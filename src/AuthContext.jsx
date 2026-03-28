@@ -1,32 +1,34 @@
 import { createContext, useContext, useEffect, useState } from "react";
-import { onAuthStateChanged, signOut } from "firebase/auth";
+import { onAuthStateChanged, signOut as firebaseSignOut } from "firebase/auth";
 import { auth } from "./firebase";
+import { supabase } from "./supabase";
 
 const AuthContext = createContext(null);
 
 export function AuthProvider({ children }) {
-  const [user,    setUser]    = useState(undefined); // undefined = still loading
+  const [user,    setUser]    = useState(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Firebase tells us whenever the user logs in or out
-    const unsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
-      setUser(firebaseUser);
+    const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
+      setUser(firebaseUser ?? null);
       setLoading(false);
     });
-    return unsubscribe; // cleanup on unmount
+    return unsubscribe;
   }, []);
 
-  const logout = () => signOut(auth);
+  const signOut = async () => {
+    await supabase.auth.signOut();
+    await firebaseSignOut(auth);
+  };
 
   return (
-    <AuthContext.Provider value={{ user, loading, logout }}>
+    <AuthContext.Provider value={{ user, loading, signOut }}>
       {children}
     </AuthContext.Provider>
   );
 }
 
-// Custom hook — any component can call useAuth() to get the current user
 export function useAuth() {
   return useContext(AuthContext);
 }

@@ -1,6 +1,7 @@
 import { AuthProvider, useAuth } from "./AuthContext";
-import Login from "./Login";
-import Home  from "./Home";
+import Login         from "./Login";
+import Home          from "./Home";
+import DataMigration from "./DataMigration";
 
 function AppContent() {
   const { user, loading } = useAuth();
@@ -13,7 +14,13 @@ function AppContent() {
     );
   }
 
-  return user ? <Home /> : <Login />;
+  if (!user) return <Login />;
+
+  // Temporary: visit /migrate in your browser to run the one-time data migration.
+  // Remove this line in Phase 3 once migration is done.
+  if (window.location.pathname === "/migrate") return <DataMigration />;
+
+  return <Home />;
 }
 
 export default function App() {

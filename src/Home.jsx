@@ -1,14 +1,14 @@
 import { useAuth } from "./AuthContext";
 
 export default function Home() {
-  const { user, logout } = useAuth();
+  const { user, signOut } = useAuth();
 
   return (
     <div style={{ padding: "2rem", maxWidth: "600px", margin: "0 auto" }}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "2rem" }}>
         <h1 style={{ fontSize: "1.8rem", color: "#3a3020" }}>По-русски</h1>
         <button
-          onClick={logout}
+          onClick={signOut}
           style={{
             padding: "8px 16px",
             borderRadius: "8px",
