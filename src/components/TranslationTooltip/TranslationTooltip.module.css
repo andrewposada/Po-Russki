@@ -1,0 +1,103 @@
+/* src/components/TranslationTooltip/TranslationTooltip.module.css */
+
+.backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 590;
+}
+
+.tooltip {
+  position: absolute;
+  z-index: 600;
+  transform: translate(-50%, -100%);
+  background: var(--c-bg-card);
+  border: 1px solid var(--c-border);
+  border-radius: var(--radius-md);
+  padding: 14px 16px 12px;
+  min-width: 200px;
+  max-width: 280px;
+  box-shadow: 0 4px 20px rgba(58, 48, 32, 0.14);
+}
+
+.wordRow {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  margin-bottom: 4px;
+}
+
+.word {
+  font-size: 20px;
+  color: var(--c-text-dark);
+  line-height: 1.2;
+}
+
+.lemma {
+  font-size: 12px;
+  color: var(--c-text-light);
+}
+
+.translation {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--c-sage-dark);
+  margin-bottom: 4px;
+}
+
+.contextNote {
+  font-size: 12px;
+  color: var(--c-text-light);
+  font-style: italic;
+  margin-bottom: 8px;
+  line-height: 1.4;
+}
+
+.actions {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  margin-top: 10px;
+}
+
+.actionBtn {
+  height: 28px;
+  padding: 0 10px;
+  border-radius: 6px;
+  border: 1px solid var(--c-border);
+  background: var(--c-bg-panel);
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--c-text-mid);
+  transition: background 0.12s;
+}
+
+.actionBtn:hover { background: var(--c-bg-deep); }
+
+.masteredBtn {
+  background: var(--c-sage-light);
+  border-color: var(--c-sage);
+  color: var(--c-sage-dark);
+}
+
+.masteredBtn:hover { background: var(--c-sage); color: white; }
+
+.savedTag {
+  font-size: 12px;
+  color: var(--c-text-light);
+  font-style: italic;
+  padding: 4px 0;
+}
+
+.closeBtn {
+  position: absolute;
+  top: 8px;
+  right: 10px;
+  background: none;
+  border: none;
+  color: var(--c-text-xlight);
+  font-size: 13px;
+  line-height: 1;
+  padding: 2px;
+}
+
+.closeBtn:hover { color: var(--c-text-mid); }

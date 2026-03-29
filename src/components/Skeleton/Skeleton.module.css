@@ -1,0 +1,32 @@
+/* src/components/Skeleton/Skeleton.module.css */
+
+.bar {
+  background: linear-gradient(
+    90deg,
+    var(--c-bg-panel) 0px,
+    var(--c-border-soft) 300px,
+    var(--c-bg-panel) 600px
+  );
+  background-size: 1200px 100%;
+  animation: shimmer 1.6s ease-in-out infinite;
+  display: block;
+}
+
+.group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  width: 100%;
+}
+
+.card {
+  background: var(--c-bg-card);
+  border: 1px solid var(--c-border);
+  border-radius: var(--radius-md);
+  padding: 16px;
+}
+
+@keyframes shimmer {
+  0%   { background-position: -600px 0; }
+  100% { background-position:  600px 0; }
+}

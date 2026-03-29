@@ -1,11 +1,90 @@
+/* src/index.css */
+
 *, *::before, *::after {
   box-sizing: border-box;
   margin: 0;
   padding: 0;
 }
 
-body {
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-  background: #f5f0e8;
-  color: #3a3020;
+:root {
+  /* По-русски palette */
+  --c-bg:            #f5f0e8;
+  --c-bg-card:       #fffdf7;
+  --c-bg-panel:      #eee8d8;
+  --c-bg-deep:       #e8dfc8;
+  --c-border:        #d4c9b0;
+  --c-border-soft:   #e0d8c4;
+  --c-sage:          #7a9e7e;
+  --c-sage-dark:     #5a7a5e;
+  --c-sage-light:    #c8ddc8;
+  --c-mushroom:      #b07c5a;
+  --c-mushroom-lt:   #e8c8a8;
+  --c-sky:           #7aaec8;
+  --c-sky-light:     #c8e0ee;
+  --c-cream:         #f0e8d0;
+  --c-text-dark:     #3a3020;
+  --c-text-mid:      #6a5e48;
+  --c-text-light:    #9a8e78;
+  --c-text-xlight:   #b8ae98;
+  --c-correct:       #5a9e6a;
+  --c-wrong:         #c07050;
+  --c-orange:        #d08030;
+
+  /* Header button colors */
+  --c-ref-text:      #4a6e8a;
+  --c-ref-bg:        #edf4f9;
+  --c-ref-border:    #ccdde8;
+  --c-ref-hover:     #ddeaf3;
+  --c-prog-text:     #7a5a20;
+  --c-prog-bg:       #faf0e0;
+  --c-prog-border:   #e8d4a8;
+  --c-prog-hover:    #f0e0c0;
+  --c-words-text:    #3a6a3e;
+  --c-words-bg:      #eaf3ea;
+  --c-words-border:  #c0d8c0;
+  --c-words-hover:   #d4e8d4;
+  --c-set-text:      #6a4e38;
+  --c-set-bg:        #f4ece4;
+  --c-set-border:    #dcc8b4;
+  --c-set-hover:     #e8d8c8;
+
+  /* Typography */
+  --font-ru: "Caveat", Georgia, serif;
+  --font-ui: system-ui, -apple-system, sans-serif;
+
+  /* Spacing */
+  --radius-sm:  6px;
+  --radius-md:  10px;
+  --radius-lg:  14px;
+  --radius-xl:  20px;
+}
+
+html, body, #root {
+  height: 100%;
+  background: var(--c-bg);
+  color: var(--c-text-dark);
+  font-family: var(--font-ui);
+  font-size: 16px;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+}
+
+button {
+  font-family: inherit;
+  cursor: pointer;
+}
+
+input, textarea {
+  font-family: inherit;
+}
+
+/* Russian text utility class — apply to any element displaying Cyrillic */
+.ru {
+  font-family: var(--font-ru);
+}
+
+/* Skeleton animation — used by Skeleton component */
+@keyframes shimmer {
+  0%   { background-position: -600px 0; }
+  100% { background-position:  600px 0; }
 }
