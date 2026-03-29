@@ -9,7 +9,7 @@ import TranslationTooltip from "./components/TranslationTooltip/TranslationToolt
 import WordBankOverlay from "./components/WordBank/WordBankOverlay";
 import Login from "./Login";
 import Home from "./modules/Home/Home";
-import styles from "./App.module.css";
+import styles from "./app.module.css";
 import { SettingsProvider } from "./context/SettingsContext";
 
 // Module imports — add as each phase is built
