@@ -11,7 +11,7 @@ export default function TranslationTooltip() {
   const { enrich }                = useWordBank();
 
   const tooltipRef = useRef(null);
-  const [pos, setPos] = useState({ left: 0, top: 0, below: false, triangleOffset: "50%" });
+  const [pos, setPos] = useState({ left: 0, top: 0, below: false, triangleOffset: "50%", visible: false });
 
   useEffect(() => {
     if (!tooltipRef.current || !tooltip) return;
@@ -46,7 +46,12 @@ export default function TranslationTooltip() {
       top:            top,
       below:          below,
       triangleOffset: `${clampedTriangle}px`,
+      visible:        true,
     });
+  }, [tooltip]);
+
+  useEffect(() => {
+    if (!tooltip) setPos(p => ({ ...p, visible: false }));
   }, [tooltip]);
 
   if (!tooltip) return null;
@@ -72,11 +77,12 @@ export default function TranslationTooltip() {
 
       <div
         ref={tooltipRef}
-        className={`${styles.tooltip} ${pos.below ? styles.tooltipBelow : ""}`}
+        className={`${styles.tooltipBubble} ${pos.below ? styles.below : styles.above}`}
         style={{
-          position:          "fixed",
-          left:              pos.left,
-          top:               pos.top,
+          position:            "fixed",
+          left:                pos.left,
+          top:                 pos.top,
+          opacity:             pos.visible ? 1 : 0,
           "--triangle-offset": pos.triangleOffset,
         }}
       >
