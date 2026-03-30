@@ -6,10 +6,9 @@
   z-index: 590;
 }
 
-.tooltip {
-  position: absolute;
+.tooltipBubble {
+  position: fixed;
   z-index: 600;
-  transform: translate(-50%, -100%);
   background: var(--c-bg-card);
   border: 1px solid var(--c-border);
   border-radius: var(--radius-md);
@@ -17,6 +16,29 @@
   min-width: 200px;
   max-width: 280px;
   box-shadow: 0 4px 20px rgba(58, 48, 32, 0.14);
+}
+
+/* Triangle arrow */
+.tooltipBubble::after {
+  content: "";
+  position: absolute;
+  left: var(--triangle-offset, 50%);
+  transform: translateX(-50%);
+  border: 8px solid transparent;
+}
+
+/* Triangle points DOWN when tooltip is above the word */
+.tooltipBubble.above::after {
+  bottom: -8px;
+  border-top-color: var(--c-bg-card);
+  border-bottom: none;
+}
+
+/* Triangle points UP when tooltip is below the word */
+.tooltipBubble.below::after {
+  top: -8px;
+  border-bottom-color: var(--c-bg-card);
+  border-top: none;
 }
 
 .wordRow {

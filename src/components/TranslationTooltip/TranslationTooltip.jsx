@@ -1,4 +1,5 @@
 // src/components/TranslationTooltip/TranslationTooltip.jsx
+import { useEffect, useRef, useState } from "react";
 import { useAuth } from "../../AuthContext";
 import { useTooltip } from "../../context/TooltipContext";
 import { useWordBank } from "../../context/WordBankContext";
@@ -9,9 +10,48 @@ export default function TranslationTooltip() {
   const { tooltip, closeTooltip } = useTooltip();
   const { enrich }                = useWordBank();
 
+  const tooltipRef = useRef(null);
+  const [pos, setPos] = useState({ left: 0, top: 0, below: false, triangleOffset: "50%" });
+
+  useEffect(() => {
+    if (!tooltipRef.current || !tooltip) return;
+
+    const tt  = tooltipRef.current.getBoundingClientRect();
+    const gap = 8;
+
+    // tooltip.x / tooltip.y are the anchor center point
+    const anchorCenterX = tooltip.x;
+    const anchorY       = tooltip.y;
+
+    // Default: centered above anchor point
+    let left  = anchorCenterX - tt.width / 2;
+    let top   = anchorY - tt.height - gap;
+    let below = false;
+
+    // Not enough room above? Flip below.
+    if (top < 8) {
+      top   = anchorY + gap;
+      below = true;
+    }
+
+    // Nudge left/right to stay inside viewport
+    const nudgedLeft = Math.max(8, Math.min(window.innerWidth - tt.width - 8, left));
+
+    // Triangle offset: always points at anchor center even after nudge
+    const triangleOffset  = anchorCenterX - nudgedLeft;
+    const clampedTriangle = Math.max(12, Math.min(tt.width - 12, triangleOffset));
+
+    setPos({
+      left:           nudgedLeft,
+      top:            top,
+      below:          below,
+      triangleOffset: `${clampedTriangle}px`,
+    });
+  }, [tooltip]);
+
   if (!tooltip) return null;
 
-  const { x, y, word, displayWord, translation, contextNote, isPhrase, wordBankStatus } = tooltip;
+  const { word, displayWord, translation, contextNote, isPhrase, wordBankStatus } = tooltip;
 
   const handleAddToWordBank = async () => {
     if (!user || isPhrase) return;
@@ -31,8 +71,14 @@ export default function TranslationTooltip() {
       <div className={styles.backdrop} onClick={closeTooltip} />
 
       <div
-        className={styles.tooltip}
-        style={{ left: x, top: y - 12 }}
+        ref={tooltipRef}
+        className={`${styles.tooltip} ${pos.below ? styles.tooltipBelow : ""}`}
+        style={{
+          position:          "fixed",
+          left:              pos.left,
+          top:               pos.top,
+          "--triangle-offset": pos.triangleOffset,
+        }}
       >
         {/* Word display */}
         <div className={styles.wordRow}>
