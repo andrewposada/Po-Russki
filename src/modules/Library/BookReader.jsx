@@ -5,14 +5,15 @@ import { useAuth }     from "../../AuthContext";
 import { useSettings } from "../../context/SettingsContext";
 import { useWordBank } from "../../context/WordBankContext";
 import {
-  getBooks, getChapters, updateBook, upsertReadingSession,
+  getBooks, getChapters, updateBook, upsertReadingSession, getChapterPriorTime,
 } from "../../storage";
 import { useReadingTimer } from "../../hooks/useReadingTimer";
 import styles from "./BookReader.module.css";
 import ComprehensionBlock from "./ComprehensionBlock";
 import StatsOverlay from "./StatsOverlay";
 
-const SESSION_ID = crypto.randomUUID();
+// Session ID is generated per chapter visit, not once at mount.
+// We store it in a ref so goToChapter can refresh it.
 
 // ─────────────────────────────────────────────────────
 // splitIntoSegments
@@ -43,6 +44,7 @@ function splitIntoSegments(content) {
 }
 
 export default function BookReader() {
+  const chapterSessionIdRef = useRef(crypto.randomUUID());
   const { bookId }   = useParams();
   const { user }     = useAuth();
   const settings     = useSettings();
@@ -73,22 +75,22 @@ export default function BookReader() {
   useEffect(() => { translationsCacheRef.current = translationsCache; }, [translationsCache]);
 
   // ── Reading timer ────────────────────────────────────────────────────────
-  const { seconds, running, toggle, recordInteraction, flush } = useReadingTimer({
-    onFlush: async (elapsed) => {
-      if (!user || elapsed < 3) return;
+  const [priorSeconds, setPriorSeconds] = useState(0);
+  const priorSecondsRef = useRef(0);
+  useEffect(() => { priorSecondsRef.current = priorSeconds; }, [priorSeconds]);
+
+  const { seconds, running, toggle, nudgeInteraction, flushAndReset } = useReadingTimer({
+    onSave: async (elapsed) => {
+      if (!user || elapsed < 1) return;
       const ch = chapters.find(c => c.chapter_num === activeChapterNumRef.current);
       if (!ch) return;
-      try {
-        await upsertReadingSession(user.uid, {
-          sessionId:   SESSION_ID,
-          chapterId:   ch.id,
-          timeSpent:   elapsed,
-          startedAt:   new Date(Date.now() - elapsed * 1000).toISOString(),
-          completedAt: new Date().toISOString(),
-        });
-      } catch (err) {
-        console.warn("Could not save reading session:", err.message);
-      }
+      await upsertReadingSession(user.uid, {
+        sessionId:   chapterSessionIdRef.current,
+        chapterId:   ch.id,
+        timeSpent:   elapsed,
+        startedAt:   new Date(Date.now() - elapsed * 1000).toISOString(),
+        completedAt: new Date().toISOString(),
+      });
     },
   });
 
@@ -109,6 +111,16 @@ export default function BookReader() {
       if (!thisBook) { setError("Book not found."); return; }
       setBook(thisBook);
       setChapters(chaptersData ?? []);
+
+      // Load prior reading time for the initial chapter
+      const startChapter = thisBook.bookmark_chapter ?? 1;
+      const startChapData = (chaptersData ?? []).find(c => c.chapter_num === startChapter);
+      if (startChapData && user) {
+        const prior = await getChapterPriorTime(user.uid, startChapData.id);
+        setPriorSeconds(prior);
+        priorSecondsRef.current = prior;
+      }
+
       if (thisBook.bookmark_chapter && thisBook.bookmark_segment != null) {
         setActiveChapterNum(thisBook.bookmark_chapter);
         setBookmark({ chapterNum: thisBook.bookmark_chapter, segIdx: thisBook.bookmark_segment });
@@ -137,11 +149,23 @@ export default function BookReader() {
   // ── Chapter navigation ───────────────────────────────────────────────────
   async function goToChapter(num) {
     if (num < 1 || num > chapters.length) return;
-    await flush();
+    await flushAndReset();
+    // Fresh session ID for this chapter visit
+    chapterSessionIdRef.current = crypto.randomUUID();
     setActiveChapterNum(num);
     setRevealedSegs(new Set());
     setTranslationsCache({});
     setShowComprehension(false);
+    // Load prior time for the new chapter
+    const ch = chapters.find(c => c.chapter_num === num);
+    if (ch && user) {
+      const prior = await getChapterPriorTime(user.uid, ch.id);
+      setPriorSeconds(prior);
+      priorSecondsRef.current = prior;
+    } else {
+      setPriorSeconds(0);
+      priorSecondsRef.current = 0;
+    }
     window.scrollTo({ top: 0, behavior: "smooth" });
   }
 
@@ -261,8 +285,11 @@ export default function BookReader() {
   }, [segments.length, bookmark, activeChapterNum]);
   useEffect(() => { bookmarkScrolled.current = false; }, [activeChapterNum]);
 
-  const timerDisplay = `${Math.floor(seconds / 60)}:${String(seconds % 60).padStart(2, "0")}`;
-  const coverColor   = book?.cover_color || "#7a9e7e";
+const totalSeconds  = priorSeconds + seconds;
+  const fmtTime = (s) => `${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}`;
+  const timerDisplay  = fmtTime(seconds);
+  const totalDisplay  = fmtTime(totalSeconds);
+  const coverColor    = book?.cover_color || "#7a9e7e";
 
   if (loading) return (
     <div className={styles.loading}>
@@ -279,13 +306,13 @@ export default function BookReader() {
   );
 
   return (
-    <div className={styles.reader} onPointerMove={handleSegPointerMove}
-      onClick={recordInteraction} onKeyDown={recordInteraction}>
+   <div className={styles.reader} onPointerMove={handleSegPointerMove}
+      onClick={nudgeInteraction} onKeyDown={nudgeInteraction}>
 
       {/* Sub-header */}
       <div className={styles.subHeader}>
         <button className={styles.backBtn}
-          onClick={async () => { await flush(); navigate("/library"); }}>✕</button>
+          onClick={async () => { await flushAndReset(); navigate("/library"); }}>✕</button>
         <span className={styles.bookTitle}>{book?.title}</span>
         <div className={styles.subHeaderRight}>
           {book?.level && (
@@ -387,11 +414,26 @@ export default function BookReader() {
             title="Highlight word bank words"
           >СБ</button>
 
-          <button
-            className={`${styles.toolbarBtn} ${running ? styles.timerRunning : ""}`}
-            onClick={toggle}
-            title={running ? "Pause timer" : "Start timer"}
-          >⏱ {timerDisplay}</button>
+          <div className={styles.timerWrapper}>
+            <button
+              className={`${styles.toolbarBtn} ${running ? styles.timerRunning : ""}`}
+              onClick={toggle}
+              title={running ? "Pause timer" : "Start timer"}
+            >⏱</button>
+            {totalSeconds > 0 && (
+              <div className={styles.timerPopup}>
+                <div className={styles.timerPopupRow}>
+                  <span className={styles.timerLabel}>session</span>
+                  <span className={styles.timerValue}>{timerDisplay}</span>
+                </div>
+                <div className={styles.timerPopupRow}>
+                  <span className={styles.timerLabel}>total</span>
+                  <span className={`${styles.timerValue} ${styles.timerTotal}`}>{totalDisplay}</span>
+                </div>
+                <div className={styles.timerPopupArrow} />
+              </div>
+            )}
+          </div>
 
           <span className={`${styles.bookmarkIcon} ${
             bookmark?.chapterNum === activeChapterNum ? styles.bookmarkIconActive : ""

@@ -427,19 +427,35 @@ export async function upsertAttempt(userId, attemptObj) {
 }
 
 // ── READING LOG ────────────────────────────────────────────────────────────
-
 export async function upsertReadingSession(userId, sessionObj) {
+  console.log("upsertReadingSession called with:", { userId, sessionObj });  // ← ADD THIS
   const { error } = await supabase
     .from("reading_log")
-    .insert({
-      user_id:      userId,
-      session_id:   sessionObj.sessionId,
-      chapter_id:   sessionObj.chapterId,
-      started_at:   sessionObj.startedAt   ?? new Date(),
-      completed_at: sessionObj.completedAt ?? null,
-      time_spent:   sessionObj.timeSpent   ?? 0,
-    });
+    .upsert(
+      {
+        user_id:      userId,
+        session_id:   sessionObj.sessionId,
+        chapter_id:   sessionObj.chapterId,
+        started_at:   sessionObj.startedAt ?? new Date(),
+        completed_at: sessionObj.completedAt ?? null,
+        time_spent:   sessionObj.timeSpent ?? 0,
+      },
+      { onConflict: "session_id,chapter_id" }
+    );
+  if (error) {
+    console.error("upsertReadingSession error:", error);  // ← ADD THIS
+    throw error;
+  }
+}
+
+export async function getChapterPriorTime(userId, chapterId) {
+  const { data, error } = await supabase
+    .from("reading_log")
+    .select("time_spent")
+    .eq("user_id", userId)
+    .eq("chapter_id", chapterId);
   if (error) throw error;
+  return (data ?? []).reduce((sum, row) => sum + (row.time_spent ?? 0), 0);
 }
 
 export async function getReadingLog(userId, bookId) {
