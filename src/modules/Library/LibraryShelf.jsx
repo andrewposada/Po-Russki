@@ -1,5 +1,5 @@
 // src/modules/Library/LibraryShelf.jsx
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../../AuthContext";
 import { getBooks, updateBook, deleteBook } from "../../storage";
@@ -20,6 +20,7 @@ export default function LibraryShelf() {
   const [statsBook,   setStatsBook]   = useState(null);
   const [confirmBook, setConfirmBook] = useState(null);
   const [confirmType, setConfirmType] = useState(null);
+  const [coverBook,   setCoverBook]   = useState(null);
 
   const activeBooks   = books.filter(b => !b.is_archived);
   const archivedBooks = books.filter(b =>  b.is_archived);
@@ -101,6 +102,7 @@ export default function LibraryShelf() {
               onArchive={() => { setConfirmBook(book); setConfirmType("archive"); }}
               onDelete={() => { setConfirmBook(book); setConfirmType("delete"); }}
               onStats={() => setStatsBook(book)}
+              onCoverChange={() => setCoverBook(book)}
             />
           ))}
         </div>
@@ -123,6 +125,7 @@ export default function LibraryShelf() {
                   onUnarchive={() => handleUnarchive(book)}
                   onDelete={() => { setConfirmBook(book); setConfirmType("delete"); }}
                   onStats={() => setStatsBook(book)}
+                  onCoverChange={() => setCoverBook(book)}
                 />
               ))}
             </div>
@@ -141,6 +144,16 @@ export default function LibraryShelf() {
       {/* Stats overlay */}
       {statsBook && (
         <StatsOverlay book={statsBook} onClose={() => setStatsBook(null)} />
+      )}
+
+      {/* Cover image modal */}
+      {coverBook && (
+        <CoverModal
+          book={coverBook}
+          userId={user.uid}
+          onClose={() => setCoverBook(null)}
+          onSaved={() => { setCoverBook(null); loadBooks(); }}
+        />
       )}
 
       {/* Confirm dialog */}
@@ -168,7 +181,7 @@ export default function LibraryShelf() {
 // ─────────────────────────────────────────────────────
 // BookTile
 // ─────────────────────────────────────────────────────
-function BookTile({ book, archived, onOpen, onArchive, onUnarchive, onDelete, onStats }) {
+function BookTile({ book, archived, onOpen, onArchive, onUnarchive, onDelete, onStats, onCoverChange }) {
   const [menuOpen, setMenuOpen] = useState(false);
   const coverColor = book.cover_color || libCoverColor(book.title);
   const progress   = book.total_chapters > 0
@@ -197,6 +210,11 @@ function BookTile({ book, archived, onOpen, onArchive, onUnarchive, onDelete, on
         />
       </div>
 
+      <div className={styles.tileFooter}>
+        <span className={styles.tileTitle}>{book.title}</span>
+        {book.level && <span className={styles.tileLevelBadge}>{book.level}</span>}
+      </div>
+
       <button
         className={styles.tileMenu}
         onClick={e => { e.stopPropagation(); setMenuOpen(m => !m); }}
@@ -212,6 +230,7 @@ function BookTile({ book, archived, onOpen, onArchive, onUnarchive, onDelete, on
             <button onClick={() => { setMenuOpen(false); onUnarchive(); }}>↩ Re-read</button>
           )}
           <button onClick={() => { setMenuOpen(false); onStats(); }}>📊 Stats</button>
+          <button onClick={() => { setMenuOpen(false); onCoverChange(); }}>🖼 Change Cover</button>
           <button
             className={styles.deleteBtn}
             onClick={() => { setMenuOpen(false); onDelete(); }}
@@ -249,6 +268,195 @@ function ConfirmDialog({ title, message, onConfirm, onCancel }) {
           <button className={styles.confirmCancel} onClick={onCancel}>Cancel</button>
           <button className={styles.confirmDelete} onClick={onConfirm}>Confirm</button>
         </div>
+      </div>
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────────────
+// CoverModal
+// ─────────────────────────────────────────────────────
+function CoverModal({ book, userId, onClose, onSaved }) {
+  const fileInputRef        = useRef(null);
+  const [copied,   setCopied]   = useState(false);
+  const [preview,  setPreview]  = useState(book.cover_image ?? null);
+  const [pending,  setPending]  = useState(null);   // resized base64 not yet saved
+  const [saving,   setSaving]   = useState(false);
+  const [error,    setError]    = useState(null);
+
+  const synopsis = book.synopsis
+    ? book.synopsis.split(/[.!?]/)[0].trim() + "."
+    : "";
+
+  const dallePrompt =
+`Create a portrait-format book cover illustration (output size: 1024×1792) for a Russian-language learner's story.
+
+Title: "${book.title}"${synopsis ? `\nStory: ${synopsis}` : ""}
+
+Style guidelines:
+- Painterly, warm, storybook illustration
+- Rich, saturated colors with a slightly vintage feel
+- Centered composition with clear focal subject
+- No text, lettering, or writing of any kind anywhere in the image
+- Suitable for a book cover — evocative, not literal
+
+Output size: 1024×1792 (portrait). Select this size in the DALL·E interface before generating.`;
+
+  async function handleCopy() {
+    await navigator.clipboard.writeText(dallePrompt);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  }
+
+  function handleFileSelect(e) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setError(null);
+    if (file.size > 5 * 1024 * 1024) {
+      setError("Image must be under 5 MB.");
+      return;
+    }
+    const img = new Image();
+    const url = URL.createObjectURL(file);
+    img.onload = () => {
+      const MAX_W = 300, MAX_H = 420;
+      const scale  = Math.min(MAX_W / img.width, MAX_H / img.height, 1);
+      const canvas = document.createElement("canvas");
+      canvas.width  = Math.round(img.width  * scale);
+      canvas.height = Math.round(img.height * scale);
+      canvas.getContext("2d").drawImage(img, 0, 0, canvas.width, canvas.height);
+      const resized = canvas.toDataURL("image/jpeg", 0.85);
+      setPreview(resized);
+      setPending(resized);
+      URL.revokeObjectURL(url);
+    };
+    img.src = url;
+  }
+
+  async function handleSave() {
+    if (!pending) return;
+    setSaving(true);
+    setError(null);
+    try {
+      await updateBook(userId, book.id, { cover_image: pending });
+      onSaved();
+    } catch (err) {
+      setError(err.message || "Save failed. Please try again.");
+      setSaving(false);
+    }
+  }
+
+  function handleRemove() {
+    setPreview(null);
+    setPending("");   // empty string signals "remove cover"
+  }
+
+  async function handleSaveRemove() {
+    setSaving(true);
+    setError(null);
+    try {
+      await updateBook(userId, book.id, { cover_image: null });
+      onSaved();
+    } catch (err) {
+      setError(err.message || "Save failed. Please try again.");
+      setSaving(false);
+    }
+  }
+
+  return (
+    <div className={styles.coverBackdrop} onClick={onClose}>
+      <div className={styles.coverModal} onClick={e => e.stopPropagation()}>
+
+        {/* Header */}
+        <div className={styles.coverModalHeader}>
+          <p className={styles.coverModalTitle}>🖼 Change Cover</p>
+          <p className={styles.coverModalBook}>{book.title}</p>
+          <button className={styles.coverModalClose} onClick={onClose}>✕</button>
+        </div>
+
+        {/* Step 1 — DALL·E prompt */}
+        <div className={styles.coverSection}>
+          <p className={styles.coverSectionLabel}>Step 1 — Generate with DALL·E</p>
+          <p className={styles.coverSectionHint}>
+            Copy this prompt, paste it into{" "}
+            <a href="https://chatgpt.com" target="_blank" rel="noreferrer">ChatGPT</a>{" "}
+            or the DALL·E interface, and select <strong>1024×1792</strong> (portrait) before generating.
+          </p>
+          <div className={styles.promptBox}>
+            <pre className={styles.promptText}>{dallePrompt}</pre>
+          </div>
+          <button className={styles.copyPromptBtn} onClick={handleCopy}>
+            {copied ? "✓ Copied!" : "📋 Copy Prompt"}
+          </button>
+        </div>
+
+        {/* Divider */}
+        <div className={styles.coverDivider} />
+
+        {/* Step 2 — Upload */}
+        <div className={styles.coverSection}>
+          <p className={styles.coverSectionLabel}>Step 2 — Upload the image</p>
+          <p className={styles.coverSectionHint}>
+            Save the generated image to your device, then upload it here.
+          </p>
+
+          {preview && pending !== "" ? (
+            <div className={styles.coverPreviewWrap}>
+              <img src={preview} alt="Cover preview" className={styles.coverPreviewImg} />
+              <div className={styles.coverPreviewActions}>
+                <button
+                  className={styles.coverChangeBtn}
+                  onClick={() => fileInputRef.current?.click()}
+                >
+                  ↩ Choose different image
+                </button>
+                <button className={styles.coverRemoveBtn} onClick={handleRemove}>
+                  🗑 Remove cover
+                </button>
+              </div>
+            </div>
+          ) : (
+            <button
+              className={styles.uploadBtn}
+              onClick={() => fileInputRef.current?.click()}
+            >
+              📂 Choose Image
+            </button>
+          )}
+
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept=".jpg,.jpeg,.png,.webp"
+            onChange={handleFileSelect}
+            style={{ display: "none" }}
+          />
+
+          {error && <p className={styles.coverError}>{error}</p>}
+        </div>
+
+        {/* Footer */}
+        <div className={styles.coverFooter}>
+          <button className={styles.coverCancelBtn} onClick={onClose}>Cancel</button>
+          {pending === "" ? (
+            <button
+              className={styles.coverSaveBtn}
+              onClick={handleSaveRemove}
+              disabled={saving}
+            >
+              {saving ? "Saving…" : "Save (no cover)"}
+            </button>
+          ) : (
+            <button
+              className={styles.coverSaveBtn}
+              onClick={handleSave}
+              disabled={!pending || saving}
+            >
+              {saving ? "Saving…" : "✓ Save Cover"}
+            </button>
+          )}
+        </div>
+
       </div>
     </div>
   );

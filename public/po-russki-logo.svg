@@ -1,0 +1,32 @@
+<svg width="512" height="512" viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg">
+
+  <!-- book shadow -->
+  <rect x="46" y="49" width="426" height="426" rx="22" fill="#e8dfc8" opacity="0.6"/>
+
+  <!-- book body -->
+  <rect x="40" y="42" width="426" height="426" rx="22" fill="#fffdf7" stroke="#c8b898" stroke-width="2.5"/>
+
+  <!-- spine -->
+  <rect x="40" y="42" width="44" height="426" rx="16" fill="#7a9e7e"/>
+  <line x1="84" y1="42" x2="84" y2="468" stroke="#5a7a5e" stroke-width="1"/>
+
+  <!-- Я drawn first so lines render on top -->
+  <text x="265" y="325" text-anchor="middle" font-family="Georgia, serif" font-size="240" font-weight="700" fill="#7a9e7e">Я</text>
+
+  <!-- all ruled lines drawn after Я -->
+  <line x1="100" y1="90"  x2="448" y2="90"  stroke="#e0d8c4" stroke-width="1.4"/>
+  <line x1="100" y1="118" x2="448" y2="118" stroke="#e0d8c4" stroke-width="1.4"/>
+  <line x1="100" y1="146" x2="448" y2="146" stroke="#e0d8c4" stroke-width="1.4"/>
+  <line x1="100" y1="338" x2="448" y2="338" stroke="#e0d8c4" stroke-width="1.4"/>
+  <line x1="100" y1="366" x2="448" y2="366" stroke="#e0d8c4" stroke-width="1.4"/>
+  <line x1="100" y1="394" x2="448" y2="394" stroke="#e0d8c4" stroke-width="1.4"/>
+  <line x1="100" y1="422" x2="448" y2="422" stroke="#e0d8c4" stroke-width="1.4"/>
+  
+
+  <!-- faint По-русски near bottom -->
+  <text x="265" y="455" text-anchor="middle" font-family="Georgia, serif" font-size="26" fill="#7a9e7e" opacity="0.22" letter-spacing="4">По-русски</text>
+
+  <!-- bookmark on top -->
+  <polygon points="352,42 392,42 392,148 372,128 352,148" fill="#b07c5a"/>
+
+</svg>
