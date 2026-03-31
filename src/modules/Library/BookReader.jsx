@@ -5,7 +5,7 @@ import { useAuth }     from "../../AuthContext";
 import { useSettings } from "../../context/SettingsContext";
 import { useWordBank } from "../../context/WordBankContext";
 import {
-  getBooks, getChapters, updateBook, updateChapter, upsertReadingSession, getChapterPriorTime,
+  getBooks, getChapters, updateBook, upsertReadingSession, getChapterPriorTime,
 } from "../../storage";
 import { useReadingTimer } from "../../hooks/useReadingTimer";
 import styles from "./BookReader.module.css";
@@ -70,10 +70,12 @@ export default function BookReader() {
 
   const activeChapterNumRef  = useRef(1);
   const translationsCacheRef = useRef({});
+  const bookmarkRef          = useRef(null);
 
   useEffect(() => { activeChapterNumRef.current  = activeChapterNum;  }, [activeChapterNum]);
   useEffect(() => { translationsCacheRef.current = translationsCache; }, [translationsCache]);
-
+  useEffect(() => { bookmarkRef.current          = bookmark;          }, [bookmark]);
+  
   // ── Reading timer ────────────────────────────────────────────────────────
   const [priorSeconds, setPriorSeconds] = useState(0);
   const priorSecondsRef = useRef(0);
@@ -122,15 +124,13 @@ export default function BookReader() {
       }
 
       // Find which chapter has a bookmark saved
-      const bookmarkedChapter = (chaptersData ?? []).find(
-        c => c.bookmark_segment_index != null
-      );
-      if (bookmarkedChapter) {
-        setActiveChapterNum(bookmarkedChapter.chapter_num);
+      if (thisBook.bookmark_chapter_num != null && thisBook.bookmark_segment_index != null) {
+        setActiveChapterNum(thisBook.bookmark_chapter_num);
         setBookmark({
-          chapterNum: bookmarkedChapter.chapter_num,
-          segIdx:     bookmarkedChapter.bookmark_segment_index,
+          chapterNum: thisBook.bookmark_chapter_num,
+          segIdx:     thisBook.bookmark_segment_index,
         });
+        pendingBookmarkScroll.current = true;
       } else {
         setActiveChapterNum(1);
       }
@@ -157,13 +157,11 @@ export default function BookReader() {
   async function goToChapter(num) {
     if (num < 1 || num > chapters.length) return;
     await flushAndReset();
-    // Fresh session ID for this chapter visit
     chapterSessionIdRef.current = crypto.randomUUID();
     setActiveChapterNum(num);
     setRevealedSegs(new Set());
     setTranslationsCache({});
     setShowComprehension(false);
-    // Load prior time for the new chapter
     const ch = chapters.find(c => c.chapter_num === num);
     if (ch && user) {
       const prior = await getChapterPriorTime(user.uid, ch.id);
@@ -173,7 +171,11 @@ export default function BookReader() {
       setPriorSeconds(0);
       priorSecondsRef.current = 0;
     }
-    window.scrollTo({ top: 0, behavior: "smooth" });
+    if (bookmarkRef.current?.chapterNum === num) {
+      pendingBookmarkScroll.current = true;
+    } else {
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    }
   }
 
   // ── Bookmark ─────────────────────────────────────────────────────────────
@@ -182,10 +184,9 @@ export default function BookReader() {
     const newBm  = isSame ? null : { chapterNum, segIdx };
     setBookmark(newBm);
     try {
-      const ch = chapters.find(c => c.chapter_num === chapterNum);
-      if (!ch) return;
-      await updateChapter(user.uid, ch.id, {
-        bookmark_segment_index: newBm?.segIdx ?? null,
+      await updateBook(user.uid, bookId, {
+        bookmark_chapter_num:   newBm?.chapterNum ?? null,
+        bookmark_segment_index: newBm?.segIdx     ?? null,
       });
     } catch (err) {
       console.warn("Could not save bookmark:", err.message);
@@ -284,14 +285,26 @@ export default function BookReader() {
   const ruFontSize = settings?.cursive ? 18 : 16;
 
   // Scroll to bookmark on chapter load
-  const bookmarkScrolled = useRef(false);
+  const pendingBookmarkScroll = useRef(false);
   useEffect(() => {
-    if (!bookmark || bookmarkScrolled.current) return;
-    if (bookmark.chapterNum !== activeChapterNum) return;
+    if (!pendingBookmarkScroll.current) return;
+    if (!bookmark || bookmark.chapterNum !== activeChapterNum) return;
     const el = document.getElementById(`seg_${bookmark.segIdx}`);
-    if (el) { el.scrollIntoView({ behavior: "smooth", block: "center" }); bookmarkScrolled.current = true; }
-  }, [segments.length, bookmark, activeChapterNum]);
-  useEffect(() => { bookmarkScrolled.current = false; }, [activeChapterNum]);
+    if (el) {
+      el.scrollIntoView({ behavior: "smooth", block: "center" });
+      pendingBookmarkScroll.current = false;
+    } else {
+      // Element not yet in DOM — retry once after a short delay
+      const t = setTimeout(() => {
+        const el2 = document.getElementById(`seg_${bookmark.segIdx}`);
+        if (el2) {
+          el2.scrollIntoView({ behavior: "smooth", block: "center" });
+          pendingBookmarkScroll.current = false;
+        }
+      }, 150);
+      return () => clearTimeout(t);
+    }
+  }, [segments.length, activeChapterNum]);
 
 const totalSeconds  = priorSeconds + seconds;
   const fmtTime = (s) => `${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}`;
