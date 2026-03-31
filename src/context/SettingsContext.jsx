@@ -70,6 +70,18 @@ export function SettingsProvider({ children }) {
     setNightModeState(getDeviceDarkMode());
   };
 
+  // ── Alt key toggles Russian keyboard globally ─────────────────────────────
+  useEffect(() => {
+    const handler = (e) => {
+      if (e.key === "Alt") {
+        e.preventDefault();
+        toggleTranslitOn();
+      }
+    };
+    window.addEventListener("keydown", handler);
+    return () => window.removeEventListener("keydown", handler);
+  }, []);
+
   // ── Load settings from Supabase ───────────────────────────────────────────
   useEffect(() => {
     if (!user) return;
@@ -116,12 +128,21 @@ export function SettingsProvider({ children }) {
     saveField("translitOn", val);
   };
 
+  const toggleTranslitOn = () => {
+    setSettings(s => {
+      const next = !s.translitOn;
+      saveField("translitOn", next);
+      return { ...s, translitOn: next };
+    });
+  };
+
   return (
     <SettingsContext.Provider value={{
       ...settings,
       setLevel,
       setCursive,
       setTranslitOn,
+      toggleTranslitOn,
       setSettings,
       loaded,
       nightMode,

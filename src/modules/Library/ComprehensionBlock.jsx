@@ -1,8 +1,10 @@
 // src/modules/Library/ComprehensionBlock.jsx
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useAuth } from "../../AuthContext";
 import { getAttempt, upsertAttempt, saveQuestions } from "../../storage";
 import { QUESTION_TYPES } from "../../constants";
+import { useSettings } from "../../context/SettingsContext";
+import { useRussianKeyboard } from "../../hooks/useRussianKeyboard";
 import styles from "./ComprehensionBlock.module.css";
 
 export default function ComprehensionBlock({ chapter, book, onDone }) {
@@ -218,6 +220,9 @@ function QuestionCard({ q, qIdx, answer, grading, onSubmit }) {
     q.sequence_items ? q.sequence_items.map((_, i) => i) : []
   );
   const answered = !!answer;
+  const { translitOn } = useSettings();
+  const freeTextareaRef = useRef(null);
+  useRussianKeyboard(freeTextareaRef, translitOn);
 
   return (
     <div className={`${styles.card} ${answered ? styles.cardAnswered : ""}`}>
@@ -300,6 +305,7 @@ function QuestionCard({ q, qIdx, answer, grading, onSubmit }) {
       {q.correct_answer_guidance && (
         <div className={styles.freeResponse}>
           <textarea
+            ref={freeTextareaRef}
             value={answered ? (answer.value ?? "") : freeText}
             onChange={e => !answered && setFreeText(e.target.value)}
             disabled={answered}

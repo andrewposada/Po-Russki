@@ -5,7 +5,7 @@ import { useAuth }     from "../../AuthContext";
 import { useSettings } from "../../context/SettingsContext";
 import { useWordBank } from "../../context/WordBankContext";
 import {
-  getBooks, getChapters, updateBook, upsertReadingSession, getChapterPriorTime,
+  getBooks, getChapters, updateBook, upsertReadingSession, getChapterPriorTime, getAttempt,
 } from "../../storage";
 import { useReadingTimer } from "../../hooks/useReadingTimer";
 import styles from "./BookReader.module.css";
@@ -64,9 +64,10 @@ export default function BookReader() {
   const [translationsCache, setTranslationsCache] = useState({});
   const [translating,       setTranslating]       = useState(null);
   const [bookmark,          setBookmark]          = useState(null);
-  const [showChapterDrawer, setShowChapterDrawer] = useState(false);
-  const [showComprehension, setShowComprehension] = useState(false);
-  const [showStats,         setShowStats]         = useState(false);
+  const [showChapterDrawer,    setShowChapterDrawer]    = useState(false);
+  const [showComprehension,    setShowComprehension]    = useState(false);
+  const [showStats,            setShowStats]            = useState(false);
+  const [hasExistingQuestions, setHasExistingQuestions] = useState(false);
 
   const activeChapterNumRef  = useRef(1);
   const translationsCacheRef = useRef({});
@@ -124,6 +125,7 @@ export default function BookReader() {
       }
 
       // Find which chapter has a bookmark saved
+      const startChapterNum = thisBook.bookmark_chapter_num ?? 1;
       if (thisBook.bookmark_chapter_num != null && thisBook.bookmark_segment_index != null) {
         setActiveChapterNum(thisBook.bookmark_chapter_num);
         setBookmark({
@@ -133,6 +135,12 @@ export default function BookReader() {
         pendingBookmarkScroll.current = true;
       } else {
         setActiveChapterNum(1);
+      }
+      // Check if the starting chapter already has questions
+      const startChapData2 = (chaptersData ?? []).find(c => c.chapter_num === startChapterNum);
+      if (startChapData2 && user) {
+        const attempt = await getAttempt(user.uid, startChapData2.id);
+        if (attempt?.questions?.length > 0) setHasExistingQuestions(true);
       }
     } catch (err) {
       setError(err.message);
@@ -162,11 +170,16 @@ export default function BookReader() {
     setRevealedSegs(new Set());
     setTranslationsCache({});
     setShowComprehension(false);
+    setHasExistingQuestions(false);
     const ch = chapters.find(c => c.chapter_num === num);
     if (ch && user) {
-      const prior = await getChapterPriorTime(user.uid, ch.id);
+      const [prior, attempt] = await Promise.all([
+        getChapterPriorTime(user.uid, ch.id),
+        getAttempt(user.uid, ch.id),
+      ]);
       setPriorSeconds(prior);
       priorSecondsRef.current = prior;
+      if (attempt?.questions?.length > 0) setHasExistingQuestions(true);
     } else {
       setPriorSeconds(0);
       priorSecondsRef.current = 0;
@@ -423,17 +436,20 @@ const totalSeconds  = priorSeconds + seconds;
         {/* End of chapter */}
         {segments.length > 0 && (
           <div className={styles.endOfChapter}>
-            {!showComprehension ? (
+            {showComprehension || hasExistingQuestions ? (
+              <ComprehensionBlock
+                chapter={activeChapter}
+                book={book}
+                onDone={() => {
+                  setShowComprehension(false);
+                  setHasExistingQuestions(false);
+                }}
+              />
+            ) : (
               <button className={styles.comprehensionBtn}
                 onClick={() => setShowComprehension(true)}>
                 Test My Understanding
               </button>
-            ) : (
-              <ComprehensionBlock
-                chapter={activeChapter}
-                book={book}
-                onDone={() => setShowComprehension(false)}
-              />
             )}
           </div>
         )}
