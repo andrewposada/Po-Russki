@@ -12,7 +12,7 @@ import Home from "./modules/Home/Home";
 import LibraryShelf from "./modules/Library/LibraryShelf";
 import BookReader from "./modules/Library/BookReader";
 import styles from "./app.module.css";
-import { SettingsProvider, useSettings } from "./context/SettingsContext";
+import { SettingsProvider } from "./context/SettingsContext";
 
 // Module imports — uncomment as each phase is built
 // import Grammar      from "./modules/Grammar/Grammar";
@@ -40,10 +40,11 @@ function AppShell() {
   );
 }
 
+// Night mode is now handled entirely via data-night on <html> in SettingsContext.
+// AppContent no longer needs to read nightMode at all.
 function AppContent() {
-  const { nightMode } = useSettings();
   return (
-    <div className={`${styles.appRoot}${nightMode ? ` ${styles.night}` : ""}`}>
+    <div className={styles.appRoot}>
       <AppShell />
       <main className={styles.main}>
         <Routes>
@@ -68,18 +69,6 @@ function AppContent() {
     </div>
   );
 }
-
-// export default function App() {
-//   return (
-//     <AuthProvider>
-//       <BrowserRouter>
-//       <SettingsProvider>
-//       <div>Hello world</div>
-//       </SettingsProvider>
-//       </BrowserRouter>
-//     </AuthProvider>
-//   );
-// }
 
 export default function App() {
   return (

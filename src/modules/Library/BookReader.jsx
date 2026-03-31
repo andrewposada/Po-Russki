@@ -286,8 +286,8 @@ export default function BookReader() {
   const activeChapter = chapters.find(c => c.chapter_num === activeChapterNum);
   const segments = splitIntoSegments(activeChapter?.content);
 
-  const ruFont     = settings?.cursive ? "'Caveat', cursive" : "Georgia, serif";
-  const ruFontSize = settings?.cursive ? 18 : 16;
+  const ruFont     = settings?.cursive ? "'Philosopher', italic" : "Georgia, serif";
+  const ruFontSize = settings?.cursive ? 19 : 16;
 
   // Scroll to bookmark on chapter load
   const pendingBookmarkScroll = useRef(false);
@@ -334,7 +334,7 @@ const totalSeconds  = priorSeconds + seconds;
   return (
    <div className={styles.reader}
       onClick={nudgeInteraction} onKeyDown={nudgeInteraction}>
-        
+
       {/* Sub-header */}
       <div className={styles.subHeader}>
         <button className={styles.backBtn}

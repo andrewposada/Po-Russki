@@ -2,47 +2,21 @@
 import { useState } from "react";
 import { useAuth } from "../../AuthContext";
 import { getAuth, signOut } from "firebase/auth";
-import { getSettings, saveSettings } from "../../storage";
 import { useSettings } from "../../context/SettingsContext";
 import { LEVELS, APP_VERSION, CHANGELOG } from "../../constants";
 import styles from "./Settings.module.css";
 
 export default function Settings({ onClose }) {
-  const { user }                    = useAuth();
-  const { nightMode, setNightMode } = useSettings();
-  const [level,    setLevel]        = useState(() => user ? null : "B1");
-  const [cursive,  setCursive]      = useState(false);
-  const [translit, setTranslit]     = useState(false);
-  const [loaded,   setLoaded]       = useState(false);
-  const [saving,   setSaving]       = useState(false);
-  const [showLog,  setShowLog]      = useState(false);
+  const { user } = useAuth();
+  const {
+    level, setLevel,
+    cursive, setCursive,
+    translitOn, setTranslitOn,
+    nightMode, setNightMode,
+    loaded,
+  } = useSettings();
 
-  // Load settings on mount
-  useState(() => {
-    if (!user || loaded) return;
-    getSettings(user.uid).then(s => {
-      if (s) {
-        setLevel(s.cefr_level || "B1");
-        setCursive(s.cursive_font || false);
-        setTranslit(s.transliteration || false);
-      } else {
-        setLevel("B1");
-      }
-      setLoaded(true);
-    });
-  });
-
-  const handleSave = async () => {
-    if (!user) return;
-    setSaving(true);
-    await saveSettings(user.uid, {
-      cefrLevel:       level,
-      cursiveFont:     cursive,
-      transliteration: translit,
-    });
-    setSaving(false);
-    onClose();
-  };
+  const [showLog, setShowLog] = useState(false);
 
   const handleSignOut = async () => {
     await signOut(getAuth());
@@ -85,7 +59,7 @@ export default function Settings({ onClose }) {
                 </div>
                 <button
                   className={`${styles.toggle} ${cursive ? styles.toggleOn : ""}`}
-                  onClick={() => setCursive(v => !v)}
+                  onClick={() => setCursive(!cursive)}
                   aria-pressed={cursive}
                   aria-label="Cursive font"
                 >
@@ -99,9 +73,9 @@ export default function Settings({ onClose }) {
                   <p className={styles.toggleSub}>QWERTY keys type Cyrillic by default</p>
                 </div>
                 <button
-                  className={`${styles.toggle} ${translit ? styles.toggleOn : ""}`}
-                  onClick={() => setTranslit(v => !v)}
-                  aria-pressed={translit}
+                  className={`${styles.toggle} ${translitOn ? styles.toggleOn : ""}`}
+                  onClick={() => setTranslitOn(!translitOn)}
+                  aria-pressed={translitOn}
                   aria-label="Russian keyboard"
                 >
                   <span className={styles.toggleThumb} />
@@ -136,19 +110,23 @@ export default function Settings({ onClose }) {
                       <p className={styles.changeVersion}>v{entry.version} — {entry.date}</p>
                       {entry.summary && <p className={styles.changeSummary}>{entry.summary}</p>}
                       <ul className={styles.changeList}>
-                        {entry.changes.map((c, i) => <li key={i}>{c}</li>)} </ul> </div> ))} </div> )} </section>
-        {/* Actions */}
-        <div className={styles.actions}>
-          <button className={styles.saveBtn} onClick={handleSave} disabled={saving}>
-            {saving ? "Saving…" : "Save settings"}
-          </button>
-          <button className={styles.signOutBtn} onClick={handleSignOut}>
-            Sign out
-          </button>
-        </div>
-      </>
-    )}
-  </div>
-</div>
-); 
+                        {entry.changes.map((c, i) => <li key={i}>{c}</li>)}
+                      </ul>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </section>
+
+            {/* Actions */}
+            <div className={styles.actions}>
+              <button className={styles.signOutBtn} onClick={handleSignOut}>
+                Sign out
+              </button>
+            </div>
+          </>
+        )}
+      </div>
+    </div>
+  );
 }
