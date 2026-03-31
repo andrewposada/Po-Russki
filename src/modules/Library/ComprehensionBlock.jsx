@@ -52,7 +52,17 @@ export default function ComprehensionBlock({ chapter, book, onDone }) {
       const data = await res.json();
       if (!data.questions) throw new Error("No questions returned");
       setQuestions(data.questions);
+      // Save questions to chapters table (backup / fast path)
       await saveQuestions(user.uid, chapter.id, data.questions);
+      // Also create an attempt row immediately so getAttempt() finds
+      // the questions on any future visit, even with zero answers
+      const newId = await upsertAttempt(user.uid, {
+        chapterId: chapter.id,
+        questions: data.questions,
+        answers:   null,
+        score:     null,
+      });
+      setAttemptId(newId);
     } catch (err) {
       setError(err.message || "Could not load questions");
     } finally {
