@@ -193,42 +193,47 @@ export default function BookReader() {
     }
   }
 
-  // ── Long-press paragraph translation ────────────────────────────────────
-  const pressTimerRef = useRef(null);
-  const pressStartRef = useRef(null);
+    // ── Right marker (translate bar) handlers ────────────────────────────────
+  const [fillingSegIdx, setFillingSegIdx] = useState(null);
+  const translatePressTimer = useRef(null);
+  const translateFillTimer  = useRef(null);
 
-  function handleSegPointerDown(e, segIdx) {
-    if (window.getSelection().toString().length > 0) return;
-    pressStartRef.current = { x: e.clientX, y: e.clientY };
-    pressTimerRef.current = setTimeout(() => translateSegment(segIdx), 600);
+  function handleTranslatePointerDown(e, segIdx) {
+    e.stopPropagation();
+    // Start fill animation
+    setFillingSegIdx(segIdx);
+    // After 600ms trigger translation
+    translatePressTimer.current = setTimeout(() => {
+      translateSegment(segIdx);
+      setFillingSegIdx(null);
+    }, 600);
   }
 
-  function handleSegPointerUp(e, segIdx) {
-    clearTimeout(pressTimerRef.current);
-    const start = pressStartRef.current;
-    if (!start) return;
-    const dx = Math.abs(e.clientX - start.x);
-    const dy = Math.abs(e.clientY - start.y);
-    if (dx < 5 && dy < 5) {
-      if (translationsCacheRef.current[segIdx]) {
-        setRevealedSegs(prev => {
-          const next = new Set(prev);
-          next.has(segIdx) ? next.delete(segIdx) : next.add(segIdx);
-          return next;
-        });
-      }
-    }
-    pressStartRef.current = null;
-  }
-
-  function handleSegPointerMove(e) {
-    const start = pressStartRef.current;
-    if (!start) return;
-    if (Math.abs(e.clientX - start.x) > 10 || Math.abs(e.clientY - start.y) > 10) {
-      clearTimeout(pressTimerRef.current);
-      pressStartRef.current = null;
+  function handleTranslatePointerUp(e, segIdx) {
+    e.stopPropagation();
+    const wasfilling = fillingSegIdx === segIdx;
+    clearTimeout(translatePressTimer.current);
+    setFillingSegIdx(null);
+    // If released before 600ms it was a tap — toggle visibility
+    if (!wasfilling) return;
+    // If fill was still animating (< 600ms) treat as tap
+    if (translationsCacheRef.current[segIdx]) {
+      setRevealedSegs(prev => {
+        const next = new Set(prev);
+        next.has(segIdx) ? next.delete(segIdx) : next.add(segIdx);
+        return next;
+      });
     }
   }
+
+  function handleTranslatePointerLeave(e, segIdx) {
+    if (fillingSegIdx === segIdx) {
+      clearTimeout(translatePressTimer.current);
+      setFillingSegIdx(null);
+    }
+  }
+
+  
 
   async function translateSegment(segIdx) {
     const ch = chapters.find(c => c.chapter_num === activeChapterNumRef.current);
@@ -327,9 +332,9 @@ const totalSeconds  = priorSeconds + seconds;
   );
 
   return (
-   <div className={styles.reader} onPointerMove={handleSegPointerMove}
+   <div className={styles.reader}
       onClick={nudgeInteraction} onKeyDown={nudgeInteraction}>
-
+        
       {/* Sub-header */}
       <div className={styles.subHeader}>
         <button className={styles.backBtn}
@@ -366,8 +371,6 @@ const totalSeconds  = priorSeconds + seconds;
             key={idx}
             id={`seg_${idx}`}
             className={`${styles.segment} ${revealedSegs.has(idx) ? styles.segmentRevealed : ""}`}
-            onPointerDown={e => handleSegPointerDown(e, idx)}
-            onPointerUp={e => handleSegPointerUp(e, idx)}
           >
             <div
               className={`${styles.bookmarkBar} ${
@@ -395,6 +398,24 @@ const totalSeconds  = priorSeconds + seconds;
                   <span className={styles.translationText}>{translationsCache[idx]}</span>
                 </div>
               )}
+            </div>
+
+            {/* Right translate bar */}
+            <div
+              className={`${styles.translateBar} ${
+                translationsCache[idx] ? styles.translateBarActive : ""
+              }`}
+              onPointerDown={e => handleTranslatePointerDown(e, idx)}
+              onPointerUp={e => handleTranslatePointerUp(e, idx)}
+              onPointerLeave={e => handleTranslatePointerLeave(e, idx)}
+              title="Hold to translate paragraph"
+            >
+              <div className={`${styles.translateBarFill} ${
+                fillingSegIdx === idx ? styles.translateBarFilling : ""
+              }`} />
+              <div className={`${styles.translateDot} ${
+                translationsCache[idx] ? styles.translateDotVisible : ""
+              }`} />
             </div>
           </div>
         ))}

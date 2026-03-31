@@ -52,8 +52,9 @@
 
 .segment {
   display: flex; gap: 0; margin-bottom: 20px;
-  border-radius: 0 8px 8px 0; transition: background 0.2s ease;
+  border-radius: 8px; transition: background 0.2s ease;
   user-select: text; -webkit-user-select: text;
+  position: relative;
 }
 .segmentRevealed { background: var(--c-bg-card); box-shadow: 0 1px 8px rgba(58,48,32,0.06); }
 
@@ -64,7 +65,38 @@
 .bookmarkBar:hover { background: var(--c-border); }
 .bookmarkBarActive { background: var(--cover-color, var(--c-sage)); }
 
-.segContent { flex: 1; padding: 4px 12px 4px 10px; }
+.translateBar {
+  width: 8px; flex-shrink: 0; border-radius: 3px 0 0 3px;
+  background: transparent; cursor: pointer;
+  position: relative; overflow: hidden;
+  transition: background 0.15s ease;
+}
+.translateBar:hover { background: rgba(122, 174, 200, 0.2); }
+.translateBarActive { background: rgba(122, 174, 200, 0.35); }
+
+.translateBarFill {
+  position: absolute; bottom: 0; left: 0; right: 0;
+  background: var(--c-sky);
+  height: 0%;
+  transition: none;
+  border-radius: 3px 0 0 3px;
+}
+.translateBarFilling {
+  height: 100%;
+  transition: height 600ms linear;
+}
+
+.translateDot {
+  position: absolute; bottom: 4px; left: 50%;
+  transform: translateX(-50%);
+  width: 5px; height: 5px; border-radius: 50%;
+  background: var(--c-sky);
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+.translateDotVisible { opacity: 1; }
+
+.segContent { flex: 1; padding: 4px 10px 4px 10px; }
 .segText { margin: 0; line-height: 1.85; text-align: justify; hyphens: auto; color: var(--c-text-dark); }
 
 .vocabHighlight { background: rgba(122, 110, 168, 0.18); border-radius: 3px; padding: 0 1px; }
