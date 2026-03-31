@@ -316,7 +316,7 @@ export default function DataMigration() {
 
           let content = "";
           if (Array.isArray(chData.russianSegments)) {
-            content = chData.russianSegments.map(s => s.russian ?? "").join(" ").trim();
+            content = chData.russianSegments.map(s => s.russian ?? "").join("\n\n").trim();
           } else if (typeof chData.text === "string") {
             content = chData.text;
           } else if (typeof chData.content === "string") {

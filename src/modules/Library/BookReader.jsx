@@ -14,6 +14,34 @@ import StatsOverlay from "./StatsOverlay";
 
 const SESSION_ID = crypto.randomUUID();
 
+// ─────────────────────────────────────────────────────
+// splitIntoSegments
+// Preferred: content stored with \n\n separators (new/imported books).
+// Fallback:  group into 4-sentence blocks (legacy/migrated content).
+// ─────────────────────────────────────────────────────
+function splitIntoSegments(content) {
+  if (!content) return [];
+
+  // If double-newlines exist, use them (properly formatted content)
+  const byParagraph = content.split(/\n\n+/).filter(s => s.trim().length > 0);
+  if (byParagraph.length > 1) return byParagraph;
+
+  // Fallback: split on sentence-ending punctuation followed by a capital Cyrillic letter
+  const sentences = content
+    .split(/(?<=[.!?…»])\s+(?=[А-ЯЁ«"'])/)
+    .map(s => s.trim())
+    .filter(Boolean);
+
+  if (sentences.length <= 1) return [content];
+
+  // Group into blocks of 4 sentences
+  const groups = [];
+  for (let i = 0; i < sentences.length; i += 4) {
+    groups.push(sentences.slice(i, i + 4).join(" "));
+  }
+  return groups;
+}
+
 export default function BookReader() {
   const { bookId }   = useParams();
   const { user }     = useAuth();
@@ -172,8 +200,8 @@ export default function BookReader() {
   async function translateSegment(segIdx) {
     const ch = chapters.find(c => c.chapter_num === activeChapterNumRef.current);
     if (!ch?.content) return;
-    const segments = ch.content.split(/\n\n+/).filter(s => s.trim().length > 0);
-    const text = segments[segIdx];
+    const segs = splitIntoSegments(ch.content);
+    const text = segs[segIdx];
     if (!text) return;
     if (translationsCacheRef.current[segIdx]) {
       setRevealedSegs(prev => new Set([...prev, segIdx]));
@@ -218,9 +246,7 @@ export default function BookReader() {
 
   // ── Derived values ───────────────────────────────────────────────────────
   const activeChapter = chapters.find(c => c.chapter_num === activeChapterNum);
-  const segments = activeChapter?.content
-    ? activeChapter.content.split(/\n\n+/).filter(s => s.trim().length > 0)
-    : [];
+  const segments = splitIntoSegments(activeChapter?.content);
 
   const ruFont     = settings?.cursive ? "'Caveat', cursive" : "Georgia, serif";
   const ruFontSize = settings?.cursive ? 18 : 16;
