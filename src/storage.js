@@ -385,6 +385,14 @@ export async function saveQuestions(userId, chapterId, questions) {
   if (error) throw error;
 }
 
+export async function updateChapter(userId, chapterId, fields) {
+  const { error } = await supabase
+    .from("chapters")
+    .update(fields)
+    .eq("id", chapterId);
+  if (error) throw error;
+}
+
 // ── COMPREHENSION ATTEMPTS ─────────────────────────────────────────────────
 
 export async function getAttempt(userId, chapterId) {

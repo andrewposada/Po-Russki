@@ -5,7 +5,7 @@ import { useAuth }     from "../../AuthContext";
 import { useSettings } from "../../context/SettingsContext";
 import { useWordBank } from "../../context/WordBankContext";
 import {
-  getBooks, getChapters, updateBook, upsertReadingSession, getChapterPriorTime,
+  getBooks, getChapters, updateBook, updateChapter, upsertReadingSession, getChapterPriorTime,
 } from "../../storage";
 import { useReadingTimer } from "../../hooks/useReadingTimer";
 import styles from "./BookReader.module.css";
@@ -121,9 +121,16 @@ export default function BookReader() {
         priorSecondsRef.current = prior;
       }
 
-      if (thisBook.bookmark_chapter && thisBook.bookmark_segment != null) {
-        setActiveChapterNum(thisBook.bookmark_chapter);
-        setBookmark({ chapterNum: thisBook.bookmark_chapter, segIdx: thisBook.bookmark_segment });
+      // Find which chapter has a bookmark saved
+      const bookmarkedChapter = (chaptersData ?? []).find(
+        c => c.bookmark_segment_index != null
+      );
+      if (bookmarkedChapter) {
+        setActiveChapterNum(bookmarkedChapter.chapter_num);
+        setBookmark({
+          chapterNum: bookmarkedChapter.chapter_num,
+          segIdx:     bookmarkedChapter.bookmark_segment_index,
+        });
       } else {
         setActiveChapterNum(1);
       }
@@ -175,9 +182,10 @@ export default function BookReader() {
     const newBm  = isSame ? null : { chapterNum, segIdx };
     setBookmark(newBm);
     try {
-      await updateBook(user.uid, bookId, {
-        bookmark_chapter: newBm?.chapterNum ?? null,
-        bookmark_segment: newBm?.segIdx     ?? null,
+      const ch = chapters.find(c => c.chapter_num === chapterNum);
+      if (!ch) return;
+      await updateChapter(user.uid, ch.id, {
+        bookmark_segment_index: newBm?.segIdx ?? null,
       });
     } catch (err) {
       console.warn("Could not save bookmark:", err.message);
