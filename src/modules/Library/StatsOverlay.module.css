@@ -1,0 +1,54 @@
+/* src/modules/Library/StatsOverlay.module.css */
+
+.backdrop {
+  position: fixed; inset: 0; background: rgba(30,24,14,0.55); z-index: 100;
+  display: flex; align-items: center; justify-content: center; padding: 20px;
+}
+.modal {
+  background: var(--c-bg); border-radius: 16px; width: 100%; max-width: 600px;
+  max-height: 85vh; overflow-y: auto; box-shadow: 0 12px 40px rgba(30,24,14,0.25);
+  display: flex; flex-direction: column;
+}
+
+.header {
+  display: flex; align-items: flex-start; justify-content: space-between;
+  padding: 20px 24px 14px; border-bottom: 1px solid var(--c-border-soft);
+  position: sticky; top: 0; background: var(--c-bg); z-index: 2;
+}
+.title { font-family: 'Caveat', cursive; font-size: 22px; color: var(--c-text-dark); margin: 0 0 4px; }
+.levelBadge {
+  background: var(--c-mushroom); color: #fff;
+  font-size: 10px; font-weight: 700; padding: 2px 8px; border-radius: 20px; letter-spacing: 0.5px;
+}
+.closeBtn { background: none; border: none; font-size: 18px; color: var(--c-text-light); cursor: pointer; padding: 4px 8px; border-radius: 6px; }
+.closeBtn:hover { background: var(--c-bg-panel); }
+
+.summary {
+  display: flex; gap: 24px; padding: 16px 24px;
+  border-bottom: 1px solid var(--c-border-soft); flex-wrap: wrap;
+}
+.stat   { display: flex; flex-direction: column; gap: 2px; }
+.statVal { font-size: 20px; font-weight: 700; color: var(--c-text-dark); font-family: 'Caveat', cursive; }
+.statLabel { font-size: 11px; color: var(--c-text-light); }
+
+.synopsis { font-size: 13px; color: var(--c-text-mid); line-height: 1.6; padding: 14px 24px; border-bottom: 1px solid var(--c-border-soft); margin: 0; font-style: italic; }
+
+.loadingText { color: var(--c-text-light); font-size: 13px; padding: 20px 24px; }
+
+.chapterList { padding: 8px 0 16px; }
+.chRow { padding: 10px 24px; display: flex; flex-direction: column; gap: 5px; border-bottom: 1px solid var(--c-border-soft); }
+.chRow:last-child { border-bottom: none; }
+
+.chMeta { display: flex; align-items: center; gap: 8px; }
+.chNum  { font-size: 11px; color: var(--c-text-light); font-family: Georgia, serif; width: 36px; flex-shrink: 0; }
+.chTitle { font-family: 'Caveat', cursive; font-size: 15px; color: var(--c-text-dark); flex: 1; }
+.chWords { font-size: 11px; color: var(--c-text-light); }
+
+.chBar { height: 6px; background: var(--c-bg-panel); border-radius: 3px; position: relative; overflow: visible; }
+.chBarFill { height: 100%; border-radius: 3px; transition: width 0.5s ease; min-width: 0; }
+.chBarRef  { position: absolute; top: -3px; width: 2px; height: 12px; background: var(--c-text-light); transform: translateX(-50%); border-radius: 1px; }
+
+.chStats { display: flex; gap: 12px; align-items: center; }
+.chWpm   { font-size: 12px; font-weight: 600; color: var(--c-text-mid); }
+.chDash  { font-size: 12px; color: var(--c-text-light); }
+.chTime  { font-size: 11px; color: var(--c-text-light); }

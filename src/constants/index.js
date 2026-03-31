@@ -6,8 +6,6 @@ export const MODEL_HAIKU  = "claude-haiku-4-5-20251001";
 export const MODEL_OPUS   = "claude-opus-4-6";
 
 // ── Color palette ─────────────────────────────────────────────────────────────
-// Use these values in CSS Modules via var(--c-*) tokens defined in globals.css.
-// Import C directly only when you need the value in JavaScript (e.g. SVG fills).
 export const C = {
   bg:           "#f5f0e8",
   bgCard:       "#fffdf7",
@@ -69,7 +67,7 @@ export const G_NUMBERS  = ["Singular","Plural"];
 export const CASE_PILLS = [
   { id:"genitive",      label:"Genitive"      },
   { id:"prepositional", label:"Prepositional" },
-  { id:"accusative",   label:"Accusative"    },
+  { id:"accusative",    label:"Accusative"    },
   { id:"dative",        label:"Dative"        },
   { id:"instrumental",  label:"Instrumental"  },
   { id:"nominative",    label:"Nominative"    },
@@ -173,9 +171,9 @@ export const LIB_GENRES = [
   "Folk Tale","Slice of Life","Thriller","Science Fiction","Comedy",
 ];
 export const LIB_LENGTHS = [
-  { id:"short",    label:"Short (8–10 ch)"    },
+  { id:"short",    label:"Short (8–10 ch)"     },
   { id:"standard", label:"Standard (11–13 ch)" },
-  { id:"long",     label:"Long (14–15 ch)"    },
+  { id:"long",     label:"Long (14–15 ch)"     },
 ];
 export const LIB_COVER_PALETTE = [
   "#6e7fa8","#7a6ea8","#6ea88a","#a86e7a","#a8936e",
@@ -186,6 +184,21 @@ export const libCoverColor = (title) => {
   for (let i = 0; i < title.length; i++) h = (h * 31 + title.charCodeAt(i)) & 0xffff;
   return LIB_COVER_PALETTE[h % LIB_COVER_PALETTE.length];
 };
+
+// ── Question types (mirrors question_types Supabase table) ────────────────────
+export const QUESTION_TYPES = [
+  { id: 1, type: "detail_recall",         label: "Detail Recall",           freeResponse: false },
+  { id: 2, type: "inference",             label: "Inference",               freeResponse: true  },
+  { id: 3, type: "vocabulary_in_context", label: "Vocabulary in Context",   freeResponse: false },
+  { id: 4, type: "true_false",            label: "True / False",            freeResponse: false },
+  { id: 5, type: "character_motivation",  label: "Character Motivation",    freeResponse: true  },
+  { id: 6, type: "sequence",              label: "Sequence",                freeResponse: false },
+  { id: 7, type: "prediction_reflection", label: "Prediction / Reflection", freeResponse: true  },
+  { id: 8, type: "grammar_spotlight",     label: "Grammar Spotlight",       freeResponse: true  },
+];
+
+// Reading timer: auto-pause after 2 minutes of no interaction
+export const TIMER_AUTOPAUSE_MS = 120_000;
 
 // ── Shared helpers ────────────────────────────────────────────────────────────
 export const letterGrade = p => p >= 90 ? "A" : p >= 80 ? "B" : p >= 70 ? "C" : p >= 60 ? "D" : "F";
@@ -216,8 +229,31 @@ export const pickWeightedTopic = (scores, selCases, selTypes) => {
 };
 
 // ── Changelog ─────────────────────────────────────────────────────────────────
-export const APP_VERSION = "3.0.0";
+export const APP_VERSION = "3.1.0";
 export const CHANGELOG = [
+  {
+    version: "3.1.0",
+    date: "2026",
+    summary: "Библиотека: full story library with comprehension, timer, and stats",
+    changes: [
+      "Library: book shelf with cover art, progress bars, and chapter position tracking",
+      "Library: import books from JSON — generate in Claude.ai using the built-in prompt builder",
+      "Library: prompt builder generates Opus scaffold prompt and Sonnet chapter prompt client-side",
+      "Reader: long-press any paragraph to reveal its English translation inline",
+      "Reader: tap again to dismiss; Russian text is never replaced",
+      "Reader: word and phrase highlight still opens the translation tooltip and word bank",
+      "Reader: vocabulary highlight toggle (СБ) — tints words from your word bank in the text",
+      "Reader: reading timer with auto-pause after 2 minutes of inactivity",
+      "Reader: bookmark any paragraph from the left-edge bar; book reopens at your bookmark",
+      "Reader: chapter navigation via arrow keys; chapter pill shows position and opens chapter list",
+      "Comprehension: 6 varied questions per chapter — detail recall, inference, grammar spotlight, and more",
+      "Comprehension: free-response questions graded by AI with specific feedback",
+      "Book stats: per-chapter WPM, pace vs level average, comprehension scores, total reading time",
+      "Night mode: now a global setting applied app-wide",
+      "Word bank: cards redesigned with pronunciation, etymology, and usage example always visible",
+      "Translation tooltip: smart viewport positioning — never clips at screen edges",
+    ],
+  },
   {
     version: "3.0.0",
     date: "2026",

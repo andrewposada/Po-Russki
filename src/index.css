@@ -7,7 +7,6 @@
 }
 
 :root {
-  /* По-русски palette */
   --c-bg:            #f5f0e8;
   --c-bg-card:       #fffdf7;
   --c-bg-panel:      #eee8d8;
@@ -30,7 +29,6 @@
   --c-wrong:         #c07050;
   --c-orange:        #d08030;
 
-  /* Header button colors */
   --c-ref-text:      #4a6e8a;
   --c-ref-bg:        #edf4f9;
   --c-ref-border:    #ccdde8;
@@ -48,15 +46,26 @@
   --c-set-border:    #dcc8b4;
   --c-set-hover:     #e8d8c8;
 
-  /* Typography */
   --font-ru: "Caveat", Georgia, serif;
   --font-ui: system-ui, -apple-system, sans-serif;
 
-  /* Spacing */
   --radius-sm:  6px;
   --radius-md:  10px;
   --radius-lg:  14px;
   --radius-xl:  20px;
+}
+
+/* Night mode — activated when data-night="true" is on the  element */
+[data-night="true"] {
+  --c-bg:          #1e1a14;
+  --c-bg-card:     #2a2418;
+  --c-bg-panel:    #252015;
+  --c-border:      #3a3020;
+  --c-border-soft: #302810;
+  --c-text-dark:   #e8e0d0;
+  --c-text-mid:    #b8ae98;
+  --c-text-light:  #7a7060;
+  --c-text-xlight: #504840;
 }
 
 html, body, #root {
@@ -69,21 +78,11 @@ html, body, #root {
   -webkit-font-smoothing: antialiased;
 }
 
-button {
-  font-family: inherit;
-  cursor: pointer;
-}
+button { font-family: inherit; cursor: pointer; }
+input, textarea { font-family: inherit; }
 
-input, textarea {
-  font-family: inherit;
-}
+.ru { font-family: var(--font-ru); }
 
-/* Russian text utility class — apply to any element displaying Cyrillic */
-.ru {
-  font-family: var(--font-ru);
-}
-
-/* Skeleton animation — used by Skeleton component */
 @keyframes shimmer {
   0%   { background-position: -600px 0; }
   100% { background-position:  600px 0; }

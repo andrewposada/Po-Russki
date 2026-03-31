@@ -3,19 +3,21 @@ import { useState } from "react";
 import { useAuth } from "../../AuthContext";
 import { getAuth, signOut } from "firebase/auth";
 import { getSettings, saveSettings } from "../../storage";
+import { useSettings } from "../../context/SettingsContext";
 import { LEVELS, APP_VERSION, CHANGELOG } from "../../constants";
 import styles from "./Settings.module.css";
 
 export default function Settings({ onClose }) {
-  const { user } = useAuth();
-  const [level,       setLevel]       = useState(() => user ? null : "B1"); // loaded below
-  const [cursive,     setCursive]     = useState(false);
-  const [translit,    setTranslit]    = useState(false);
-  const [loaded,      setLoaded]      = useState(false);
-  const [saving,      setSaving]      = useState(false);
-  const [showLog,     setShowLog]     = useState(false);
+  const { user }                    = useAuth();
+  const { nightMode, setNightMode } = useSettings();
+  const [level,    setLevel]        = useState(() => user ? null : "B1");
+  const [cursive,  setCursive]      = useState(false);
+  const [translit, setTranslit]     = useState(false);
+  const [loaded,   setLoaded]       = useState(false);
+  const [saving,   setSaving]       = useState(false);
+  const [showLog,  setShowLog]      = useState(false);
 
-  // Load on mount
+  // Load settings on mount
   useState(() => {
     if (!user || loaded) return;
     getSettings(user.uid).then(s => {
@@ -90,6 +92,7 @@ export default function Settings({ onClose }) {
                   <span className={styles.toggleThumb} />
                 </button>
               </div>
+
               <div className={styles.toggleRow}>
                 <div>
                   <p className={styles.toggleLabel}>Russian keyboard</p>
@@ -100,6 +103,21 @@ export default function Settings({ onClose }) {
                   onClick={() => setTranslit(v => !v)}
                   aria-pressed={translit}
                   aria-label="Russian keyboard"
+                >
+                  <span className={styles.toggleThumb} />
+                </button>
+              </div>
+
+              <div className={styles.toggleRow}>
+                <div>
+                  <p className={styles.toggleLabel}>🌙 Night mode</p>
+                  <p className={styles.toggleSub}>Dark background for reading at night</p>
+                </div>
+                <button
+                  className={`${styles.toggle} ${nightMode ? styles.toggleOn : ""}`}
+                  onClick={() => setNightMode(!nightMode)}
+                  aria-pressed={nightMode}
+                  aria-label="Night mode"
                 >
                   <span className={styles.toggleThumb} />
                 </button>
@@ -118,26 +136,19 @@ export default function Settings({ onClose }) {
                       <p className={styles.changeVersion}>v{entry.version} — {entry.date}</p>
                       {entry.summary && <p className={styles.changeSummary}>{entry.summary}</p>}
                       <ul className={styles.changeList}>
-                        {entry.changes.map((c, i) => <li key={i}>{c}</li>)}
-                      </ul>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </section>
-
-            {/* Actions */}
-            <div className={styles.actions}>
-              <button className={styles.saveBtn} onClick={handleSave} disabled={saving}>
-                {saving ? "Saving…" : "Save settings"}
-              </button>
-              <button className={styles.signOutBtn} onClick={handleSignOut}>
-                Sign out
-              </button>
-            </div>
-          </>
-        )}
-      </div>
-    </div>
-  );
+                        {entry.changes.map((c, i) => <li key={i}>{c}</li>)} </ul> </div> ))} </div> )} </section>
+        {/* Actions */}
+        <div className={styles.actions}>
+          <button className={styles.saveBtn} onClick={handleSave} disabled={saving}>
+            {saving ? "Saving…" : "Save settings"}
+          </button>
+          <button className={styles.signOutBtn} onClick={handleSignOut}>
+            Sign out
+          </button>
+        </div>
+      </>
+    )}
+  </div>
+</div>
+); 
 }

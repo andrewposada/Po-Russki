@@ -83,10 +83,10 @@ export async function upsertWord(userId, wordObj) {
       translation:   wordObj.translation   ?? null,
       pronunciation: wordObj.pronunciation ?? null,
       etymology:     wordObj.etymology     ?? null,
-      usage_example: wordObj.usageExample  ?? null,
+      usage_example: wordObj.usageExample  ?? wordObj.usage_example ?? null,
       cefr_level:    wordObj.cefrLevel     ?? null,
       proficiency:   wordObj.proficiency   ?? 0,
-      is_mastered:   wordObj.isMastered    ?? false,
+      is_mastered:   wordObj.isMastered    ?? wordObj.is_mastered ?? false,
       updated_at:    new Date(),
     }, { onConflict: "user_id,word" });
   if (error) throw error;
@@ -299,33 +299,57 @@ export async function getBooks(userId) {
 
 export async function upsertBook(userId, bookObj) {
   const payload = {
-    user_id:         userId,
-    title:           bookObj.title,
-    level:           bookObj.level,
-    synopsis:        bookObj.synopsis       ?? null,
-    character_bible: bookObj.characterBible ?? null,
-    total_chapters:  bookObj.totalChapters  ?? null,
-    status:          bookObj.status         ?? "active",
+    user_id:          userId,
+    title:            bookObj.title,
+    level:            bookObj.level          ?? null,
+    synopsis:         bookObj.synopsis       ?? null,
+    scaffold:         bookObj.scaffold       ?? null,
+    genres:           bookObj.genres         ?? null,
+    total_chapters:   bookObj.totalChapters  ?? null,
+    cover_color:      bookObj.coverColor     ?? null,
+    cover_image:      bookObj.coverImage     ?? null,
+    is_archived:      bookObj.isArchived     ?? false,
+    updated_at:       new Date(),
   };
   if (bookObj.id) {
-    const { error } = await supabase.from("books").update(payload).eq("id", bookObj.id);
+    const { error } = await supabase
+      .from("books")
+      .update(payload)
+      .eq("id", bookObj.id);
     if (error) throw error;
     return bookObj.id;
   } else {
-    const { data, error } = await supabase.from("books").insert(payload).select("id").single();
+    const { data, error } = await supabase
+      .from("books")
+      .insert(payload)
+      .select("id")
+      .single();
     if (error) throw error;
     return data.id;
   }
 }
 
-export async function deleteBook(bookId) {
-  const { error } = await supabase.from("books").delete().eq("id", bookId);
+export async function updateBook(userId, bookId, fields) {
+  const { error } = await supabase
+    .from("books")
+    .update({ ...fields, updated_at: new Date() })
+    .eq("id", bookId)
+    .eq("user_id", userId);
+  if (error) throw error;
+}
+
+export async function deleteBook(userId, bookId) {
+  const { error } = await supabase
+    .from("books")
+    .delete()
+    .eq("id", bookId)
+    .eq("user_id", userId);
   if (error) throw error;
 }
 
 // ── CHAPTERS ───────────────────────────────────────────────────────────────
 
-export async function getChapters(bookId) {
+export async function getChapters(userId, bookId) {
   const { data, error } = await supabase
     .from("chapters")
     .select("*")
@@ -335,61 +359,95 @@ export async function getChapters(bookId) {
   return data;
 }
 
-export async function upsertChapter(bookId, chapterNum, { title, content, chapterSummary, wordCount }) {
+export async function upsertChapter(userId, chapterObj) {
   const { error } = await supabase
     .from("chapters")
     .upsert({
-      book_id:         bookId,
-      chapter_num:     chapterNum,
-      title:           title          ?? null,
-      content:         content,
-      chapter_summary: chapterSummary ?? null,
-      word_count:      wordCount      ?? null,
+      book_id:         chapterObj.bookId,
+      chapter_num:     chapterObj.chapterNum,
+      title:           chapterObj.title        ?? null,
+      content:         chapterObj.content      ?? null,
+      last_sentence:   chapterObj.lastSentence ?? null,
+      word_count:      chapterObj.wordCount    ?? null,
+      questions:       null,
     }, { onConflict: "book_id,chapter_num" });
+  if (error) throw error;
+}
+
+export async function saveQuestions(userId, chapterId, questions) {
+  const { error } = await supabase
+    .from("chapters")
+    .update({
+      questions:               questions,
+      questions_generated_at:  new Date(),
+    })
+    .eq("id", chapterId);
   if (error) throw error;
 }
 
 // ── COMPREHENSION ATTEMPTS ─────────────────────────────────────────────────
 
-export async function saveComprehensionAttempt(userId, chapterId, { questions, answers, score }) {
-  const { data, error } = await supabase
-    .from("comprehension_attempts")
-    .insert({
-      user_id:    userId,
-      chapter_id: chapterId,
-      questions:  questions ?? null,
-      answers:    answers   ?? null,
-      score:      score     ?? null,
-    })
-    .select("id")
-    .single();
-  if (error) throw error;
-  return data.id;
-}
-
-export async function getComprehensionAttempts(userId, chapterId) {
+export async function getAttempt(userId, chapterId) {
   const { data, error } = await supabase
     .from("comprehension_attempts")
     .select("*")
     .eq("user_id", userId)
     .eq("chapter_id", chapterId)
-    .order("attempted_at", { ascending: false });
+    .order("attempted_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
   if (error) throw error;
-  return data;
+  return data ?? null;
+}
+
+export async function upsertAttempt(userId, attemptObj) {
+  const payload = {
+    user_id:    userId,
+    chapter_id: attemptObj.chapterId,
+    questions:  attemptObj.questions ?? null,
+    answers:    attemptObj.answers   ?? null,
+    score:      attemptObj.score     ?? null,
+  };
+  if (attemptObj.id) {
+    const { error } = await supabase
+      .from("comprehension_attempts")
+      .update(payload)
+      .eq("id", attemptObj.id);
+    if (error) throw error;
+    return attemptObj.id;
+  } else {
+    const { data, error } = await supabase
+      .from("comprehension_attempts")
+      .insert(payload)
+      .select("id")
+      .single();
+    if (error) throw error;
+    return data.id;
+  }
 }
 
 // ── READING LOG ────────────────────────────────────────────────────────────
 
-export async function saveReadingLog(userId, sessionId, chapterId, { startedAt, completedAt, timeSpent }) {
+export async function upsertReadingSession(userId, sessionObj) {
   const { error } = await supabase
     .from("reading_log")
     .insert({
       user_id:      userId,
-      session_id:   sessionId,
-      chapter_id:   chapterId,
-      started_at:   startedAt   ?? null,
-      completed_at: completedAt ?? null,
-      time_spent:   timeSpent   ?? null,
+      session_id:   sessionObj.sessionId,
+      chapter_id:   sessionObj.chapterId,
+      started_at:   sessionObj.startedAt   ?? new Date(),
+      completed_at: sessionObj.completedAt ?? null,
+      time_spent:   sessionObj.timeSpent   ?? 0,
     });
   if (error) throw error;
+}
+
+export async function getReadingLog(userId, bookId) {
+  const { data, error } = await supabase
+    .from("reading_log")
+    .select("*, chapters!inner(book_id, word_count)")
+    .eq("user_id", userId)
+    .eq("chapters.book_id", bookId);
+  if (error) throw error;
+  return data;
 }

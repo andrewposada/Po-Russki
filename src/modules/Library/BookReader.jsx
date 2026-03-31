@@ -1,0 +1,421 @@
+// src/modules/Library/BookReader.jsx
+import { useState, useEffect, useRef, useCallback } from "react";
+import { useParams, useNavigate } from "react-router-dom";
+import { useAuth }     from "../../AuthContext";
+import { useSettings } from "../../context/SettingsContext";
+import { useWordBank } from "../../context/WordBankContext";
+import {
+  getBooks, getChapters, updateBook, upsertReadingSession,
+} from "../../storage";
+import { useReadingTimer } from "../../hooks/useReadingTimer";
+import styles from "./BookReader.module.css";
+import ComprehensionBlock from "./ComprehensionBlock";
+import StatsOverlay from "./StatsOverlay";
+
+const SESSION_ID = crypto.randomUUID();
+
+export default function BookReader() {
+  const { bookId }   = useParams();
+  const { user }     = useAuth();
+  const settings     = useSettings();
+  const { words: wordBankWords } = useWordBank();
+  const navigate     = useNavigate();
+
+  const [book,     setBook]     = useState(null);
+  const [chapters, setChapters] = useState([]);
+  const [loading,  setLoading]  = useState(true);
+  const [error,    setError]    = useState(null);
+
+  const [activeChapterNum,  setActiveChapterNum]  = useState(1);
+  const [vocabHighlight,    setVocabHighlight]    = useState(() => {
+    try { return localStorage.getItem("vocab_highlight") === "true"; } catch { return false; }
+  });
+  const [revealedSegs,      setRevealedSegs]      = useState(new Set());
+  const [translationsCache, setTranslationsCache] = useState({});
+  const [translating,       setTranslating]       = useState(null);
+  const [bookmark,          setBookmark]          = useState(null);
+  const [showChapterDrawer, setShowChapterDrawer] = useState(false);
+  const [showComprehension, setShowComprehension] = useState(false);
+  const [showStats,         setShowStats]         = useState(false);
+
+  const activeChapterNumRef  = useRef(1);
+  const translationsCacheRef = useRef({});
+
+  useEffect(() => { activeChapterNumRef.current  = activeChapterNum;  }, [activeChapterNum]);
+  useEffect(() => { translationsCacheRef.current = translationsCache; }, [translationsCache]);
+
+  // ── Reading timer ────────────────────────────────────────────────────────
+  const { seconds, running, toggle, recordInteraction, flush } = useReadingTimer({
+    onFlush: async (elapsed) => {
+      if (!user || elapsed < 3) return;
+      const ch = chapters.find(c => c.chapter_num === activeChapterNumRef.current);
+      if (!ch) return;
+      try {
+        await upsertReadingSession(user.uid, {
+          sessionId:   SESSION_ID,
+          chapterId:   ch.id,
+          timeSpent:   elapsed,
+          startedAt:   new Date(Date.now() - elapsed * 1000).toISOString(),
+          completedAt: new Date().toISOString(),
+        });
+      } catch (err) {
+        console.warn("Could not save reading session:", err.message);
+      }
+    },
+  });
+
+  // ── Load data ────────────────────────────────────────────────────────────
+  useEffect(() => {
+    if (!user || !bookId) return;
+    loadBookData();
+  }, [user, bookId]);
+
+  async function loadBookData() {
+    try {
+      setLoading(true);
+      const [booksData, chaptersData] = await Promise.all([
+        getBooks(user.uid),
+        getChapters(user.uid, bookId),
+      ]);
+      const thisBook = booksData.find(b => b.id === bookId);
+      if (!thisBook) { setError("Book not found."); return; }
+      setBook(thisBook);
+      setChapters(chaptersData ?? []);
+      if (thisBook.bookmark_chapter && thisBook.bookmark_segment != null) {
+        setActiveChapterNum(thisBook.bookmark_chapter);
+        setBookmark({ chapterNum: thisBook.bookmark_chapter, segIdx: thisBook.bookmark_segment });
+      } else {
+        setActiveChapterNum(1);
+      }
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  // ── Keyboard navigation ──────────────────────────────────────────────────
+  useEffect(() => {
+    function handleKey(e) {
+      const tag = document.activeElement?.tagName;
+      if (tag === "TEXTAREA" || tag === "INPUT") return;
+      if (e.key === "ArrowRight") goToChapter(activeChapterNumRef.current + 1);
+      if (e.key === "ArrowLeft")  goToChapter(activeChapterNumRef.current - 1);
+    }
+    window.addEventListener("keydown", handleKey);
+    return () => window.removeEventListener("keydown", handleKey);
+  }, [chapters]);
+
+  // ── Chapter navigation ───────────────────────────────────────────────────
+  async function goToChapter(num) {
+    if (num < 1 || num > chapters.length) return;
+    await flush();
+    setActiveChapterNum(num);
+    setRevealedSegs(new Set());
+    setTranslationsCache({});
+    setShowComprehension(false);
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }
+
+  // ── Bookmark ─────────────────────────────────────────────────────────────
+  async function setBookmarkAt(chapterNum, segIdx) {
+    const isSame = bookmark?.chapterNum === chapterNum && bookmark?.segIdx === segIdx;
+    const newBm  = isSame ? null : { chapterNum, segIdx };
+    setBookmark(newBm);
+    try {
+      await updateBook(user.uid, bookId, {
+        bookmark_chapter: newBm?.chapterNum ?? null,
+        bookmark_segment: newBm?.segIdx     ?? null,
+      });
+    } catch (err) {
+      console.warn("Could not save bookmark:", err.message);
+    }
+  }
+
+  // ── Long-press paragraph translation ────────────────────────────────────
+  const pressTimerRef = useRef(null);
+  const pressStartRef = useRef(null);
+
+  function handleSegPointerDown(e, segIdx) {
+    if (window.getSelection().toString().length > 0) return;
+    pressStartRef.current = { x: e.clientX, y: e.clientY };
+    pressTimerRef.current = setTimeout(() => translateSegment(segIdx), 600);
+  }
+
+  function handleSegPointerUp(e, segIdx) {
+    clearTimeout(pressTimerRef.current);
+    const start = pressStartRef.current;
+    if (!start) return;
+    const dx = Math.abs(e.clientX - start.x);
+    const dy = Math.abs(e.clientY - start.y);
+    if (dx < 5 && dy < 5) {
+      if (translationsCacheRef.current[segIdx]) {
+        setRevealedSegs(prev => {
+          const next = new Set(prev);
+          next.has(segIdx) ? next.delete(segIdx) : next.add(segIdx);
+          return next;
+        });
+      }
+    }
+    pressStartRef.current = null;
+  }
+
+  function handleSegPointerMove(e) {
+    const start = pressStartRef.current;
+    if (!start) return;
+    if (Math.abs(e.clientX - start.x) > 10 || Math.abs(e.clientY - start.y) > 10) {
+      clearTimeout(pressTimerRef.current);
+      pressStartRef.current = null;
+    }
+  }
+
+  async function translateSegment(segIdx) {
+    const ch = chapters.find(c => c.chapter_num === activeChapterNumRef.current);
+    if (!ch?.content) return;
+    const segments = ch.content.split(/\n\n+/).filter(s => s.trim().length > 0);
+    const text = segments[segIdx];
+    if (!text) return;
+    if (translationsCacheRef.current[segIdx]) {
+      setRevealedSegs(prev => new Set([...prev, segIdx]));
+      return;
+    }
+    setTranslating(segIdx);
+    try {
+      const res  = await fetch("/api/translate", {
+        method:  "POST",
+        headers: { "Content-Type": "application/json" },
+        body:    JSON.stringify({ text, isPhrase: true }),
+      });
+      const data = await res.json();
+      if (data.translation) {
+        setTranslationsCache(prev => {
+          const next = { ...prev, [segIdx]: data.translation };
+          translationsCacheRef.current = next;
+          return next;
+        });
+        setRevealedSegs(prev => new Set([...prev, segIdx]));
+      }
+    } catch (err) {
+      console.warn("Translation error:", err.message);
+    } finally {
+      setTranslating(null);
+    }
+  }
+
+  // ── Vocab highlight ──────────────────────────────────────────────────────
+  const wordBankSet = new Set(
+    (wordBankWords ?? []).map(w => w.word?.toLowerCase().replace(/[^а-яёa-z]/gi, ""))
+  );
+
+  function highlightVocab(text) {
+    if (!vocabHighlight || wordBankSet.size === 0) return text;
+    return text.split(/(\s+)/).map((token, i) => {
+      const clean = token.toLowerCase().replace(/[^а-яё]/gi, "");
+      if (clean.length < 3 || !wordBankSet.has(clean)) return token;
+      return <span key={i} className={styles.vocabHighlight}>{token}</span>;
+    });
+  }
+
+  // ── Derived values ───────────────────────────────────────────────────────
+  const activeChapter = chapters.find(c => c.chapter_num === activeChapterNum);
+  const segments = activeChapter?.content
+    ? activeChapter.content.split(/\n\n+/).filter(s => s.trim().length > 0)
+    : [];
+
+  const ruFont     = settings?.cursive ? "'Caveat', cursive" : "Georgia, serif";
+  const ruFontSize = settings?.cursive ? 18 : 16;
+
+  // Scroll to bookmark on chapter load
+  const bookmarkScrolled = useRef(false);
+  useEffect(() => {
+    if (!bookmark || bookmarkScrolled.current) return;
+    if (bookmark.chapterNum !== activeChapterNum) return;
+    const el = document.getElementById(`seg_${bookmark.segIdx}`);
+    if (el) { el.scrollIntoView({ behavior: "smooth", block: "center" }); bookmarkScrolled.current = true; }
+  }, [segments.length, bookmark, activeChapterNum]);
+  useEffect(() => { bookmarkScrolled.current = false; }, [activeChapterNum]);
+
+  const timerDisplay = `${Math.floor(seconds / 60)}:${String(seconds % 60).padStart(2, "0")}`;
+  const coverColor   = book?.cover_color || "#7a9e7e";
+
+  if (loading) return (
+    <div className={styles.loading}>
+      <div className={styles.dots}><span /><span /><span /></div>
+      <p>Загрузка…</p>
+    </div>
+  );
+
+  if (error) return (
+    <div className={styles.errorState}>
+      <p>{error}</p>
+      <button onClick={() => navigate("/library")}>← Back to Library</button>
+    </div>
+  );
+
+  return (
+    <div className={styles.reader} onPointerMove={handleSegPointerMove}
+      onClick={recordInteraction} onKeyDown={recordInteraction}>
+
+      {/* Sub-header */}
+      <div className={styles.subHeader}>
+        <button className={styles.backBtn}
+          onClick={async () => { await flush(); navigate("/library"); }}>✕</button>
+        <span className={styles.bookTitle}>{book?.title}</span>
+        <div className={styles.subHeaderRight}>
+          {book?.level && (
+            <span className={styles.levelBadge} style={{ background: coverColor }}>
+              {book.level}
+            </span>
+          )}
+          <button className={styles.statsLink} onClick={() => setShowStats(true)} title="Book stats">
+            📊
+          </button>
+        </div>
+      </div>
+
+      {/* Chapter content */}
+      <div className={styles.contentArea}>
+        <div className={styles.chapterHeading}>
+          <p className={styles.chapterLabel}>CHAPTER {activeChapterNum}</p>
+          <p className={styles.chapterTitle} style={{ fontFamily: ruFont }}>
+            {activeChapter?.title || ""}
+          </p>
+          <hr className={styles.headingRule} />
+        </div>
+
+        {segments.length === 0 && (
+          <p className={styles.noContent}>This chapter has no content.</p>
+        )}
+
+        {segments.map((seg, idx) => (
+          <div
+            key={idx}
+            id={`seg_${idx}`}
+            className={`${styles.segment} ${revealedSegs.has(idx) ? styles.segmentRevealed : ""}`}
+            onPointerDown={e => handleSegPointerDown(e, idx)}
+            onPointerUp={e => handleSegPointerUp(e, idx)}
+          >
+            <div
+              className={`${styles.bookmarkBar} ${
+                bookmark?.chapterNum === activeChapterNum && bookmark?.segIdx === idx
+                  ? styles.bookmarkBarActive : ""
+              }`}
+              style={{ "--cover-color": coverColor }}
+              onClick={e => { e.stopPropagation(); setBookmarkAt(activeChapterNum, idx); }}
+              title="Bookmark this paragraph"
+            />
+
+            <div className={styles.segContent}>
+              <p className={styles.segText}
+                style={{ fontFamily: ruFont, fontSize: ruFontSize }} lang="ru">
+                {highlightVocab(seg)}
+              </p>
+
+              {translating === idx && (
+                <div className={styles.translatingDots}><span /><span /><span /></div>
+              )}
+
+              {revealedSegs.has(idx) && translationsCache[idx] && (
+                <div className={styles.translation}>
+                  <span className={styles.enBadge}>EN</span>
+                  <span className={styles.translationText}>{translationsCache[idx]}</span>
+                </div>
+              )}
+            </div>
+          </div>
+        ))}
+
+        {/* End of chapter */}
+        {segments.length > 0 && (
+          <div className={styles.endOfChapter}>
+            {!showComprehension ? (
+              <button className={styles.comprehensionBtn}
+                onClick={() => setShowComprehension(true)}>
+                Test My Understanding
+              </button>
+            ) : (
+              <ComprehensionBlock
+                chapter={activeChapter}
+                book={book}
+                onDone={() => setShowComprehension(false)}
+              />
+            )}
+          </div>
+        )}
+      </div>
+
+      {/* Bottom toolbar */}
+      <div className={styles.toolbar}>
+        <button className={styles.chapterPill}
+          onClick={() => setShowChapterDrawer(s => !s)}>
+          Глава {activeChapterNum} / {chapters.length}
+        </button>
+        <div className={styles.toolbarRight}>
+          <button
+            className={`${styles.toolbarBtn} ${vocabHighlight ? styles.toolbarBtnActive : ""}`}
+            onClick={() => {
+              const next = !vocabHighlight;
+              setVocabHighlight(next);
+              try { localStorage.setItem("vocab_highlight", String(next)); } catch {}
+            }}
+            title="Highlight word bank words"
+          >СБ</button>
+
+          <button
+            className={`${styles.toolbarBtn} ${running ? styles.timerRunning : ""}`}
+            onClick={toggle}
+            title={running ? "Pause timer" : "Start timer"}
+          >⏱ {timerDisplay}</button>
+
+          <span className={`${styles.bookmarkIcon} ${
+            bookmark?.chapterNum === activeChapterNum ? styles.bookmarkIconActive : ""
+          }`}>🔖</span>
+        </div>
+      </div>
+
+      {/* Chapter drawer */}
+      {showChapterDrawer && (
+        <ChapterDrawer
+          chapters={chapters}
+          activeChapterNum={activeChapterNum}
+          onSelect={num => { goToChapter(num); setShowChapterDrawer(false); }}
+          onClose={() => setShowChapterDrawer(false)}
+        />
+      )}
+
+      {/* Stats overlay */}
+      {showStats && (
+        <StatsOverlay book={book} onClose={() => setShowStats(false)} />
+      )}
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────────────
+// ChapterDrawer
+// ─────────────────────────────────────────────────────
+function ChapterDrawer({ chapters, activeChapterNum, onSelect, onClose }) {
+  return (
+    <>
+      <div className={styles.drawerBackdrop} onClick={onClose} />
+      <div className={styles.drawer}>
+        <div className={styles.drawerHeader}>
+          <span className={styles.drawerTitle}>Chapters</span>
+          <button className={styles.drawerClose} onClick={onClose}>✕</button>
+        </div>
+        <div className={styles.drawerList}>
+          {chapters.map(ch => (
+            <button
+              key={ch.id}
+              className={`${styles.drawerItem} ${ch.chapter_num === activeChapterNum ? styles.drawerItemActive : ""}`}
+              onClick={() => onSelect(ch.chapter_num)}
+            >
+              <span className={styles.drawerChNum}>{ch.chapter_num}</span>
+              <span className={styles.drawerChTitle}>{ch.title}</span>
+            </button>
+          ))}
+        </div>
+      </div>
+    </>
+  );
+}

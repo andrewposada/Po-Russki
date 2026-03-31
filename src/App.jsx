@@ -9,15 +9,16 @@ import TranslationTooltip from "./components/TranslationTooltip/TranslationToolt
 import WordBankOverlay from "./components/WordBank/WordBankOverlay";
 import Login from "./Login";
 import Home from "./modules/Home/Home";
+import LibraryShelf from "./modules/Library/LibraryShelf";
+import BookReader from "./modules/Library/BookReader";
 import styles from "./app.module.css";
-import { SettingsProvider } from "./context/SettingsContext";
+import { SettingsProvider, useSettings } from "./context/SettingsContext";
 
-// Module imports — add as each phase is built
-// import Library     from "./modules/Library/Library";
-// import Grammar     from "./modules/Grammar/Grammar";
+// Module imports — uncomment as each phase is built
+// import Grammar      from "./modules/Grammar/Grammar";
 // import Conjugations from "./modules/Conjugations/Conjugations";
-// import Vocabulary  from "./modules/Vocabulary/Vocabulary";
-// import Drill       from "./modules/Drill/Drill";
+// import Vocabulary   from "./modules/Vocabulary/Vocabulary";
+// import Drill        from "./modules/Drill/Drill";
 
 function ProtectedRoute({ children }) {
   const { user, loading } = useAuth();
@@ -39,6 +40,47 @@ function AppShell() {
   );
 }
 
+function AppContent() {
+  const { nightMode } = useSettings();
+  return (
+    <div className={`${styles.appRoot}${nightMode ? ` ${styles.night}` : ""}`}>
+      <AppShell />
+      <main className={styles.main}>
+        <Routes>
+          <Route path="/login" element={<LoginRoute />} />
+          <Route path="/" element={
+            <ProtectedRoute><Home /></ProtectedRoute>
+          } />
+          <Route path="/library" element={
+            <ProtectedRoute><LibraryShelf /></ProtectedRoute>
+          } />
+          <Route path="/library/:bookId" element={
+            <ProtectedRoute><BookReader /></ProtectedRoute>
+          } />
+          {/* Uncomment as each phase is built:
+          <Route path="/grammar"      element={<ProtectedRoute><Grammar /></ProtectedRoute>} />
+          <Route path="/conjugations" element={<ProtectedRoute><Conjugations /></ProtectedRoute>} />
+          <Route path="/vocabulary"   element={<ProtectedRoute><Vocabulary /></ProtectedRoute>} />
+          <Route path="/drill"        element={<ProtectedRoute><Drill /></ProtectedRoute>} /> */}
+          <Route path="*" element={<Navigate to="/" replace />} />
+        </Routes>
+      </main>
+    </div>
+  );
+}
+
+// export default function App() {
+//   return (
+//     <AuthProvider>
+//       <BrowserRouter>
+//       <SettingsProvider>
+//       <div>Hello world</div>
+//       </SettingsProvider>
+//       </BrowserRouter>
+//     </AuthProvider>
+//   );
+// }
+
 export default function App() {
   return (
     <AuthProvider>
@@ -46,28 +88,10 @@ export default function App() {
         <SettingsProvider>
           <TooltipProvider>
             <WordBankProvider>
-              <div className={styles.appRoot}>
-                <AppShell />
-                <main className={styles.main}>
-                  <Routes>
-                    <Route path="/login" element={<LoginRoute />} />
-                    <Route path="/" element={
-                      <ProtectedRoute><Home /></ProtectedRoute>
-                    } />
-                    {/* Uncomment as each phase is built: */}
-                    {/* <Route path="/library" element={<ProtectedRoute><Library /></ProtectedRoute>} />
-                    <Route path="/library/:bookId" element={<ProtectedRoute><Library /></ProtectedRoute>} />
-                    <Route path="/grammar" element={<ProtectedRoute><Grammar /></ProtectedRoute>} />
-                    <Route path="/conjugations" element={<ProtectedRoute><Conjugations /></ProtectedRoute>} />
-                    <Route path="/vocabulary" element={<ProtectedRoute><Vocabulary /></ProtectedRoute>} />
-                    <Route path="/drill" element={<ProtectedRoute><Drill /></ProtectedRoute>} /> */}
-                    <Route path="*" element={<Navigate to="/" replace />} />
-                  </Routes>
-                </main>
-              </div>
+              <AppContent />
             </WordBankProvider>
           </TooltipProvider>
-         </SettingsProvider>
+        </SettingsProvider>
       </BrowserRouter>
     </AuthProvider>
   );
