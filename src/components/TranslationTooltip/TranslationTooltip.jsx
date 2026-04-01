@@ -10,11 +10,14 @@ export default function TranslationTooltip() {
   const { tooltip, closeTooltip } = useTooltip();
   const { enrich }                = useWordBank();
 
-  const tooltipRef = useRef(null);
+  const tooltipRef  = useRef(null);
+  const openedAtRef = useRef(0);
   const [pos, setPos] = useState({ left: 0, top: 0, below: false, triangleOffset: "50%", visible: false });
 
   useEffect(() => {
-    if (!tooltipRef.current || !tooltip) return;
+    if (!tooltip) return;
+    openedAtRef.current = Date.now();
+    if (!tooltipRef.current) return;
 
     const tt  = tooltipRef.current.getBoundingClientRect();
     const gap = 8;
@@ -72,9 +75,14 @@ export default function TranslationTooltip() {
 
   return (
     <>
-      {/* Backdrop to close */}
-      <div className={styles.backdrop} onClick={closeTooltip} />
-
+      {/* Backdrop to close — ignore the click that opened the tooltip */}
+      <div
+        className={styles.backdrop}
+        onClick={() => {
+          if (Date.now() - openedAtRef.current > 200) closeTooltip();
+        }}
+      />
+      
       <div
         ref={tooltipRef}
         className={`${styles.tooltipBubble} ${pos.below ? styles.below : styles.above}`}
