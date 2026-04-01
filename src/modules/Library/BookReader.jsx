@@ -211,14 +211,10 @@ export default function BookReader() {
   const translatePressTimer = useRef(null);
   const translateFillTimer  = useRef(null);
 
- // Detect touch-primary device once (phones/tablets have hover: none)
-  const isTouchDevice = useRef(
-    typeof window !== "undefined" && window.matchMedia("(hover: none)").matches
-  );
-
-  function handleTranslatePointerDown(e, segIdx) {
+ function handleTranslatePointerDown(e, segIdx) {
     e.stopPropagation();
-    if (isTouchDevice.current) {
+    const isTouch = e.pointerType === "touch";
+    if (isTouch) {
       // Mobile: single tap — translate immediately or toggle if cached
       if (translationsCacheRef.current[segIdx]) {
         setRevealedSegs(prev => {
@@ -241,7 +237,7 @@ export default function BookReader() {
 
   function handleTranslatePointerUp(e, segIdx) {
     e.stopPropagation();
-    if (isTouchDevice.current) return; // handled on pointerDown
+    if (e.pointerType === "touch") return; // handled on pointerDown
     const wasFilling = fillingSegIdx === segIdx;
     clearTimeout(translatePressTimer.current);
     setFillingSegIdx(null);
@@ -256,7 +252,7 @@ export default function BookReader() {
   }
 
   function handleTranslatePointerLeave(e, segIdx) {
-    if (!isTouchDevice.current && fillingSegIdx === segIdx) {
+    if (e.pointerType !== "touch" && fillingSegIdx === segIdx) {
       clearTimeout(translatePressTimer.current);
       setFillingSegIdx(null);
     }
