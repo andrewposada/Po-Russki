@@ -90,6 +90,7 @@ export default function SelectionPill() {
         body:    JSON.stringify({ text: pill.text, isPhrase: pill.isPhrase }),
       });
       const data = await res.json();
+      console.log("translate response:", res.status, data);
       if (!data.translation) { setLoading(false); return; }
 
       // Check word bank status against lemma (single words only)
