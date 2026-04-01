@@ -10,9 +10,37 @@ export default function TranslationTooltip() {
   const { tooltip, closeTooltip } = useTooltip();
   const { enrich }                = useWordBank();
 
-  const tooltipRef = useRef(null);
+  const tooltipRef  = useRef(null);
   const [pos, setPos] = useState({ left: 0, top: 0, below: false, triangleOffset: "50%", visible: false });
 
+  // Keep tooltip anchored to its word as the page scrolls
+  useEffect(() => {
+    if (!tooltip) return;
+    const handleScroll = () => {
+      if (!tooltipRef.current) return;
+      const tt  = tooltipRef.current.getBoundingClientRect();
+      const gap = 8;
+
+      const anchorCenterX = tooltip.x - window.scrollX;
+      const anchorY       = tooltip.y - window.scrollY;
+
+      let left  = anchorCenterX - tt.width / 2;
+      let top   = anchorY - tt.height - gap;
+      let below = false;
+
+      if (top < 8) { top = anchorY + gap; below = true; }
+
+      const nudgedLeft      = Math.max(8, Math.min(window.innerWidth - tt.width - 8, left));
+      const triangleOffset  = anchorCenterX - nudgedLeft;
+      const clampedTriangle = Math.max(12, Math.min(tt.width - 12, triangleOffset));
+
+      setPos({ left: nudgedLeft, top, below, triangleOffset: `${clampedTriangle}px`, visible: true });
+    };
+
+    window.addEventListener("scroll", handleScroll, { passive: true });
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, [tooltip]);
+  
   useEffect(() => {
     if (!tooltipRef.current || !tooltip) return;
 
