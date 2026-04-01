@@ -18,6 +18,7 @@ export default function WordBankOverlay() {
   const [tab,    setTab]       = useState("active");   // "active" | "mastered"
   const [search, setSearch]    = useState("");
   const [sort,   setSort]      = useState("date");
+  const [searchFocused, setSearchFocused] = useState(false);
 
   if (!isOpen) return null;
 
@@ -61,7 +62,7 @@ export default function WordBankOverlay() {
   return (
     <>
       <div className={styles.backdrop} onClick={close} />
-      <div className={styles.overlay}>
+      <div className={`${styles.overlay} ${searchFocused ? styles.overlayKeyboard : ""}`}>
         {/* Header */}
         <div className={styles.header}>
           <h2 className={styles.title}>Word Bank</h2>
@@ -92,6 +93,8 @@ export default function WordBankOverlay() {
             placeholder="Search…"
             value={search}
             onChange={e => setSearch(e.target.value)}
+            onFocus={() => setSearchFocused(true)}
+            onBlur={() => setSearchFocused(false)}
           />
           <select
             className={styles.sortSelect}
