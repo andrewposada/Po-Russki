@@ -160,8 +160,6 @@
   gap: 16px;
 }
 
-.changeEntry { }
-
 .changeVersion {
   font-size: 12px;
   font-weight: 600;
@@ -221,3 +219,45 @@
 }
 
 .signOutBtn:hover { background: #fdf0ed; }
+
+/* Usage cards */
+.usageCards {
+  display: flex;
+  gap: 8px;
+}
+
+.usageCard {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 10px 6px;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--c-border);
+  background: var(--c-bg);
+  text-decoration: none;
+  transition: background 0.15s, border-color 0.15s;
+}
+
+.usageCard:hover {
+  background: var(--c-bg-panel);
+  border-color: var(--c-sage);
+}
+
+.usageIcon {
+  font-size: 18px;
+  line-height: 1;
+}
+
+.usageName {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--c-text-mid);
+  text-align: center;
+}
+
+.usageArrow {
+  font-size: 10px;
+  color: var(--c-text-light);
+}
