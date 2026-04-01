@@ -211,11 +211,28 @@ export default function BookReader() {
   const translatePressTimer = useRef(null);
   const translateFillTimer  = useRef(null);
 
+ // Detect touch-primary device once (phones/tablets have hover: none)
+  const isTouchDevice = useRef(
+    typeof window !== "undefined" && window.matchMedia("(hover: none)").matches
+  );
+
   function handleTranslatePointerDown(e, segIdx) {
     e.stopPropagation();
-    // Start fill animation
+    if (isTouchDevice.current) {
+      // Mobile: single tap — translate immediately or toggle if cached
+      if (translationsCacheRef.current[segIdx]) {
+        setRevealedSegs(prev => {
+          const next = new Set(prev);
+          next.has(segIdx) ? next.delete(segIdx) : next.add(segIdx);
+          return next;
+        });
+      } else {
+        translateSegment(segIdx);
+      }
+      return;
+    }
+    // Desktop: hold 600ms to translate
     setFillingSegIdx(segIdx);
-    // After 600ms trigger translation
     translatePressTimer.current = setTimeout(() => {
       translateSegment(segIdx);
       setFillingSegIdx(null);
@@ -224,13 +241,12 @@ export default function BookReader() {
 
   function handleTranslatePointerUp(e, segIdx) {
     e.stopPropagation();
-    const wasfilling = fillingSegIdx === segIdx;
+    if (isTouchDevice.current) return; // handled on pointerDown
+    const wasFilling = fillingSegIdx === segIdx;
     clearTimeout(translatePressTimer.current);
     setFillingSegIdx(null);
-    // If released before 600ms it was a tap — toggle visibility
-    if (!wasfilling) return;
-    // If fill was still animating (< 600ms) treat as tap
-    if (translationsCacheRef.current[segIdx]) {
+    // Released before 600ms on desktop — toggle visibility if already cached
+    if (wasFilling && translationsCacheRef.current[segIdx]) {
       setRevealedSegs(prev => {
         const next = new Set(prev);
         next.has(segIdx) ? next.delete(segIdx) : next.add(segIdx);
@@ -240,12 +256,11 @@ export default function BookReader() {
   }
 
   function handleTranslatePointerLeave(e, segIdx) {
-    if (fillingSegIdx === segIdx) {
+    if (!isTouchDevice.current && fillingSegIdx === segIdx) {
       clearTimeout(translatePressTimer.current);
       setFillingSegIdx(null);
     }
   }
-
   
 
   async function translateSegment(segIdx) {
@@ -391,6 +406,7 @@ const totalSeconds  = priorSeconds + seconds;
                   ? styles.bookmarkBarActive : ""
               }`}
               style={{ "--cover-color": coverColor }}
+              onPointerDown={e => e.preventDefault()}
               onClick={e => { e.stopPropagation(); setBookmarkAt(activeChapterNum, idx); }}
               title="Bookmark this paragraph"
             />

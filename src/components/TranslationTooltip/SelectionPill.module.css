@@ -13,7 +13,7 @@
   border-radius: 99px;
   border: 1px solid var(--c-border);
   background: var(--c-text-dark);
-  color: #f5f0e8;
+  color: var(--c-bg);
   font-size: 12px;
   font-weight: 500;
   white-space: nowrap;
@@ -23,3 +23,13 @@
 
 .btn:hover:not(:disabled) { background: var(--c-text-mid); }
 .btn:disabled { opacity: 0.7; }
+
+[data-night="true"] .btn {
+  background: var(--c-sage);
+  color: #fff;
+  border-color: var(--c-sage-dark);
+}
+
+[data-night="true"] .btn:hover:not(:disabled) {
+  background: var(--c-sage-dark);
+}
