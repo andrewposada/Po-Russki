@@ -7,9 +7,8 @@ import Skeleton from "../Skeleton/Skeleton";
 import styles from "./WordBankOverlay.module.css";
 
 const SORT_OPTIONS = [
-  { id: "date",    label: "Date added" },
-  { id: "alpha",   label: "A → Я"     },
-  { id: "mastered",label: "Mastered"  },
+  { id: "date",  label: "Date added" },
+  { id: "alpha", label: "A → Я"     },
 ];
 
 export default function WordBankOverlay() {
@@ -34,9 +33,8 @@ export default function WordBankOverlay() {
       w.translation?.toLowerCase().includes(search.toLowerCase())
     )
     .sort((a, b) => {
-      if (sort === "alpha")    return (a.word ?? "").localeCompare(b.word ?? "", "ru");
-      if (sort === "mastered") return (b.is_mastered ? 1 : 0) - (a.is_mastered ? 1 : 0);
-      return new Date(b.created_at ?? 0) - new Date(a.created_at ?? 0);
+      if (sort === "alpha") return (a.word ?? "").localeCompare(b.word ?? "", "ru");
+      return new Date(b.added_at ?? 0) - new Date(a.added_at ?? 0);
     });
 
   const handleDelete = async (word) => {

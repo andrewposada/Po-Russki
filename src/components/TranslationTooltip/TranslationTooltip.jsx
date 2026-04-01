@@ -40,7 +40,7 @@ export default function TranslationTooltip() {
     window.addEventListener("scroll", handleScroll, { passive: true });
     return () => window.removeEventListener("scroll", handleScroll);
   }, [tooltip]);
-  
+
   useEffect(() => {
     if (!tooltipRef.current || !tooltip) return;
 
@@ -86,15 +86,15 @@ export default function TranslationTooltip() {
 
   const { word, displayWord, translation, contextNote, isPhrase, wordBankStatus } = tooltip;
 
-  const handleAddToWordBank = async () => {
+  const handleAddToWordBank = () => {
     if (!user || isPhrase) return;
-    await enrich(user.uid, { word, translation });
-    closeTooltip();
+    enrich(user.uid, { word, translation });       // fire-and-forget
+    closeTooltip();                                // close immediately
   };
 
-  const handleAddToMastered = async () => {
+  const handleAddToMastered = () => {
     if (!user || isPhrase) return;
-    await enrich(user.uid, { word, translation, isMastered: true });
+    enrich(user.uid, { word, translation, isMastered: true }); // fire-and-forget
     closeTooltip();
   };
 

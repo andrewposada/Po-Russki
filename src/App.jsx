@@ -7,6 +7,7 @@ import { TooltipProvider } from "./context/TooltipContext";
 import SelectionPill from "./components/TranslationTooltip/SelectionPill";
 import TranslationTooltip from "./components/TranslationTooltip/TranslationTooltip";
 import WordBankOverlay from "./components/WordBank/WordBankOverlay";
+import WordBankToast from "./components/WordBankToast/WordBankToast";
 import Login from "./Login";
 import Home from "./modules/Home/Home";
 import LibraryShelf from "./modules/Library/LibraryShelf";
@@ -38,6 +39,7 @@ function AppShell() {
       <SelectionPill />
       <TranslationTooltip />
       <WordBankOverlay />
+      <WordBankToast />
     </>
   );
 }
