@@ -243,7 +243,7 @@
     width: 100%;
     top: auto;
     bottom: 0;
-    max-height: 80vh;
+    max-height: 80dvh;
     border-radius: var(--radius-lg) var(--radius-lg) 0 0;
   }
 }

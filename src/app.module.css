@@ -7,6 +7,14 @@
   background: var(--c-bg);
 }
 
+.headerWrap {
+  position: sticky;
+  top: 0;
+  z-index: 200;
+  background: var(--c-bg);
+  padding: 16px 16px 0;
+}
+
 .main {
   flex: 1;
   display: flex;

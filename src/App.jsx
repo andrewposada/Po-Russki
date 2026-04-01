@@ -32,7 +32,9 @@ function AppShell() {
   if (!user) return null;
   return (
     <>
-      <GlobalHeader />
+      <div className={styles.headerWrap}>
+        <GlobalHeader />
+      </div>
       <SelectionPill />
       <TranslationTooltip />
       <WordBankOverlay />
