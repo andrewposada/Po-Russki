@@ -20,8 +20,8 @@ export default function TranslationTooltip() {
     const gap = 8;
 
     // tooltip.x / tooltip.y are the anchor center point
-    const anchorCenterX = tooltip.x;
-    const anchorY       = tooltip.y;
+    const anchorCenterX = tooltip.x - window.scrollX;
+    const anchorY       = tooltip.y - window.scrollY;
 
     // Default: centered above anchor point
     let left  = anchorCenterX - tt.width / 2;

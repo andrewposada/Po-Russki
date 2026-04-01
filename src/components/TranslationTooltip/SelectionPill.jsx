@@ -57,8 +57,8 @@ export default function SelectionPill() {
     }
 
     setPill({
-      x:    rect.left + rect.width / 2,
-      y:    rect.top - 8,
+      x:    rect.left + rect.width / 2 + window.scrollX,
+      y:    rect.top + window.scrollY - 8,
       text: displayText,
       isPhrase,
     });
