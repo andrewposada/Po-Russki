@@ -122,32 +122,17 @@ export default function Settings({ onClose }) {
             <section className={styles.section}>
               <p className={styles.label}>Usage &amp; Quotas</p>
               <div className={styles.usageCards}>
-                
-                  className={styles.usageCard}
-                  href="https://platform.claude.com/workspaces/default/cost"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                <a>
+                <a className={styles.usageCard} href="https://platform.claude.com/workspaces/default/cost" target="_blank" rel="noopener noreferrer">
                   <span className={styles.usageIcon}>🤖</span>
                   <span className={styles.usageName}>Claude</span>
                   <span className={styles.usageArrow}>↗</span>
                 </a>
-                
-                  className={styles.usageCard}
-                  href="https://supabase.com/dashboard/org/emspsaqbavppwvcpjcnu/usage?projectRef=segbmhztkgyglzaxdtlh"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                <a>
+                <a className={styles.usageCard} href="https://supabase.com/dashboard/org/emspsaqbavppwvcpjcnu/usage?projectRef=segbmhztkgyglzaxdtlh" target="_blank" rel="noopener noreferrer">
                   <span className={styles.usageIcon}>🗄️</span>
                   <span className={styles.usageName}>Supabase</span>
                   <span className={styles.usageArrow}>↗</span>
                 </a>
-                
-                  className={styles.usageCard}
-                  href="https://console.cloud.google.com/apis/api/translate.googleapis.com/quotas?authuser=1&facet_url=https:%2F%2Fcloud.google.com%2Ftranslate&project=project-c59d2519-30a6-4afe-9dc"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                <a>
+                <a className={styles.usageCard} href="https://console.cloud.google.com/apis/api/translate.googleapis.com/quotas?authuser=1&facet_url=https:%2F%2Fcloud.google.com%2Ftranslate&project=project-c59d2519-30a6-4afe-9dc" target="_blank" rel="noopener noreferrer">
                   <span className={styles.usageIcon}>🌐</span>
                   <span className={styles.usageName}>Translate</span>
                   <span className={styles.usageArrow}>↗</span>
