@@ -133,37 +133,83 @@ export const defaultConjScores = () =>
 
 // ── Vocabulary constants ──────────────────────────────────────────────────────
 export const VOCAB_TOPICS = [
-  { id:"food",      label:"Food & Drink",       icon:"🍞" },
-  { id:"animals",   label:"Animals",            icon:"🐾" },
-  { id:"body",      label:"Body & Health",      icon:"🩺" },
-  { id:"clothing",  label:"Clothing",           icon:"👗" },
-  { id:"home",      label:"Home & Furniture",   icon:"🏠" },
-  { id:"family",    label:"Family",             icon:"👨‍👩‍👧" },
-  { id:"time",      label:"Numbers & Time",     icon:"🕐" },
-  { id:"colours",   label:"Colours",            icon:"🎨" },
-  { id:"weather",   label:"Weather",            icon:"🌤" },
-  { id:"transport", label:"Transport",          icon:"🚂" },
-  { id:"greetings", label:"Greetings & Phrases",icon:"👋" },
-  { id:"emotions",  label:"Emotions & Feelings",icon:"💭" },
-  { id:"work",      label:"Work & Professions", icon:"💼" },
-  { id:"school",    label:"School & Education", icon:"📚" },
-  { id:"shopping",  label:"Shopping",           icon:"🛍" },
-  { id:"nature",    label:"Nature",             icon:"🌲" },
-  { id:"travel",    label:"Travel & Places",    icon:"✈️" },
-  { id:"sports",    label:"Sports & Hobbies",   icon:"⚽" },
+  { id:"food",      label:"Food & Drink",        icon:"🍞" },
+  { id:"animals",   label:"Animals",             icon:"🐾" },
+  { id:"body",      label:"Body & Health",       icon:"🩺" },
+  { id:"clothing",  label:"Clothing",            icon:"👗" },
+  { id:"home",      label:"Home & Furniture",    icon:"🏠" },
+  { id:"family",    label:"Family",              icon:"👨‍👩‍👧" },
+  { id:"time",      label:"Numbers & Time",      icon:"🕐" },
+  { id:"colours",   label:"Colours",             icon:"🎨" },
+  { id:"weather",   label:"Weather",             icon:"🌤" },
+  { id:"transport", label:"Transport",           icon:"🚂" },
+  { id:"greetings", label:"Greetings & Phrases", icon:"👋" },
+  { id:"emotions",  label:"Emotions & Feelings", icon:"💭" },
+  { id:"work",      label:"Work & Professions",  icon:"💼" },
+  { id:"school",    label:"School & Education",  icon:"📚" },
+  { id:"shopping",  label:"Shopping",            icon:"🛍" },
+  { id:"nature",    label:"Nature",              icon:"🌲" },
+  { id:"travel",    label:"Travel & Places",     icon:"✈️" },
+  { id:"sports",    label:"Sports & Hobbies",    icon:"⚽" },
 ];
-export const V_TYPE_PILLS = [
+
+export const VOCAB_POS_TYPES = [
   { id:"nouns",      label:"Nouns"      },
   { id:"adjectives", label:"Adjectives" },
   { id:"verbs",      label:"Verbs"      },
 ];
-export const V_MODES = [
-  { id:"translate",      label:"Translate",        icon:"🌿" },
-  { id:"multiplechoice", label:"Multiple Choice",  icon:"🔢" },
-  { id:"sentence",       label:"Use in a Sentence",icon:"✍️" },
-  { id:"story",          label:"Story",            icon:"📖" },
-  { id:"flashcard",      label:"Flashcards",       icon:"🃏" },
+
+export const VOCAB_EXPLORE_MODES = [
+  { id:"translate", label:"Translate"         },
+  { id:"mc",        label:"Multiple Choice"   },
+  { id:"cloze",     label:"Fill in the Blank" },
+  { id:"sentence",  label:"Sentence Builder"  },
 ];
+
+// SRS tier thresholds (determined by review_count)
+export const SRS_TIERS = {
+  MATCHING:         { min: 0,  max: 0          }, // review_count = 0
+  MULTIPLE_CHOICE:  { min: 1,  max: 2          }, // review_count 1–2
+  TRANSLATE_RU_EN:  { min: 3,  max: 5          }, // review_count 3–5
+  TRANSLATE_EN_RU:  { min: 6,  max: 9          }, // review_count 6–9
+  SENTENCE_BUILDER: { min: 10, max: Infinity   }, // review_count 10+
+};
+
+/**
+ * Derive exercise type for a word based on review_count + is_mastered.
+ * For Tier 2 (review_count 3–9), alternates between Translate and Cloze
+ * using the stored last_exercise_was_cloze flag.
+ * Returns one of: "matching" | "mc" | "translate_ru_en" | "translate_en_ru"
+ *               | "cloze" | "sentence"
+ */
+export function getExerciseType(word) {
+  if (word.is_mastered) return "sentence";
+  const rc = word.review_count ?? 0;
+  if (rc === 0) return "matching";
+  if (rc <= 2)  return "mc";
+  if (rc <= 5)  return word.last_exercise_was_cloze ? "translate_ru_en" : "cloze";
+  if (rc <= 9)  return word.last_exercise_was_cloze ? "translate_en_ru" : "cloze";
+  return "sentence";
+}
+
+// SRS quality values — passed to api/srs-update.js
+export const SRS_QUALITY = {
+  FAIL:          0, // wrong answer on any exercise
+  CORRECT_EASY:  3, // matching, multiple choice
+  CORRECT_MEDIUM:4, // translate RU→EN
+  CORRECT_HARD:  5, // translate EN→RU, cloze, sentence builder
+};
+
+// Tier badge display config (used by exercise cards)
+export const TIER_BADGE = {
+  matching:        { label: "Tier 0",   bg: "#E6F1FB", text: "#185FA5" },
+  mc:              { label: "Tier 1",   bg: "#EAF3DE", text: "#3B6D11" },
+  translate_ru_en: { label: "Tier 2",   bg: "#FAEEDA", text: "#854F0B" },
+  translate_en_ru: { label: "Tier 2",   bg: "#FAEEDA", text: "#854F0B" },
+  cloze:           { label: "Tier 2",   bg: "#FAEEDA", text: "#854F0B" },
+  sentence:        { label: "Tier 3",   bg: "#FBEAF0", text: "#993556" },
+  mastered:        { label: "Mastered", bg: "#EEEDFE", text: "#3C3489" },
+};
 
 // ── Library constants ─────────────────────────────────────────────────────────
 export const LIB_GENRES = [

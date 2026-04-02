@@ -1,0 +1,72 @@
+.controls {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+/*.section {}*/
+
+.sectionLabel {
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  color: var(--color-text-tertiary);
+  margin: 0 0 4px;
+  text-transform: uppercase;
+}
+
+.sectionHint {
+  font-size: 12px;
+  color: var(--color-text-tertiary);
+  margin: 0 0 10px;
+}
+
+.pills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.pill {
+  padding: 6px 12px;
+  border: 0.5px solid var(--color-border-secondary);
+  border-radius: 20px;
+  background: var(--color-background-primary);
+  color: var(--color-text-secondary);
+  font-size: 13px;
+  cursor: pointer;
+  transition: background 0.12s, border-color 0.12s, color 0.12s;
+}
+
+.pill:hover {
+  background: var(--color-background-secondary);
+}
+
+.pill.active {
+  background: #E6F1FB;
+  border-color: #5B9EBD;
+  color: #185FA5;
+  font-weight: 600;
+}
+
+.startBtn {
+  padding: 12px 28px;
+  background: #5B9EBD;
+  color: #fff;
+  border: none;
+  border-radius: 10px;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  align-self: flex-start;
+  margin-top: 8px;
+}
+
+.startBtn:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+
+.startBtn:hover:not(:disabled) {
+  background: #4a8dac;
+}

@@ -101,6 +101,88 @@ export async function deleteWord(userId, word) {
   if (error) throw error;
 }
 
+// ── VOCABULARY SRS ─────────────────────────────────────────────────────────
+
+/**
+ * Fetch words due for review (next_review_at <= now OR never reviewed).
+ * Returns up to `limit` rows ordered by most overdue first.
+ * Words with null next_review_at are treated as immediately due.
+ * If a session has fewer than 4 unique due words, pads with mastered words
+ * so the Matching card always has a full set of 4.
+ */
+export async function getDueWords(userId, limit = 20) {
+  // Primary: due words (null next_review_at counts as due)
+  const { data: due, error: dueErr } = await supabase
+    .from("words")
+    .select("*")
+    .eq("user_id", userId)
+    .or("next_review_at.is.null,next_review_at.lte." + new Date().toISOString())
+    .order("next_review_at", { ascending: true, nullsFirst: true })
+    .limit(limit);
+  if (dueErr) throw dueErr;
+
+  if (due.length >= 4) return due;
+
+  // Pad with mastered words so Matching always gets a full set of 4
+  const dueIds = due.map(w => w.id);
+  const needed = 4 - due.length;
+  const { data: padded, error: padErr } = await supabase
+    .from("words")
+    .select("*")
+    .eq("user_id", userId)
+    .eq("is_mastered", true)
+    .not("id", "in", `(${dueIds.length > 0 ? dueIds.join(",") : "00000000-0000-0000-0000-000000000000"})`)
+    .limit(needed);
+  if (padErr) throw padErr;
+
+  return [...due, ...(padded ?? [])];
+}
+
+/**
+ * Update SRS fields on a word after a review.
+ * Also toggles last_exercise_was_cloze for Tier 2 alternation.
+ * Called by the client after receiving calculated values from api/srs-update.js.
+ */
+export async function updateWordSrs(userId, wordId, {
+  next_review_at,
+  interval_days,
+  ease_factor,
+  review_count,
+  last_exercise_was_cloze,
+}) {
+  const payload = {
+    next_review_at,
+    interval_days,
+    ease_factor,
+    review_count,
+    updated_at: new Date(),
+  };
+  // Only update the cloze flag if explicitly passed
+  if (typeof last_exercise_was_cloze === "boolean") {
+    payload.last_exercise_was_cloze = last_exercise_was_cloze;
+  }
+  const { error } = await supabase
+    .from("words")
+    .update(payload)
+    .eq("id", wordId)
+    .eq("user_id", userId);
+  if (error) throw error;
+}
+
+/**
+ * Fetch the full word bank for the flashcard deck,
+ * ordered by most overdue first (soonest next_review_at last).
+ */
+export async function getFlashcardDeck(userId) {
+  const { data, error } = await supabase
+    .from("words")
+    .select("*")
+    .eq("user_id", userId)
+    .order("next_review_at", { ascending: true, nullsFirst: true });
+  if (error) throw error;
+  return data;
+}
+
 // ── SCORES ─────────────────────────────────────────────────────────────────
 
 export async function getScores(userId, domainName) {

@@ -18,7 +18,7 @@ import { SettingsProvider } from "./context/SettingsContext";
 // Module imports — uncomment as each phase is built
 // import Grammar      from "./modules/Grammar/Grammar";
 // import Conjugations from "./modules/Conjugations/Conjugations";
-// import Vocabulary   from "./modules/Vocabulary/Vocabulary";
+import Vocabulary   from "./modules/Vocabulary";
 // import Drill        from "./modules/Drill/Drill";
 
 function ProtectedRoute({ children }) {
@@ -64,9 +64,12 @@ function AppContent() {
           } />
           {/* Uncomment as each phase is built:
           <Route path="/grammar"      element={<ProtectedRoute><Grammar /></ProtectedRoute>} />
-          <Route path="/conjugations" element={<ProtectedRoute><Conjugations /></ProtectedRoute>} />
-          <Route path="/vocabulary"   element={<ProtectedRoute><Vocabulary /></ProtectedRoute>} />
-          <Route path="/drill"        element={<ProtectedRoute><Drill /></ProtectedRoute>} /> */}
+          <Route path="/conjugations" element={<ProtectedRoute><Conjugations /></ProtectedRoute>} /> */}
+          <Route path="/vocabulary"          element={<ProtectedRoute><Vocabulary /></ProtectedRoute>} />
+          <Route path="/vocabulary/session"  element={<ProtectedRoute><Vocabulary /></ProtectedRoute>} />
+          <Route path="/vocabulary/explore"  element={<ProtectedRoute><Vocabulary /></ProtectedRoute>} />
+          <Route path="/vocabulary/flashcards" element={<ProtectedRoute><Vocabulary /></ProtectedRoute>} />
+          {/* <Route path="/drill" element={<ProtectedRoute><Drill /></ProtectedRoute>} /> */}
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </main>

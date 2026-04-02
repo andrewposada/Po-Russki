@@ -1,0 +1,99 @@
+.page {
+  max-width: 560px;
+  margin: 0 auto;
+  padding: 24px 16px 48px;
+}
+
+.header {
+  margin-bottom: 28px;
+}
+
+.title {
+  font-size: 24px;
+  font-weight: 600;
+  color: var(--color-text-primary);
+  margin: 0 0 4px;
+}
+
+.subtitle {
+  font-size: 13px;
+  color: var(--color-text-tertiary);
+  margin: 0;
+}
+
+.cards {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.modeCard {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  width: 100%;
+  background: var(--color-background-primary);
+  border: 0.5px solid var(--color-border-tertiary);
+  border-radius: 12px;
+  padding: 18px 16px;
+  text-align: left;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.modeCard:hover:not(:disabled) {
+  background: var(--color-background-secondary);
+}
+
+.modeCard:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+.modeIcon {
+  font-size: 28px;
+  flex-shrink: 0;
+  width: 40px;
+  text-align: center;
+}
+
+.modeBody {
+  flex: 1;
+  min-width: 0;
+}
+
+.modeTitle {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--color-text-primary);
+  margin-bottom: 3px;
+}
+
+.modeDesc {
+  font-size: 13px;
+  color: var(--color-text-secondary);
+  line-height: 1.4;
+}
+
+.dueBadge {
+  display: inline-block;
+  margin-top: 6px;
+  padding: 2px 8px;
+  background: #E6F1FB;
+  color: #185FA5;
+  border-radius: 20px;
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.noDue {
+  margin-top: 6px;
+  font-size: 11px;
+  color: var(--color-text-tertiary);
+}
+
+.arrow {
+  font-size: 22px;
+  color: var(--color-text-tertiary);
+  flex-shrink: 0;
+}
