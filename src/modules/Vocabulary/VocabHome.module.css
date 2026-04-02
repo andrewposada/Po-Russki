@@ -1,99 +1,369 @@
+/* src/modules/Vocabulary/VocabHome.module.css */
+
 .page {
-  max-width: 560px;
+  max-width: 900px;
   margin: 0 auto;
-  padding: 24px 16px 48px;
+  padding: 28px 20px 56px;
 }
 
-.header {
-  margin-bottom: 28px;
-}
-
+/* ── Header ── */
 .title {
-  font-size: 24px;
-  font-weight: 600;
-  color: var(--color-text-primary);
-  margin: 0 0 4px;
+  font-size: 22px;
+  font-weight: 500;
+  color: var(--c-text-dark);
+  font-family: Georgia, serif;
+  letter-spacing: -0.3px;
+  margin: 0 0 3px;
 }
-
 .subtitle {
   font-size: 13px;
-  color: var(--color-text-tertiary);
-  margin: 0;
+  color: var(--c-text-light);
+  margin: 0 0 20px;
 }
 
-.cards {
+/* ── Stat strip ── */
+.statStrip {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 10px;
+  margin-bottom: 14px;
+}
+@media (max-width: 600px) {
+  .statStrip { grid-template-columns: repeat(2, 1fr); }
+}
+
+.statTile {
+  background: var(--c-bg-panel);
+  border-radius: var(--radius-md);
+  padding: 12px 14px;
+}
+.statLabel {
+  font-size: 11px;
+  color: var(--stat-label-color, var(--c-text-light));
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+  margin-bottom: 4px;
+}
+.statValue {
+  font-size: 22px;
+  font-weight: 500;
+  color: var(--stat-value-color, var(--c-text-dark));
+  line-height: 1;
+}
+.statSub {
+  font-size: 11px;
+  color: var(--stat-sub-color, var(--c-text-light));
+  margin-top: 3px;
+}
+
+/* ── Top grid ── */
+.topGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+  margin-bottom: 14px;
+}
+@media (max-width: 600px) {
+  .topGrid { grid-template-columns: 1fr; }
+}
+
+/* ── Featured word ── */
+.featuredCard {
+  background: #E6F1FB;
+  border: 0.5px solid #B5D4F4;
+  border-radius: var(--radius-lg);
+  padding: 18px 20px;
   display: flex;
   flex-direction: column;
+  gap: 8px;
+}
+.featuredEyebrow {
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+  color: #185FA5;
+  font-weight: 500;
+}
+.featuredWordRow {
+  display: flex;
+  align-items: center;
   gap: 12px;
+}
+.featuredWord {
+  font-size: 30px;
+  font-weight: 500;
+  color: #0C447C;
+  font-family: Georgia, serif;
+  line-height: 1.1;
+}
+.playBtn {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  background: #185FA5;
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  transition: background 0.15s, transform 0.1s;
+}
+.playBtn:hover {
+  background: #0C447C;
+  transform: scale(1.08);
+}
+.playTriangle {
+  width: 0;
+  height: 0;
+  border-top: 5px solid transparent;
+  border-bottom: 5px solid transparent;
+  border-left: 9px solid #E6F1FB;
+  margin-left: 2px;
+}
+.featuredTranslation {
+  font-size: 14px;
+  color: #185FA5;
+  font-weight: 500;
+}
+.featuredMeta {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+.posBadge {
+  font-size: 11px;
+  padding: 2px 8px;
+  border-radius: 20px;
+  background: #B5D4F4;
+  color: #0C447C;
+  font-weight: 500;
+}
+.profBadge {
+  font-size: 11px;
+  padding: 2px 8px;
+  border-radius: 20px;
+  background: #F7C1C1;
+  color: #791F1F;
+  font-weight: 500;
+}
+.featuredDetail {
+  font-size: 12px;
+  color: #185FA5;
+  line-height: 1.55;
+  border-top: 0.5px solid #B5D4F4;
+  padding-top: 8px;
+}
+.featuredDetail strong {
+  color: #0C447C;
+  font-weight: 500;
+}
+.featuredLink {
+  font-size: 12px;
+  color: #185FA5;
+  font-weight: 500;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+  text-align: left;
+  margin-top: 2px;
+}
+.featuredLink:hover { text-decoration: underline; }
+.featuredEmpty {
+  font-size: 13px;
+  color: #185FA5;
+  opacity: 0.7;
+}
+
+/* ── Word mastery progression ── */
+.masteryCard {
+  background: var(--c-bg-card);
+  border: 1px solid var(--c-border);
+  border-radius: var(--radius-lg);
+  padding: 18px 20px;
+  display: flex;
+  flex-direction: column;
+}
+.masteryTitle {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--c-text-dark);
+  margin-bottom: 12px;
+}
+.tierBarWrap {
+  display: flex;
+  border-radius: 6px;
+  overflow: visible;
+  height: 22px;
+  margin-bottom: 12px;
+  gap: 2px;
+}
+.tierSeg {
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 2px;
+  position: relative;
+  border-radius: 3px;
+  cursor: default;
+  transition: opacity 0.15s;
+}
+.tierSeg:hover { opacity: 0.85; }
+.tierSegLabel {
+  font-size: 10px;
+  font-weight: 500;
+  white-space: nowrap;
+  overflow: hidden;
+}
+.tierTooltip {
+  position: absolute;
+  bottom: calc(100% + 7px);
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--c-text-dark);
+  color: var(--c-bg);
+  font-size: 11px;
+  line-height: 1.4;
+  padding: 6px 10px;
+  border-radius: 6px;
+  white-space: nowrap;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.15s;
+  z-index: 10;
+  text-align: center;
+}
+.tierTooltip strong {
+  font-weight: 500;
+  display: block;
+  margin-bottom: 1px;
+}
+.tierTooltip::after {
+  content: '';
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  border: 4px solid transparent;
+  border-top-color: var(--c-text-dark);
+}
+.tierSeg:hover .tierTooltip { opacity: 1; }
+
+.tierLegend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px 14px;
+  margin-bottom: 4px;
+}
+.legendItem {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 11px;
+  color: var(--c-text-mid);
+}
+.legendDot {
+  width: 9px;
+  height: 9px;
+  border-radius: 2px;
+  flex-shrink: 0;
+}
+.legendLabel { color: var(--c-text-mid); }
+.legendCount {
+  font-weight: 500;
+  color: var(--c-text-dark);
+}
+.masteryEmpty {
+  font-size: 13px;
+  color: var(--c-text-light);
+  margin-bottom: 8px;
+}
+.masteryNote {
+  margin-top: auto;
+  padding-top: 10px;
+  border-top: 1px solid var(--c-border-soft);
+  font-size: 11px;
+  color: var(--c-text-light);
+  line-height: 1.55;
+}
+
+/* ── Mode cards ── */
+.modeCards {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+}
+@media (max-width: 600px) {
+  .modeCards { grid-template-columns: 1fr; }
 }
 
 .modeCard {
-  display: flex;
-  align-items: center;
-  gap: 16px;
-  width: 100%;
-  background: var(--color-background-primary);
-  border: 0.5px solid var(--color-border-tertiary);
-  border-radius: 12px;
-  padding: 18px 16px;
+  background: var(--c-bg-card);
+  border: 1px solid var(--c-border);
+  border-radius: var(--radius-lg);
+  padding: 18px 16px 14px;
   text-align: left;
   cursor: pointer;
-  transition: background 0.15s;
+  transition: background 0.15s, transform 0.12s, box-shadow 0.12s;
+  display: flex;
+  flex-direction: column;
+  border-left: 3px solid transparent;
 }
-
 .modeCard:hover:not(:disabled) {
-  background: var(--color-background-secondary);
+  background: var(--c-bg-panel);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(58, 48, 32, 0.1);
 }
-
 .modeCard:disabled {
-  opacity: 0.5;
+  opacity: 0.45;
   cursor: default;
 }
+.modeCardBlue   { border-left-color: var(--c-sky); }
+.modeCardGreen  { border-left-color: var(--c-sage); }
+.modeCardPurple { border-left-color: #9a7ec8; }
 
-.modeIcon {
-  font-size: 28px;
-  flex-shrink: 0;
-  width: 40px;
-  text-align: center;
+.cardTop {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  margin-bottom: 8px;
 }
-
-.modeBody {
+.cardEmoji  { font-size: 20px; }
+.cardChevron {
+  font-size: 18px;
+  color: var(--c-text-light);
+}
+.cardName {
+  font-size: 15px;
+  font-weight: 500;
+  color: var(--c-text-dark);
+  margin-bottom: 5px;
+}
+.cardDesc {
+  font-size: 12px;
+  color: var(--c-text-mid);
+  line-height: 1.45;
   flex: 1;
-  min-width: 0;
 }
-
-.modeTitle {
-  font-size: 16px;
-  font-weight: 600;
-  color: var(--color-text-primary);
-  margin-bottom: 3px;
+.cardFooter {
+  margin-top: 12px;
+  padding-top: 10px;
+  border-top: 1px solid var(--c-border-soft);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
 }
-
-.modeDesc {
-  font-size: 13px;
-  color: var(--color-text-secondary);
-  line-height: 1.4;
-}
-
-.dueBadge {
-  display: inline-block;
-  margin-top: 6px;
-  padding: 2px 8px;
-  background: #E6F1FB;
-  color: #185FA5;
+.cardStat { font-size: 11px; color: var(--c-text-light); }
+.cardCta {
+  font-size: 11px;
+  font-weight: 500;
+  padding: 3px 9px;
   border-radius: 20px;
-  font-size: 11px;
-  font-weight: 600;
 }
-
-.noDue {
-  margin-top: 6px;
-  font-size: 11px;
-  color: var(--color-text-tertiary);
-}
-
-.arrow {
-  font-size: 22px;
-  color: var(--color-text-tertiary);
-  flex-shrink: 0;
-}
+.ctaBlue      { background: var(--c-sky-light);    color: var(--c-sky); }
+.ctaBlueEmpty { background: var(--c-sage-light);   color: var(--c-sage-dark); }
+.ctaGreen     { background: var(--c-sage-light);   color: var(--c-sage-dark); }
+.ctaPurple    { background: #e8e0f4;               color: #6a4e9a; }

@@ -16,17 +16,16 @@ function shuffle(arr) {
 }
 
 export default function MatchingCard({ words, onComplete }) {
-  // words: array of 4 word objects (may include padded mastered words)
   const pairs = words.slice(0, 4).map(w => ({
     id:      w.id,
     russian: w.word,
     english: w.translation,
   }));
 
-  const [ruSelected,  setRuSelected]  = useState(null); // id
-  const [enSelected,  setEnSelected]  = useState(null); // id
-  const [matched,     setMatched]     = useState([]);   // array of ids
-  const [wrongFlash,  setWrongFlash]  = useState([]);   // ids flashing red
+  const [ruSelected,  setRuSelected]  = useState(null);
+  const [enSelected,  setEnSelected]  = useState(null);
+  const [matched,     setMatched]     = useState([]);
+  const [wrongFlash,  setWrongFlash]  = useState([]);
   const [englishList, setEnglishList] = useState([]);
 
   useEffect(() => {
@@ -40,17 +39,14 @@ export default function MatchingCard({ words, onComplete }) {
   useEffect(() => {
     if (ruSelected !== null && enSelected !== null) {
       if (ruSelected === enSelected) {
-        // Correct match
         const newMatched = [...matched, ruSelected];
         setMatched(newMatched);
         setRuSelected(null);
         setEnSelected(null);
         if (newMatched.length === pairs.length) {
-          // All matched — signal completion
           setTimeout(() => onComplete(), 600);
         }
       } else {
-        // Wrong — flash red then reset
         setWrongFlash([ruSelected, enSelected]);
         setTimeout(() => {
           setWrongFlash([]);
@@ -82,30 +78,26 @@ export default function MatchingCard({ words, onComplete }) {
       </div>
       <p className={styles.taskLabel}>MATCH EACH WORD TO ITS TRANSLATION</p>
       <div className={styles.matchGrid}>
-        <div className={styles.matchCol}>
-          {pairs.map(p => (
+        {pairs.map((p, i) => (
+          <>
             <button
-              key={p.id}
+              key={`ru-${p.id}`}
               className={ruClass(p.id)}
               disabled={matched.includes(p.id)}
               onClick={() => !matched.includes(p.id) && setRuSelected(p.id)}
             >
               <span className="ru">{p.russian}</span>
             </button>
-          ))}
-        </div>
-        <div className={styles.matchCol}>
-          {englishList.map(p => (
             <button
-              key={p.id}
-              className={enClass(p.id)}
-              disabled={matched.includes(p.id)}
-              onClick={() => !matched.includes(p.id) && setEnSelected(p.id)}
+              key={`en-${englishList[i]?.id}`}
+              className={enClass(englishList[i]?.id)}
+              disabled={!englishList[i] || matched.includes(englishList[i].id)}
+              onClick={() => englishList[i] && !matched.includes(englishList[i].id) && setEnSelected(englishList[i].id)}
             >
-              {p.english}
+              {englishList[i]?.english}
             </button>
-          ))}
-        </div>
+          </>
+        ))}
       </div>
     </div>
   );

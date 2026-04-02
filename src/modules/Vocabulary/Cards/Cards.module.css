@@ -1,9 +1,9 @@
 /* Shared card styles for all Vocabulary exercise cards */
 
 .card {
-  background: var(--color-background-primary);
-  border: 0.5px solid var(--color-border-tertiary);
-  border-radius: 12px;
+  background: var(--c-bg-card);
+  border: 0.5px solid var(--c-border-soft);
+  border-radius: var(--radius-md);
   padding: 18px 16px;
   display: flex;
   flex-direction: column;
@@ -28,7 +28,7 @@
   font-size: 10px;
   font-weight: 600;
   letter-spacing: 0.08em;
-  color: var(--color-text-tertiary);
+  color: var(--c-text-light);
   margin: 0;
   text-transform: uppercase;
 }
@@ -36,20 +36,20 @@
 .wordRu {
   font-size: 28px;
   font-weight: 500;
-  color: var(--color-text-primary);
+  color: var(--c-text-dark);
   margin: 4px 0 0;
 }
 
 .wordEn {
   font-size: 20px;
   font-weight: 400;
-  color: var(--color-text-secondary);
+  color: var(--c-text-mid);
   margin: 4px 0 0;
 }
 
 .posLabel {
   font-size: 12px;
-  color: var(--color-text-tertiary);
+  color: var(--c-text-light);
   font-style: italic;
   margin: 0;
 }
@@ -62,13 +62,13 @@
 
 .audioBtn {
   background: none;
-  border: 1px solid var(--color-border-secondary);
+  border: 1px solid var(--c-border);
   border-radius: 50%;
   width: 28px;
   height: 28px;
   font-size: 11px;
   cursor: pointer;
-  color: var(--color-text-secondary);
+  color: var(--c-text-mid);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -76,10 +76,9 @@
 }
 
 .audioBtn:hover {
-  background: var(--color-background-secondary);
+  background: var(--c-bg-panel);
 }
 
-/* Input row */
 .inputRow {
   display: flex;
   gap: 8px;
@@ -89,16 +88,16 @@
 .textInput {
   flex: 1;
   padding: 8px 10px;
-  border: 0.5px solid var(--color-border-secondary);
-  border-radius: 8px;
+  border: 0.5px solid var(--c-border);
+  border-radius: var(--radius-sm);
   font-size: 15px;
-  background: var(--color-background-secondary);
-  color: var(--color-text-primary);
+  background: var(--c-bg-panel);
+  color: var(--c-text-dark);
   outline: none;
 }
 
 .textInput:focus {
-  border-color: #5B9EBD;
+  border-color: var(--c-sky);
 }
 
 .textInput:disabled {
@@ -108,11 +107,11 @@
 .textarea {
   width: 100%;
   padding: 8px 10px;
-  border: 0.5px solid var(--color-border-secondary);
-  border-radius: 8px;
+  border: 0.5px solid var(--c-border);
+  border-radius: var(--radius-sm);
   font-size: 15px;
-  background: var(--color-background-secondary);
-  color: var(--color-text-primary);
+  background: var(--c-bg-panel);
+  color: var(--c-text-dark);
   outline: none;
   box-sizing: border-box;
   font-family: inherit;
@@ -120,15 +119,15 @@
 }
 
 .textarea:focus {
-  border-color: #5B9EBD;
+  border-color: var(--c-sky);
 }
 
 .submitBtn {
   padding: 8px 16px;
-  background: #5B9EBD;
+  background: var(--c-sky);
   color: #fff;
   border: none;
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   font-size: 14px;
   font-weight: 600;
   cursor: pointer;
@@ -142,7 +141,7 @@
 }
 
 .submitBtn:hover:not(:disabled) {
-  background: #4a8dac;
+  background: var(--c-sage);
 }
 
 /* Multiple choice */
@@ -155,10 +154,10 @@
 
 .mcOption {
   padding: 10px 14px;
-  border: 0.5px solid var(--color-border-secondary);
-  border-radius: 8px;
-  background: var(--color-background-secondary);
-  color: var(--color-text-primary);
+  border: 0.5px solid var(--c-border);
+  border-radius: var(--radius-sm);
+  background: var(--c-bg-panel);
+  color: var(--c-text-dark);
   font-size: 14px;
   text-align: left;
   cursor: pointer;
@@ -166,24 +165,24 @@
 }
 
 .mcOption:hover:not(:disabled) {
-  background: var(--color-background-tertiary);
+  background: var(--c-bg-deep);
 }
 
 .mcOption.selected {
-  border-color: #5B9EBD;
-  background: #E6F1FB;
+  border-color: var(--c-sky);
+  background: var(--c-sky-light);
 }
 
 .mcOption.correct {
-  border-color: #639922;
-  background: #EAF3DE;
-  color: #3B6D11;
+  border-color: var(--c-correct);
+  background: var(--c-words-bg);
+  color: var(--c-words-text);
 }
 
 .mcOption.wrong {
-  border-color: #A32D2D;
+  border-color: var(--c-wrong);
   background: #fde8e8;
-  color: #A32D2D;
+  color: var(--c-wrong);
 }
 
 .mcOption.dimmed {
@@ -199,41 +198,40 @@
 }
 
 .matchCol {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
+  display: contents;
 }
 
 .matchItem {
-  padding: 10px 10px;
-  border: 0.5px solid var(--color-border-secondary);
-  border-radius: 8px;
-  background: var(--color-background-secondary);
-  color: var(--color-text-primary);
+  padding: 10px;
+  border: 0.5px solid var(--c-border);
+  border-radius: var(--radius-sm);
+  background: var(--c-bg-panel);
+  color: var(--c-text-dark);
   font-size: 14px;
   text-align: center;
   cursor: pointer;
   transition: background 0.1s, border-color 0.1s;
-  min-height: 44px;
+  min-height: 56px;
   display: flex;
   align-items: center;
   justify-content: center;
+  line-height: 1.35;
 }
 
 .matchItem.selected {
-  border-color: #5B9EBD;
-  background: #E6F1FB;
+  border-color: var(--c-sky);
+  background: var(--c-sky-light);
 }
 
 .matchItem.matched {
-  border-color: #639922;
-  background: #EAF3DE;
-  color: #3B6D11;
+  border-color: var(--c-correct);
+  background: var(--c-words-bg);
+  color: var(--c-words-text);
   cursor: default;
 }
 
 .matchItem.wrong {
-  border-color: #A32D2D;
+  border-color: var(--c-wrong);
   background: #fde8e8;
 }
 
@@ -241,21 +239,21 @@
 .clozeSentence {
   font-size: 17px;
   line-height: 1.6;
-  color: var(--color-text-primary);
+  color: var(--c-text-dark);
   margin: 4px 0 0;
 }
 
 .clozeBlank {
   display: inline-block;
   min-width: 60px;
-  border-bottom: 2px solid #5B9EBD;
-  color: #5B9EBD;
+  border-bottom: 2px solid var(--c-sky);
+  color: var(--c-sky);
   font-weight: 600;
 }
 
 .clozeHint {
   font-size: 13px;
-  color: var(--color-text-tertiary);
+  color: var(--c-text-light);
   margin: 0;
   font-style: italic;
 }
@@ -271,7 +269,7 @@
 /* Word details expand panel */
 .detailsPanel {
   margin-top: 4px;
-  border-top: 0.5px solid var(--color-border-tertiary);
+  border-top: 0.5px solid var(--c-border-soft);
   padding-top: 8px;
 }
 
@@ -280,13 +278,13 @@
   border: none;
   padding: 0;
   font-size: 11px;
-  color: var(--color-text-tertiary);
+  color: var(--c-text-light);
   cursor: pointer;
   letter-spacing: 0.02em;
 }
 
 .detailsToggle:hover {
-  color: var(--color-text-secondary);
+  color: var(--c-text-mid);
 }
 
 .detailsBody {
@@ -298,7 +296,7 @@
 
 .detailLine {
   font-size: 12px;
-  color: var(--color-text-secondary);
+  color: var(--c-text-mid);
   margin: 0;
   line-height: 1.4;
 }
@@ -306,6 +304,6 @@
 /* Loading / misc */
 .loading {
   font-size: 13px;
-  color: var(--color-text-tertiary);
+  color: var(--c-text-light);
   margin: 0;
 }

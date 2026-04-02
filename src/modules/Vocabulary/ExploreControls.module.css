@@ -4,20 +4,18 @@
   gap: 24px;
 }
 
-/*.section {}*/
-
 .sectionLabel {
   font-size: 10px;
   font-weight: 600;
   letter-spacing: 0.08em;
-  color: var(--color-text-tertiary);
+  color: var(--c-text-light);
   margin: 0 0 4px;
   text-transform: uppercase;
 }
 
 .sectionHint {
   font-size: 12px;
-  color: var(--color-text-tertiary);
+  color: var(--c-text-light);
   margin: 0 0 10px;
 }
 
@@ -29,32 +27,32 @@
 
 .pill {
   padding: 6px 12px;
-  border: 0.5px solid var(--color-border-secondary);
+  border: 0.5px solid var(--c-border);
   border-radius: 20px;
-  background: var(--color-background-primary);
-  color: var(--color-text-secondary);
+  background: var(--c-bg-card);
+  color: var(--c-text-mid);
   font-size: 13px;
   cursor: pointer;
   transition: background 0.12s, border-color 0.12s, color 0.12s;
 }
 
 .pill:hover {
-  background: var(--color-background-secondary);
+  background: var(--c-bg-panel);
 }
 
 .pill.active {
-  background: #E6F1FB;
-  border-color: #5B9EBD;
-  color: #185FA5;
+  background: var(--c-sky-light);
+  border-color: var(--c-sky);
+  color: var(--c-ref-text);
   font-weight: 600;
 }
 
 .startBtn {
   padding: 12px 28px;
-  background: #5B9EBD;
+  background: var(--c-sky);
   color: #fff;
   border: none;
-  border-radius: 10px;
+  border-radius: var(--radius-md);
   font-size: 15px;
   font-weight: 600;
   cursor: pointer;
@@ -68,5 +66,5 @@
 }
 
 .startBtn:hover:not(:disabled) {
-  background: #4a8dac;
+  background: var(--c-sage);
 }

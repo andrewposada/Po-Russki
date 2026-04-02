@@ -15,8 +15,8 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  background: var(--color-background-primary);
-  border: 0.5px solid var(--color-border-tertiary);
+  background: var(--c-bg-card);
+  border: 0.5px solid var(--c-border);
   border-radius: 10px;
   padding: 8px 14px;
   min-width: 60px;
@@ -25,7 +25,7 @@
 .streakNum {
   font-size: 22px;
   font-weight: 700;
-  color: #5B9EBD;
+  color: var(--c-sky);
   line-height: 1;
 }
 
@@ -33,14 +33,14 @@
   font-size: 9px;
   text-transform: uppercase;
   letter-spacing: 0.06em;
-  color: var(--color-text-tertiary);
+  color: var(--c-text-light);
   margin-top: 2px;
 }
 
 .dueBox {
   flex: 1;
-  background: var(--color-background-primary);
-  border: 0.5px solid var(--color-border-tertiary);
+  background: var(--c-bg-card);
+  border: 0.5px solid var(--c-border);
   border-radius: 10px;
   padding: 8px 14px;
 }
@@ -49,28 +49,28 @@
   font-size: 10px;
   text-transform: uppercase;
   letter-spacing: 0.06em;
-  color: var(--color-text-tertiary);
+  color: var(--c-text-light);
   display: block;
 }
 
 .dueCount {
   font-size: 15px;
   font-weight: 600;
-  color: var(--color-text-primary);
+  color: var(--c-text-dark);
   display: block;
   margin-bottom: 6px;
 }
 
 .progressBarWrap {
   height: 4px;
-  background: var(--color-background-tertiary);
+  background: var(--c-bg-panel);
   border-radius: 2px;
   overflow: clip;
 }
 
 .progressBarFill {
   height: 100%;
-  background: #5B9EBD;
+  background: var(--c-sky);
   border-radius: 2px;
   transition: width 0.4s ease;
 }
@@ -105,8 +105,8 @@
 }
 
 .sidebarCard {
-  background: var(--color-background-primary);
-  border: 0.5px solid var(--color-border-tertiary);
+  background: var(--c-bg-card);
+  border: 0.5px solid var(--c-border);
   border-radius: 10px;
   padding: 12px 14px;
 }
@@ -115,14 +115,14 @@
   font-size: 10px;
   text-transform: uppercase;
   letter-spacing: 0.06em;
-  color: var(--color-text-tertiary);
+  color: var(--c-text-light);
   margin: 0 0 4px;
 }
 
 .sidebarVal {
   font-size: 22px;
   font-weight: 700;
-  color: var(--color-text-primary);
+  color: var(--c-text-dark);
   margin: 0;
 }
 
@@ -136,7 +136,7 @@
 
 .nextBtn {
   padding: 10px 24px;
-  background: #5B9EBD;
+  background: var(--c-sky);
   color: #fff;
   border: none;
   border-radius: 8px;
@@ -145,19 +145,19 @@
   cursor: pointer;
 }
 
-.nextBtn:hover { background: #4a8dac; }
+.nextBtn:hover { background: var(--c-sky-dark, #4a8dac); }
 
 .skipBtn {
   background: none;
   border: none;
   font-size: 13px;
-  color: var(--color-text-tertiary);
+  color: var(--c-text-light);
   cursor: pointer;
   padding: 4px 0;
   text-decoration: underline;
 }
 
-.skipBtn:hover { color: var(--color-text-secondary); }
+.skipBtn:hover { color: var(--c-text-mid); }
 
 /* Complete / empty screens */
 .center {
@@ -170,8 +170,8 @@
 }
 
 .completeCard {
-  background: var(--color-background-primary);
-  border: 0.5px solid var(--color-border-tertiary);
+  background: var(--c-bg-card);
+  border: 0.5px solid var(--c-border);
   border-radius: 16px;
   padding: 32px 28px;
   max-width: 420px;
@@ -187,19 +187,19 @@
 .completeCard h2 {
   font-size: 20px;
   font-weight: 600;
-  color: var(--color-text-primary);
+  color: var(--c-text-dark);
   margin: 0 0 8px;
 }
 
 .completeCard p {
   font-size: 14px;
-  color: var(--color-text-secondary);
+  color: var(--c-text-mid);
   margin: 0 0 16px;
 }
 
 .nextDue {
   font-size: 13px;
-  color: var(--color-text-tertiary);
+  color: var(--c-text-light);
 }
 
 .statsGrid {
@@ -213,7 +213,7 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  background: var(--color-background-secondary);
+  background: var(--c-bg-panel);
   border-radius: 8px;
   padding: 10px 6px;
 }
@@ -221,20 +221,20 @@
 .statVal {
   font-size: 20px;
   font-weight: 700;
-  color: var(--color-text-primary);
+  color: var(--c-text-dark);
 }
 
 .statLbl {
   font-size: 10px;
   text-transform: uppercase;
   letter-spacing: 0.05em;
-  color: var(--color-text-tertiary);
+  color: var(--c-text-light);
   margin-top: 3px;
 }
 
 .backBtn {
   padding: 10px 24px;
-  background: #5B9EBD;
+  background: var(--c-sky);
   color: #fff;
   border: none;
   border-radius: 8px;
@@ -244,10 +244,10 @@
   width: 100%;
 }
 
-.backBtn:hover { background: #4a8dac; }
+.backBtn:hover { background: var(--c-sky-dark, #4a8dac); }
 
 .error {
-  color: #A32D2D;
+  color: var(--c-wrong);
   font-size: 14px;
   margin-bottom: 12px;
 }
@@ -269,7 +269,7 @@
 .exploreTitle {
   font-size: 20px;
   font-weight: 600;
-  color: var(--color-text-primary);
+  color: var(--c-text-dark);
   margin: 0;
 }
 
@@ -283,16 +283,33 @@
 .exploreModeLabel {
   font-size: 14px;
   font-weight: 600;
-  color: var(--color-text-secondary);
+  color: var(--c-text-mid);
 }
 
 .backLink {
   background: none;
   border: none;
   font-size: 14px;
-  color: var(--color-text-secondary);
+  color: var(--c-text-mid);
   cursor: pointer;
   padding: 0;
 }
 
-.backLink:hover { color: var(--color-text-primary); }
+.backLink:hover { color: var(--c-text-dark); }
+
+/* Matching card — equal-height buttons */
+.matchingGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  width: 100%;
+}
+
+.matchingBtn {
+  min-height: 64px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 12px 16px;
+}

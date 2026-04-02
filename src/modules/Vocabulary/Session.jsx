@@ -174,13 +174,6 @@ export default function Session() {
 
   // ── Answer handlers ────────────────────────────────────────────────────────
 
-  // Matching auto-completes when all 4 pairs matched
-  const handleMatchComplete = useCallback(async () => {
-    if (!currentWord) return;
-    await handleSrsUpdate(currentWord, "matching", true, /* wordIdsInSet */ words.slice(0, 4));
-    advanceToNext();
-  }, [currentWord, words]);
-
   // MC — tap answer
   const handleMcAnswer = useCallback(async (correct) => {
     const fb = { correct, feedback: correct ? "Good recall!" : `Correct: ${currentWord.translation}` };
@@ -296,6 +289,13 @@ export default function Session() {
       setFeedback(null);
     }
   }, [currentIdx, words, isExplore, exploreSettings]);
+
+  // Matching auto-completes when all 4 pairs matched
+  const handleMatchComplete = useCallback(async () => {
+    if (!currentWord) return;
+    await handleSrsUpdate(currentWord, "matching", true, words.slice(0, 4));
+    handleNext();
+  }, [currentWord, words, handleNext]);
 
   // Skip / I don't know
   const handleSkip = useCallback(async () => {
