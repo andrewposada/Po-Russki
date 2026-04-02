@@ -114,8 +114,18 @@ export default function VocabHome() {
     <div className={styles.page}>
 
       {/* ── Page header ── */}
-      <h1 className={styles.title}>Словарь</h1>
-      <p className={styles.subtitle}>Your personal Russian vocabulary</p>
+      <div className={styles.pageHeader}>
+        <div>
+          <h1 className={styles.title}>Словарь</h1>
+          <p className={styles.subtitle}>Your personal Russian vocabulary</p>
+        </div>
+        <button
+          className={styles.dictLink}
+          onClick={() => navigate("/vocabulary/dictionary")}
+        >
+          Мой словарь <span className={styles.dictArrow}>→</span>
+        </button>
+      </div>
 
       {/* ── Stat strip ── */}
       <div className={styles.statStrip}>

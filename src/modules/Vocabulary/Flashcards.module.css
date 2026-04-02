@@ -234,7 +234,7 @@
   flex-direction: column;
   padding: 24px 28px 16px;
   gap: 6px;
-  overflow: hidden;
+  overflow-y: auto;
 }
 
 .backWord {
@@ -270,10 +270,6 @@
   color: var(--c-text-mid);
   margin: 0;
   line-height: 1.5;
-  overflow: hidden;
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  -webkit-box-orient: vertical;
 }
 
 .usageExample {
@@ -282,10 +278,6 @@
   color: var(--c-text-mid);
   margin: 0;
   line-height: 1.5;
-  overflow: hidden;
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  -webkit-box-orient: vertical;
   font-family: Georgia, serif;
 }
 

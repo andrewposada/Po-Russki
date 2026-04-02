@@ -1,0 +1,569 @@
+/* src/modules/Vocabulary/Dictionary.module.css */
+
+.page {
+  max-width: 780px;
+  margin: 0 auto;
+  padding: 1.5rem 1.25rem 4rem;
+}
+
+.loading,
+.emptyState {
+  text-align: center;
+  padding: 3rem 0;
+  font-size: 14px;
+  color: var(--c-text-light);
+}
+
+/* ── Header ── */
+.pageHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 1.25rem;
+}
+
+.title {
+  font-size: 22px;
+  font-weight: 500;
+  color: var(--c-text-dark);
+  margin: 0;
+}
+
+.subtitle {
+  font-size: 13px;
+  color: var(--c-text-light);
+  margin-top: 2px;
+}
+
+.backLink {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--c-text-mid);
+  background: var(--c-bg-card);
+  border: 1px solid var(--c-border);
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  padding: 6px 14px;
+  flex-shrink: 0;
+  font-family: var(--font-ui);
+}
+
+/* ── Stats row ── */
+.statsRow {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 10px;
+  margin-bottom: 1.25rem;
+}
+
+.statCard {
+  background: var(--c-bg-panel);
+  border-radius: var(--radius-md);
+  padding: 0.75rem 1rem;
+}
+
+.statLabel {
+  font-size: 12px;
+  color: var(--c-text-mid);
+  margin-bottom: 4px;
+}
+
+.statValue {
+  font-size: 22px;
+  font-weight: 500;
+  color: var(--c-text-dark);
+}
+
+/* Bar chart */
+.barsWrap {
+  display: flex;
+  align-items: flex-end;
+  gap: 5px;
+  height: 36px;
+  margin-top: 6px;
+}
+
+.barCol {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  height: 100%;
+  justify-content: flex-end;
+}
+
+.bar {
+  width: 100%;
+  background: #378ADD;
+  border-radius: 2px 2px 0 0;
+  opacity: 0.6;
+  min-height: 2px;
+}
+
+.barToday {
+  opacity: 1;
+}
+
+.barDay {
+  font-size: 10px;
+  color: var(--c-text-light);
+  margin-top: 3px;
+}
+
+/* ── Fading banner ── */
+.fadingBanner {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  border: 0.5px solid #FAC775;
+  background: #FAEEDA;
+  border-radius: var(--radius-lg);
+  padding: 0.75rem 1rem;
+  margin-bottom: 1.25rem;
+}
+
+.fadingDot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #BA7517;
+  flex-shrink: 0;
+}
+
+.fadingText {
+  flex: 1;
+  font-size: 13px;
+  color: #633806;
+}
+
+.fadingSub {
+  font-size: 12px;
+  color: #854F0B;
+  margin-top: 1px;
+}
+
+.fadingBtn {
+  font-size: 12px;
+  padding: 5px 12px;
+  border-radius: var(--radius-md);
+  border: 0.5px solid #BA7517;
+  background: transparent;
+  color: #633806;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+/* ── Search ── */
+.searchWrap {
+  position: relative;
+  margin-bottom: 10px;
+}
+
+.searchIcon {
+  position: absolute;
+  left: 14px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 15px;
+  height: 15px;
+  color: var(--c-text-light);
+  pointer-events: none;
+}
+
+.searchInput {
+  width: 100%;
+  height: 42px;
+  border: 0.5px solid var(--color-border-primary);
+  border-radius: var(--radius-lg);
+  padding: 0 16px 0 44px;
+  font-size: 14px;
+  background: var(--c-bg-card);
+  color: var(--c-text-dark);
+  outline: none;
+  font-family: var(--font-ui);
+}
+
+/* ── Filter pills ── */
+.filterRow {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  margin-bottom: 1.75rem;
+}
+
+.fpill {
+  height: 30px;
+  padding: 0 12px;
+  border-radius: 999px;
+  border: 0.5px solid var(--c-border);
+  background: var(--c-bg-card);
+  font-size: 12px;
+  color: var(--c-text-mid);
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  white-space: nowrap;
+  font-family: var(--font-ui);
+}
+
+.fpillOn {
+  background: #042C53;
+  border-color: #042C53;
+  color: #B5D4F4;
+}
+
+/* ── POS sections ── */
+.posSection {
+  margin-bottom: 2rem;
+}
+
+.posDivider {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 0.875rem;
+}
+
+.posHeading {
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--c-text-light);
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  white-space: nowrap;
+}
+
+.posLine {
+  flex: 1;
+  height: 0.5px;
+  background: var(--c-border-soft);
+}
+
+.posCount {
+  font-size: 11px;
+  color: var(--c-text-light);
+  white-space: nowrap;
+}
+
+/* ── Word list ── */
+.wordList {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+/* ── Word card ── */
+.wordCard {
+  background: var(--c-bg-card);
+  border: 0.5px solid var(--c-border-soft);
+  border-radius: var(--radius-lg);
+  overflow: clip;
+}
+
+.wordCardFading {
+  border-color: #FAC775;
+}
+
+/* Card header */
+.cardHeader {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  padding: 1rem 1.25rem 0.875rem;
+}
+
+.wordBlock {
+  flex: 1;
+}
+
+.wordRu {
+  font-size: 22px;
+  font-weight: 500;
+  color: var(--c-text-dark);
+  font-family: var(--font-ru);
+  line-height: 1.2;
+}
+
+.wordEn {
+  font-size: 14px;
+  color: var(--c-text-mid);
+  margin-top: 2px;
+}
+
+.wordPron {
+  font-size: 12px;
+  color: var(--c-text-light);
+  letter-spacing: 0.02em;
+  margin-top: 3px;
+}
+
+.headerRight {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 7px;
+  flex-shrink: 0;
+  margin-left: 16px;
+}
+
+.tierRow {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+}
+
+/* Tier pill + dropdown */
+.tierDropdown {
+  position: relative;
+}
+
+.tierPill {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 11px;
+  font-weight: 500;
+  padding: 4px 10px;
+  border-radius: 999px;
+  cursor: pointer;
+  border: none;
+  font-family: var(--font-ui);
+}
+
+.caret {
+  font-size: 9px;
+  opacity: 0.6;
+}
+
+.tierMenu {
+  position: absolute;
+  top: calc(100% + 5px);
+  right: 0;
+  background: var(--c-bg-card);
+  border: 0.5px solid var(--c-border);
+  border-radius: var(--radius-md);
+  z-index: 20;
+  min-width: 210px;
+  padding: 4px 0;
+}
+
+.tierMenuLabel {
+  font-size: 10px;
+  color: var(--c-text-light);
+  padding: 6px 12px 4px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.tierOpt {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 7px 12px;
+  font-size: 13px;
+  color: var(--c-text-dark);
+  cursor: pointer;
+  font-family: var(--font-ui);
+}
+
+.tierOpt:hover {
+  background: var(--c-bg-panel);
+}
+
+.tierOptActive {
+  font-weight: 500;
+}
+
+.tierDot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.tierOptEx {
+  font-size: 11px;
+  color: var(--c-text-light);
+  margin-left: auto;
+}
+
+.fadingBadge {
+  font-size: 10px;
+  background: #FAC775;
+  color: #633806;
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-weight: 500;
+}
+
+.audioBtn {
+  width: 30px;
+  height: 30px;
+  border-radius: var(--radius-md);
+  border: 0.5px solid var(--c-border);
+  background: var(--c-bg-panel);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  font-size: 11px;
+  color: var(--c-text-mid);
+  flex-shrink: 0;
+}
+
+/* Card stats section */
+.cardStats {
+  border-top: 0.5px solid var(--c-border-soft);
+  padding: 0.875rem 1.25rem;
+  background: var(--c-bg-panel);
+}
+
+.statsGrid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 0;
+  margin-bottom: 10px;
+}
+
+.sItem {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  padding-right: 8px;
+}
+
+.sLabel {
+  font-size: 10px;
+  color: var(--c-text-light);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.sVal {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--c-text-dark);
+}
+
+.streakRow {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.streakLabel {
+  font-size: 11px;
+  color: var(--c-text-light);
+}
+
+.streakDot {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: var(--c-border);
+}
+
+.streakDotOn {
+  background: #1D9E75;
+}
+
+.streakHint {
+  font-size: 11px;
+  color: var(--c-text-light);
+}
+
+.masteredTag {
+  font-size: 12px;
+  color: #085041;
+  font-weight: 500;
+}
+
+/* Card detail section */
+.cardDetail {
+  border-top: 0.5px solid var(--c-border-soft);
+  padding: 0.875rem 1.25rem;
+  background: var(--c-bg-card);
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.detailBlock {}
+
+.detailLabel {
+  font-size: 10px;
+  color: var(--c-text-light);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: 4px;
+}
+
+.detailText {
+  font-size: 13px;
+  color: var(--c-text-mid);
+  line-height: 1.55;
+}
+
+.detailText em {
+  font-style: italic;
+  color: var(--c-text-dark);
+}
+
+/* Card footer */
+.cardFooter {
+  border-top: 0.5px solid var(--c-border-soft);
+  padding: 0.75rem 1.25rem;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--c-bg-card);
+}
+
+.priBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 32px;
+  padding: 0 14px;
+  border-radius: var(--radius-md);
+  border: 0.5px solid #378ADD;
+  background: #E6F1FB;
+  color: #185FA5;
+  font-size: 13px;
+  cursor: pointer;
+  font-weight: 500;
+  font-family: var(--font-ui);
+}
+
+.masterBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 32px;
+  padding: 0 14px;
+  border-radius: var(--radius-md);
+  border: 0.5px solid var(--c-border);
+  background: var(--c-bg-panel);
+  color: var(--c-text-mid);
+  font-size: 13px;
+  cursor: pointer;
+  font-family: var(--font-ui);
+}
+
+.unmasterBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 32px;
+  padding: 0 14px;
+  border-radius: var(--radius-md);
+  border: 0.5px solid rgba(226, 75, 74, 0.35);
+  background: #FCEBEB;
+  color: #A32D2D;
+  font-size: 13px;
+  cursor: pointer;
+  font-family: var(--font-ui);
+}

@@ -158,6 +158,7 @@ export async function updateWordSrs(userId, wordId, {
   review_count,
   tier,
   tier_streak,
+  is_mastered,
 }) {
   const payload = {
     next_review_at,
@@ -166,10 +167,10 @@ export async function updateWordSrs(userId, wordId, {
     review_count,
     updated_at: new Date(),
   };
-  // Only write tier fields if explicitly provided
+  // Only write optional fields if explicitly provided
   if (typeof tier === "number")        payload.tier        = tier;
   if (typeof tier_streak === "number") payload.tier_streak = tier_streak;
-
+  if (typeof is_mastered === "boolean") payload.is_mastered = is_mastered;
   const { error } = await supabase
     .from("words")
     .update(payload)

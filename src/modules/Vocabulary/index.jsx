@@ -1,10 +1,8 @@
-// src/modules/Vocabulary/index.jsx
-// Route entry — renders sub-screens based on current path.
-
 import { useLocation } from "react-router-dom";
-import VocabHome  from "./VocabHome";
-import Session    from "./Session";
-import Flashcards from "./Flashcards";
+import VocabHome   from "./VocabHome";
+import Session     from "./Session";
+import Flashcards  from "./Flashcards";
+import Dictionary  from "./Dictionary";
 
 export default function Vocabulary() {
   const { pathname } = useLocation();
@@ -14,6 +12,9 @@ export default function Vocabulary() {
   }
   if (pathname === "/vocabulary/flashcards") {
     return <Flashcards />;
+  }
+  if (pathname === "/vocabulary/dictionary") {
+    return <Dictionary />;
   }
   return <VocabHome />;
 }

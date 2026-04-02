@@ -367,3 +367,31 @@
 .ctaBlueEmpty { background: var(--c-sage-light);   color: var(--c-sage-dark); }
 .ctaGreen     { background: var(--c-sage-light);   color: var(--c-sage-dark); }
 .ctaPurple    { background: #e8e0f4;               color: #6a4e9a; }
+
+.pageHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 0;
+}
+
+.dictLink {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--c-text-mid);
+  background: var(--c-bg-card);
+  border: 1px solid var(--c-border);
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  padding: 6px 14px;
+  flex-shrink: 0;
+  font-family: var(--font-ui);
+}
+
+.dictArrow {
+  color: var(--c-text-light);
+  font-size: 13px;
+}
