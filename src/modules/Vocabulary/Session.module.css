@@ -313,3 +313,245 @@
   text-align: center;
   padding: 12px 16px;
 }
+
+/* ── Session word list (sidebar) ───────────────────────── */
+.sidebarWordList {
+  padding: 12px 14px;
+  max-height: 420px;
+  overflow-y: auto;
+}
+
+.sessionWordList {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-top: 8px;
+}
+
+.sessionWordItem {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 0;
+  font-size: 12px;
+  color: var(--c-text-light);
+  border-radius: 4px;
+}
+
+.sessionWordCurrent {
+  color: var(--c-text-dark);
+  font-weight: 600;
+}
+
+.sessionWordStatus {
+  width: 14px;
+  font-size: 11px;
+  flex-shrink: 0;
+  color: var(--c-text-light);
+}
+
+.sessionWordCurrent .sessionWordStatus {
+  color: var(--c-sky);
+}
+
+.sessionWordRu {
+  flex: 1;
+  font-size: 13px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.sessionWordGrad {
+  font-size: 10px;
+  color: #3b6d11;
+  flex-shrink: 0;
+}
+
+/* ── Session Summary ────────────────────────────────────── */
+.summaryCard {
+  background: var(--c-bg-card);
+  border: 1.5px solid var(--c-border);
+  border-radius: 20px;
+  padding: 32px 28px;
+  max-width: 560px;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.summaryHeader {
+  text-align: center;
+}
+
+.summaryIcon {
+  font-size: 36px;
+  display: block;
+  margin-bottom: 8px;
+}
+
+.summaryTitle {
+  font-size: 22px;
+  color: var(--c-text-dark);
+  margin: 0 0 6px;
+}
+
+.summarySubtitle {
+  font-size: 13px;
+  color: var(--c-text-light);
+  font-family: Georgia, serif;
+  font-style: italic;
+  margin: 0;
+}
+
+.summaryStats {
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+}
+
+.summaryStat {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  background: var(--c-bg-panel);
+  border-radius: 12px;
+  padding: 14px 8px;
+  border: 1.5px solid var(--c-border-soft);
+}
+
+.summaryStatVal {
+  font-size: 24px;
+  font-weight: bold;
+  color: var(--c-text-dark);
+  font-family: Georgia, serif;
+}
+
+.summaryStatLbl {
+  font-size: 10px;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  color: var(--c-text-light);
+}
+
+.summarySection {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.summarySectionLabel {
+  font-size: 10px;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: var(--c-text-light);
+  margin: 0;
+}
+
+.summaryWordList {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.summaryWordRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 10px;
+  background: var(--c-bg-panel);
+  border-radius: 8px;
+  font-size: 13px;
+}
+
+.summaryWordWrong {
+  background: #fdf0ec;
+}
+
+.summaryWordRu {
+  font-size: 14px;
+  color: var(--c-text-dark);
+  min-width: 80px;
+}
+
+.summaryWordEn {
+  flex: 1;
+  color: var(--c-text-mid);
+  font-size: 12px;
+}
+
+.summaryTierBadge {
+  font-size: 11px;
+  color: #3b6d11;
+  background: #eaf3de;
+  border-radius: 8px;
+  padding: 2px 8px;
+  flex-shrink: 0;
+}
+
+.summaryTierSmall {
+  font-size: 11px;
+  color: var(--c-text-light);
+  flex-shrink: 0;
+}
+
+.summaryCorrectBadge {
+  font-size: 13px;
+  color: #3b6d11;
+  flex-shrink: 0;
+}
+
+.summaryWrongBadge {
+  font-size: 13px;
+  color: #c07050;
+  flex-shrink: 0;
+}
+
+.summarySkippedBadge {
+  font-size: 13px;
+  color: var(--c-text-x-light);
+  flex-shrink: 0;
+}
+
+/* ── Sidebar word list — reviewed states ────────────────── */
+.sessionWordCorrect {
+  color: #3b6d11;
+}
+
+.sessionWordCorrect .sessionWordStatus {
+  color: #3b6d11;
+}
+
+.sessionWordWrongItem {
+  color: var(--c-wrong);
+}
+
+.sessionWordWrongItem .sessionWordStatus {
+  color: var(--c-wrong);
+}
+
+/* ── Summary action buttons ─────────────────────────────── */
+.summaryActions {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.retryBtn {
+  padding: 10px 24px;
+  background: transparent;
+  color: var(--c-sky);
+  border: 1.5px solid var(--c-sky);
+  border-radius: 8px;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  width: 100%;
+}
+
+.retryBtn:hover {
+  background: var(--c-sky-light, #e8f4fb);
+}

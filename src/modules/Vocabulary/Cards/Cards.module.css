@@ -235,6 +235,40 @@
   background: #fde8e8;
 }
 
+.matchSuccess {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 16px;
+  padding: 10px 16px;
+  background: #eaf3ea;
+  border-radius: 10px;
+  border: 1.5px solid #c0d8c0;
+  justify-content: space-between;
+}
+
+.matchSuccessIcon {
+  font-size: 18px;
+  color: #3b6d11;
+}
+.matchSuccessText {
+  font-size: 14px;
+  color: #3b6d11;
+  font-family: Georgia, serif;
+}
+
+.matchNextBtn {
+  margin-left: auto;
+  padding: 6px 18px;
+  background: var(--c-sky);
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
 /* Cloze */
 .clozeSentence {
   font-size: 17px;

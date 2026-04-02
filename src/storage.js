@@ -148,7 +148,8 @@ export async function updateWordSrs(userId, wordId, {
   interval_days,
   ease_factor,
   review_count,
-  last_exercise_was_cloze,
+  tier,
+  tier_streak,
 }) {
   const payload = {
     next_review_at,
@@ -157,10 +158,10 @@ export async function updateWordSrs(userId, wordId, {
     review_count,
     updated_at: new Date(),
   };
-  // Only update the cloze flag if explicitly passed
-  if (typeof last_exercise_was_cloze === "boolean") {
-    payload.last_exercise_was_cloze = last_exercise_was_cloze;
-  }
+  // Only write tier fields if explicitly provided
+  if (typeof tier === "number")        payload.tier        = tier;
+  if (typeof tier_streak === "number") payload.tier_streak = tier_streak;
+
   const { error } = await supabase
     .from("words")
     .update(payload)

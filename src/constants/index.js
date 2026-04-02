@@ -166,30 +166,33 @@ export const VOCAB_EXPLORE_MODES = [
   { id:"sentence",  label:"Sentence Builder"  },
 ];
 
-// SRS tier thresholds (determined by review_count)
-export const SRS_TIERS = {
-  MATCHING:         { min: 0,  max: 0          }, // review_count = 0
-  MULTIPLE_CHOICE:  { min: 1,  max: 2          }, // review_count 1–2
-  TRANSLATE_RU_EN:  { min: 3,  max: 5          }, // review_count 3–5
-  TRANSLATE_EN_RU:  { min: 6,  max: 9          }, // review_count 6–9
-  SENTENCE_BUILDER: { min: 10, max: Infinity   }, // review_count 10+
-};
-
 /**
- * Derive exercise type for a word based on review_count + is_mastered.
- * For Tier 2 (review_count 3–9), alternates between Translate and Cloze
- * using the stored last_exercise_was_cloze flag.
- * Returns one of: "matching" | "mc" | "translate_ru_en" | "translate_en_ru"
- *               | "cloze" | "sentence"
+ * Derive exercise type for a word based on tier + is_mastered.
+ * Tier is a DB column (integer 0–5) incremented by the client after
+ * 3 consecutive correct answers at the current tier.
+ *
+ * Tier → Exercise mapping:
+ *   0 → Matching
+ *   1 → Multiple Choice
+ *   2 → Translate RU→EN
+ *   3 → Cloze
+ *   4 → Translate EN→RU
+ *   5 → Sentence Builder
+ *
+ * Mastered words always get Sentence Builder regardless of tier.
+ * Returns one of: "matching" | "mc" | "translate_ru_en" | "cloze"
+ *               | "translate_en_ru" | "sentence"
  */
 export function getExerciseType(word) {
   if (word.is_mastered) return "sentence";
-  const rc = word.review_count ?? 0;
-  if (rc === 0) return "matching";
-  if (rc <= 2)  return "mc";
-  if (rc <= 5)  return word.last_exercise_was_cloze ? "translate_ru_en" : "cloze";
-  if (rc <= 9)  return word.last_exercise_was_cloze ? "translate_en_ru" : "cloze";
-  return "sentence";
+  switch (word.tier ?? 0) {
+    case 0:  return "matching";
+    case 1:  return "mc";
+    case 2:  return "translate_ru_en";
+    case 3:  return "cloze";
+    case 4:  return "translate_en_ru";
+    default: return "sentence"; // tier 5+
+  }
 }
 
 // SRS quality values — passed to api/srs-update.js
@@ -200,16 +203,22 @@ export const SRS_QUALITY = {
   CORRECT_HARD:  5, // translate EN→RU, cloze, sentence builder
 };
 
-// Tier badge display config (used by exercise cards)
+// Tier badge display config keyed by exercise type string
 export const TIER_BADGE = {
-  matching:        { label: "Tier 0",   bg: "#E6F1FB", text: "#185FA5" },
-  mc:              { label: "Tier 1",   bg: "#EAF3DE", text: "#3B6D11" },
-  translate_ru_en: { label: "Tier 2",   bg: "#FAEEDA", text: "#854F0B" },
-  translate_en_ru: { label: "Tier 2",   bg: "#FAEEDA", text: "#854F0B" },
-  cloze:           { label: "Tier 2",   bg: "#FAEEDA", text: "#854F0B" },
-  sentence:        { label: "Tier 3",   bg: "#FBEAF0", text: "#993556" },
-  mastered:        { label: "Mastered", bg: "#EEEDFE", text: "#3C3489" },
+  matching:        { label: "Tier 0 · Matching",          bg: "#E6F1FB", text: "#185FA5" },
+  mc:              { label: "Tier 1 · Multiple Choice",   bg: "#EAF3DE", text: "#3B6D11" },
+  translate_ru_en: { label: "Tier 2 · Translate RU→EN",  bg: "#FAEEDA", text: "#854F0B" },
+  cloze:           { label: "Tier 3 · Fill in the Blank", bg: "#F3E8FB", text: "#6B2D8B" },
+  translate_en_ru: { label: "Tier 4 · Translate EN→RU",  bg: "#FBE8E8", text: "#8B2D2D" },
+  sentence:        { label: "Tier 5 · Sentence Builder",  bg: "#FBEAF0", text: "#993556" },
+  mastered:        { label: "Mastered",                   bg: "#EEEDFE", text: "#3C3489" },
 };
+
+// Max tier before a word is considered fully graduated (but not auto-mastered)
+export const MAX_TIER = 5;
+
+// Consecutive correct answers required to advance one tier
+export const TIER_GRADUATION_STREAK = 3;
 
 // ── Library constants ─────────────────────────────────────────────────────────
 export const LIB_GENRES = [

@@ -1,6 +1,4 @@
 // src/modules/Vocabulary/Session.jsx
-// Exercise session — handles both My Words (SRS) and Explore (generative) modes.
-// Renders the appropriate exercise card based on word tier.
 
 import { useState, useEffect, useRef, useCallback } from "react";
 import { useNavigate, useLocation }  from "react-router-dom";
@@ -11,6 +9,8 @@ import {
   getExerciseType,
   SRS_QUALITY,
   TIER_BADGE,
+  MAX_TIER,
+  TIER_GRADUATION_STREAK,
 } from "../../constants";
 import MatchingCard        from "./Cards/MatchingCard";
 import MultipleChoiceCard  from "./Cards/MultipleChoiceCard";
@@ -20,7 +20,7 @@ import SentenceCard        from "./Cards/SentenceCard";
 import ExploreControls     from "./ExploreControls";
 import styles              from "./Session.module.css";
 
-// ── Helpers ──────────────────────────────────────────────────────────────────
+// ── Helpers ───────────────────────────────────────────────────────────────────
 
 async function callSrsUpdate({ quality, interval_days, ease_factor, review_count }) {
   const res = await fetch("/api/srs-update", {
@@ -80,24 +80,43 @@ async function gradeAnswer({ mode, word, studentAnswer, correctAnswer }) {
   return res.json();
 }
 
-// Quality score derived from exercise type + correctness
 function deriveQuality(exerciseType, correct) {
   if (!correct) return SRS_QUALITY.FAIL;
-  if (exerciseType === "matching" || exerciseType === "mc")        return SRS_QUALITY.CORRECT_EASY;
-  if (exerciseType === "translate_ru_en")                          return SRS_QUALITY.CORRECT_MEDIUM;
-  return SRS_QUALITY.CORRECT_HARD; // translate_en_ru, cloze, sentence
+  if (exerciseType === "matching" || exerciseType === "mc") return SRS_QUALITY.CORRECT_EASY;
+  if (exerciseType === "translate_ru_en")                   return SRS_QUALITY.CORRECT_MEDIUM;
+  return SRS_QUALITY.CORRECT_HARD;
 }
 
-// ── Component ────────────────────────────────────────────────────────────────
+function computeTierProgression(word, correct) {
+  const currentTier   = word.tier        ?? 0;
+  const currentStreak = word.tier_streak ?? 0;
+  if (!correct) return { tier: currentTier, tier_streak: 0 };
+  const newStreak = currentStreak + 1;
+  if (newStreak >= TIER_GRADUATION_STREAK && currentTier < MAX_TIER) {
+    return { tier: currentTier + 1, tier_streak: 0 };
+  }
+  return { tier: currentTier, tier_streak: newStreak };
+}
+
+function shuffle(arr) {
+  const a = [...arr];
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
+// ── Component ─────────────────────────────────────────────────────────────────
 
 export default function Session() {
-  const { user }    = useAuth();
-  const { level }   = useSettings();
-  const navigate    = useNavigate();
+  const { user }     = useAuth();
+  const { level }    = useSettings();
+  const navigate     = useNavigate();
   const { pathname } = useLocation();
-  const isExplore   = pathname === "/vocabulary/explore";
+  const isExplore    = pathname === "/vocabulary/explore";
 
-  // ── Session state ──────────────────────────────────────────────────────────
+  // ── Session state ─────────────────────────────────────────────────────────
   const [phase,        setPhase]        = useState("loading");
   const [words,        setWords]        = useState([]);
   const [currentIdx,   setCurrentIdx]   = useState(0);
@@ -105,29 +124,37 @@ export default function Session() {
   const [streak,       setStreak]       = useState(0);
   const [correctCount, setCorrectCount] = useState(0);
   const [totalCount,   setTotalCount]   = useState(0);
-  const [leveledUp,    setLeveledUp]    = useState(0);
   const [error,        setError]        = useState(null);
+  const [sessionResults, setSessionResults] = useState({});
 
-  // Card-specific loading/data state
-  const [distractors,  setDistractors]  = useState([]);
-  const [clozeData,    setClozeData]    = useState(null);
-  const [cardLoading,  setCardLoading]  = useState(false);
-  const [grading,      setGrading]      = useState(false);
+  // Card-specific state
+  const [distractors, setDistractors] = useState([]);
+  const [clozeData,   setClozeData]   = useState(null);
+  const [cardLoading, setCardLoading] = useState(false);
+  const [grading,     setGrading]     = useState(false);
 
-  // Explore mode state
+  // Explore state
   const [exploreSettings, setExploreSettings] = useState(null);
   const [exploreWord,     setExploreWord]     = useState(null);
   const [recentWords,     setRecentWords]     = useState([]);
 
-  // Stale closure guard
+  // Stale closure guards
   const wordsRef = useRef(words);
   useEffect(() => { wordsRef.current = words; }, [words]);
 
-  // ── Derived ────────────────────────────────────────────────────────────────
-  const currentWord    = isExplore ? exploreWord : words[currentIdx];
-  const exerciseType   = currentWord ? getExerciseType(currentWord) : null;
+  // Tracks which word IDs have already had SRS written this session.
+  // Persists across retries — SRS only writes once per word per session.
+  const reviewedThisSession = useRef(new Set());
 
-  // ── Load due words (My Words mode) ────────────────────────────────────────
+  // ── Derived ───────────────────────────────────────────────────────────────
+  const currentWord  = isExplore ? exploreWord : words[currentIdx];
+  const exerciseType = currentWord ? getExerciseType(currentWord) : null;
+
+  // How many words does the current exercise step consume?
+  // Matching = 4 words at once, everything else = 1.
+  const stepSize = exerciseType === "matching" ? 4 : 1;
+
+  // ── Load due words ────────────────────────────────────────────────────────
   useEffect(() => {
     if (isExplore) { setPhase("explore_setup"); return; }
     (async () => {
@@ -144,7 +171,7 @@ export default function Session() {
     })();
   }, [user.uid, isExplore]);
 
-  // ── Prepare card data when word/type changes ───────────────────────────────
+  // ── Prepare card when word/index changes ──────────────────────────────────
   useEffect(() => {
     if (!currentWord || phase !== "active") return;
     setFeedback(null);
@@ -156,34 +183,90 @@ export default function Session() {
   const prepareCard = useCallback(async (word, exType) => {
     if (exType === "mc") {
       setCardLoading(true);
-      try {
-        const d = await generateDistractors(word, level);
-        setDistractors(d);
-      } catch { setDistractors(["—", "—", "—"]); }
+      try   { setDistractors(await generateDistractors(word, level)); }
+      catch { setDistractors(["—", "—", "—"]); }
       setCardLoading(false);
     }
     if (exType === "cloze") {
       setCardLoading(true);
-      try {
-        const c = await generateCloze(word, level);
-        setClozeData(c);
-      } catch { setClozeData(null); }
+      try   { setClozeData(await generateCloze(word, level)); }
+      catch { setClozeData(null); }
       setCardLoading(false);
     }
   }, [level]);
 
-  // ── Answer handlers ────────────────────────────────────────────────────────
+  // ── SRS + tier update ─────────────────────────────────────────────────────
+  // Returns true if SRS was actually written (first review this session),
+  // false if skipped (retry pass).
+  const handleSrsUpdate = async (word, exType, correct) => {
+    const alreadyReviewed = reviewedThisSession.current.has(word.id);
 
-  // MC — tap answer
+    const { tier: newTier, tier_streak: newStreak } = computeTierProgression(word, correct);
+    const graduated = newTier > (word.tier ?? 0);
+
+    // Always record display result
+    setSessionResults(prev => ({
+      ...prev,
+      [word.id]: {
+        correct,
+        graduated: alreadyReviewed ? false : graduated, // no graduation credit on retry
+        fromTier:  word.tier ?? 0,
+        toTier:    newTier,
+        word:      word.word,
+        translation: word.translation,
+      },
+    }));
+
+    // Update local word state for live tier badge
+    setWords(prev => prev.map(w =>
+      w.id === word.id ? { ...w, tier: newTier, tier_streak: newStreak } : w
+    ));
+
+    if (alreadyReviewed) return false; // skip DB write on retry
+
+    // Mark as reviewed before the async write so rapid taps can't double-write
+    reviewedThisSession.current.add(word.id);
+
+    try {
+      const newSrs = await callSrsUpdate({
+        quality:       deriveQuality(exType, correct),
+        interval_days: word.interval_days ?? 0,
+        ease_factor:   word.ease_factor   ?? 2.5,
+        review_count:  word.review_count  ?? 0,
+      });
+      await updateWordSrs(user.uid, word.id, {
+        ...newSrs,
+        tier:        newTier,
+        tier_streak: newStreak,
+      });
+    } catch (e) {
+      console.warn("SRS update failed silently:", e);
+      // Remove from set so a retry could attempt the write again
+      reviewedThisSession.current.delete(word.id);
+    }
+
+    return true;
+  };
+
+  // ── Answer handlers ───────────────────────────────────────────────────────
+
   const handleMcAnswer = useCallback(async (correct) => {
-    const fb = { correct, feedback: correct ? "Good recall!" : `Correct: ${currentWord.translation}` };
+    const fb = {
+      correct,
+      feedback: correct ? "Good recall!" : `Correct answer: ${currentWord.translation}`,
+    };
     setFeedback(fb);
-    setTotalCount(t => t + 1);
-    if (correct) { setCorrectCount(c => c + 1); setStreak(s => s + 1); }
-    else setStreak(0);
+
+    const counted = !reviewedThisSession.current.has(currentWord.id);
+    if (counted) {
+      setTotalCount(t => t + 1);
+      if (correct) { setCorrectCount(c => c + 1); setStreak(s => s + 1); }
+      else setStreak(0);
+    }
+
+    await handleSrsUpdate(currentWord, "mc", correct);
   }, [currentWord]);
 
-  // Translate / Cloze / Sentence — submit text
   const handleTextAnswer = useCallback(async (studentAnswer) => {
     if (!currentWord) return;
     setGrading(true);
@@ -193,32 +276,20 @@ export default function Session() {
 
     try {
       if (exerciseType === "translate_ru_en") {
-        // Client-side exact match first
         const exact = studentAnswer.trim().toLowerCase() === currentWord.translation?.trim().toLowerCase();
         if (exact) {
-          correct = true;
-          feedbackText = "Correct!";
+          correct = true; feedbackText = "Correct!";
         } else {
-          const result = await gradeAnswer({
-            mode: "translate_ru_en", word: currentWord, studentAnswer,
-          });
-          correct      = result.correct;
-          feedbackText = result.feedback;
+          const result = await gradeAnswer({ mode: "translate_ru_en", word: currentWord, studentAnswer });
+          correct = result.correct; feedbackText = result.feedback;
         }
       } else {
-        const modeMap = {
-          translate_en_ru: "translate_en_ru",
-          cloze:           "cloze",
-          sentence:        "sentence",
-        };
-        const result = await gradeAnswer({
-          mode:          modeMap[exerciseType],
-          word:          currentWord,
-          studentAnswer,
-          correctAnswer: clozeData?.answer,
+        const modeMap = { translate_en_ru: "translate_en_ru", cloze: "cloze", sentence: "sentence" };
+        const result  = await gradeAnswer({
+          mode: modeMap[exerciseType], word: currentWord,
+          studentAnswer, correctAnswer: clozeData?.answer,
         });
-        correct      = result.correct;
-        feedbackText = result.feedback;
+        correct = result.correct; feedbackText = result.feedback;
       }
     } catch {
       feedbackText = "Could not grade — please try again.";
@@ -226,87 +297,80 @@ export default function Session() {
 
     setGrading(false);
     setFeedback({ correct, feedback: feedbackText });
-    setTotalCount(t => t + 1);
-    if (correct) { setCorrectCount(c => c + 1); setStreak(s => s + 1); }
-    else setStreak(0);
 
-    if (!isExplore) {
-      await handleSrsUpdate(currentWord, exerciseType, correct);
+    const counted = !reviewedThisSession.current.has(currentWord.id);
+    if (counted) {
+      setTotalCount(t => t + 1);
+      if (correct) { setCorrectCount(c => c + 1); setStreak(s => s + 1); }
+      else setStreak(0);
     }
+
+    if (!isExplore) await handleSrsUpdate(currentWord, exerciseType, correct);
   }, [currentWord, exerciseType, clozeData, isExplore]);
 
-  // SRS update after feedback is shown
-  const handleSrsUpdate = async (word, exType, correct, matchWords) => {
-    const quality = deriveQuality(exType, correct);
-    try {
-      const newSrs = await callSrsUpdate({
-        quality,
-        interval_days: word.interval_days  ?? 0,
-        ease_factor:   word.ease_factor    ?? 2.5,
-        review_count:  word.review_count   ?? 0,
-      });
-
-      const wasCloze = exType === "cloze";
-      await updateWordSrs(user.uid, word.id, {
-        ...newSrs,
-        last_exercise_was_cloze: wasCloze,
-      });
-
-      // Track "leveled up" (review_count crossing a tier boundary)
-      const oldRc = word.review_count ?? 0;
-      const newRc = newSrs.review_count;
-      if (correct && (
-        (oldRc < 1  && newRc >= 1)  ||
-        (oldRc < 3  && newRc >= 3)  ||
-        (oldRc < 6  && newRc >= 6)  ||
-        (oldRc < 10 && newRc >= 10)
-      )) setLeveledUp(l => l + 1);
-
-      // Update local word state so tier badge is current for rest of session
-      if (!matchWords) {
-        setWords(prev => prev.map(w => w.id === word.id ? { ...w, ...newSrs, last_exercise_was_cloze: wasCloze } : w));
-      }
-    } catch (e) {
-      console.warn("SRS update failed silently:", e);
+  // Matching: fires when all 4 pairs are matched.
+  // Updates SRS for all 4 words, counts them all toward accuracy.
+  const handleMatchComplete = useCallback(async () => {
+    const matchWords = words.slice(currentIdx, currentIdx + 4);
+    console.log("handleMatchComplete fired, matchWords:", matchWords);
+    // Count toward accuracy only for words not yet reviewed this session
+    const newCorrect = matchWords.filter(w => !reviewedThisSession.current.has(w.id)).length;
+    if (newCorrect > 0) {
+      setTotalCount(t => t + newCorrect);
+      setCorrectCount(c => c + newCorrect);
+      setStreak(s => s + newCorrect);
     }
-  };
 
-  // Next button
+    await Promise.all(matchWords.map(w => handleSrsUpdate(w, "matching", true)));
+  }, [words, currentIdx]);
+
+  const handleSkip = useCallback(async () => {
+    if (!currentWord) return;
+
+    const counted = !reviewedThisSession.current.has(currentWord.id);
+    if (counted) {
+      setTotalCount(t => t + 1);
+      setStreak(0);
+    }
+
+    if (!isExplore) await handleSrsUpdate(currentWord, exerciseType, false);
+    handleNext();
+  }, [currentWord, exerciseType, isExplore]);
+
+  // ── Navigation ────────────────────────────────────────────────────────────
+
   const handleNext = useCallback(() => {
     if (isExplore) {
-      // In explore mode — generate next exercise
       setExploreWord(null);
       setFeedback(null);
       setPhase("active");
       generateExploreExercise(exploreSettings);
       return;
     }
-    const nextIdx = currentIdx + 1;
+    const nextIdx = currentIdx + stepSize;
     if (nextIdx >= words.length) {
       setPhase("complete");
     } else {
       setCurrentIdx(nextIdx);
       setFeedback(null);
     }
-  }, [currentIdx, words, isExplore, exploreSettings]);
+  }, [currentIdx, stepSize, words, isExplore, exploreSettings]);
 
-  // Matching auto-completes when all 4 pairs matched
-  const handleMatchComplete = useCallback(async () => {
-    if (!currentWord) return;
-    await handleSrsUpdate(currentWord, "matching", true, words.slice(0, 4));
-    handleNext();
-  }, [currentWord, words, handleNext]);
+  // Retry: reshuffle words, reset display state, keep reviewedThisSession intact
+  const handleRetry = useCallback(() => {
+    setWords(prev => shuffle([...prev]));
+    setCurrentIdx(0);
+    setFeedback(null);
+    setStreak(0);
+    setCorrectCount(0);
+    setTotalCount(0);
+    setSessionResults({});
+    setDistractors([]);
+    setClozeData(null);
+    setPhase("active");
+  }, []);
 
-  // Skip / I don't know
-  const handleSkip = useCallback(async () => {
-    if (!currentWord) return;
-    if (!isExplore) {
-      await handleSrsUpdate(currentWord, exerciseType, false);
-    }
-    handleNext();
-  }, [currentWord, exerciseType, isExplore, handleNext]);
-
-  // ── Explore mode ───────────────────────────────────────────────────────────
+  // ── Explore mode ──────────────────────────────────────────────────────────
 
   const generateExploreExercise = useCallback(async (settings) => {
     if (!settings) return;
@@ -315,41 +379,37 @@ export default function Session() {
       translate: "explore_translate",
       mc:        "explore_mc",
       cloze:     "explore_cloze",
-      sentence:  "explore_translate", // generate a word first, then use SentenceCard
+      sentence:  "explore_translate",
     };
     try {
-      const data = await (async () => {
-        const res = await fetch("/api/vocab-generate", {
-          method:  "POST",
-          headers: { "Content-Type": "application/json" },
-          body:    JSON.stringify({
-            mode:         modeMap[settings.exerciseMode],
-            level,
-            topics:       settings.topics.join(", "),
-            pos_types:    settings.posTypes.join(", "),
-            recent_words: recentWords.slice(-8).join(", "),
-          }),
-        });
-        if (!res.ok) throw new Error("generate failed");
-        return res.json();
-      })();
+      const res = await fetch("/api/vocab-generate", {
+        method:  "POST",
+        headers: { "Content-Type": "application/json" },
+        body:    JSON.stringify({
+          mode:         modeMap[settings.exerciseMode],
+          level,
+          topics:       settings.topics.join(", "),
+          pos_types:    settings.posTypes.join(", "),
+          recent_words: recentWords.slice(-8).join(", "),
+        }),
+      });
+      if (!res.ok) throw new Error("generate failed");
+      const data = await res.json();
 
-      // Shape the returned data into a word-like object
       const syntheticWord = {
-        id:             `explore-${Date.now()}`,
-        word:           data.word_ru,
-        translation:    data.word_en,
+        id:          `explore-${Date.now()}`,
+        word:        data.word_ru,
+        translation: data.word_en,
         part_of_speech: data.part_of_speech,
-        review_count:   999, // force sentence card for sentence mode
-        is_mastered:    false,
-        last_exercise_was_cloze: false,
+        tier:        5,
+        tier_streak: 0,
+        is_mastered: false,
       };
 
       setExploreWord(syntheticWord);
       setRecentWords(r => [...r.slice(-15), data.word_ru]);
 
       if (settings.exerciseMode === "mc" && data.options) {
-        // API returned options directly
         setDistractors(data.options.filter(o => o !== data.correct_option));
       } else if (settings.exerciseMode === "cloze" && data.sentence_before) {
         setClozeData({
@@ -373,14 +433,19 @@ export default function Session() {
     generateExploreExercise(settings);
   };
 
-  // ── Render helpers ─────────────────────────────────────────────────────────
+  // ── Render helpers ────────────────────────────────────────────────────────
 
-  const progress = words.length > 0 ? `${currentIdx + 1} / ${words.length}` : "";
-  const pct      = words.length > 0 ? (currentIdx / words.length) * 100 : 0;
-  const accuracy = totalCount > 0 ? Math.round((correctCount / totalCount) * 100) : null;
+  // Progress counts words, not steps. Matching jumps by 4.
+  const reviewedCount = currentIdx; // words completed so far
+  const progress      = words.length > 0 ? `${reviewedCount} / ${words.length}` : "";
+  const pct           = words.length > 0 ? (reviewedCount / words.length) * 100 : 0;
+  const accuracy      = totalCount > 0 ? Math.round((correctCount / totalCount) * 100) : null;
+
+  const tierLabel = (t) =>
+    ["Matching","Multiple Choice","Translate RU→EN","Cloze","Translate EN→RU","Sentence Builder"][t] ?? "—";
 
   const nextDueTime = () => {
-    const future = words
+    const future = wordsRef.current
       .filter(w => w.next_review_at)
       .map(w => new Date(w.next_review_at))
       .filter(d => d > new Date())
@@ -391,10 +456,18 @@ export default function Session() {
     return hrs < 1 ? "less than 1 hour" : `${hrs} hour${hrs !== 1 ? "s" : ""}`;
   };
 
-  // ── Render ─────────────────────────────────────────────────────────────────
+  // ── Phase renders ─────────────────────────────────────────────────────────
 
-  if (phase === "loading") return <div className={styles.center}><p>Loading your words…</p></div>;
-  if (phase === "error")   return <div className={styles.center}><p className={styles.error}>{error}</p><button className={styles.backBtn} onClick={() => navigate("/vocabulary")}>← Back</button></div>;
+  if (phase === "loading") return (
+    <div className={styles.center}><p>Loading your words…</p></div>
+  );
+
+  if (phase === "error") return (
+    <div className={styles.center}>
+      <p className={styles.error}>{error}</p>
+      <button className={styles.backBtn} onClick={() => navigate("/vocabulary")}>← Back</button>
+    </div>
+  );
 
   if (phase === "nothing_due") return (
     <div className={styles.center}>
@@ -418,36 +491,111 @@ export default function Session() {
     </div>
   );
 
-  if (phase === "complete") return (
-    <div className={styles.center}>
-      <div className={styles.completeCard}>
-        <div className={styles.completeIcon}>🎉</div>
-        <h2>Session complete</h2>
-        <p>{words.length} words reviewed · {nextDueTime() ? `next due in ${nextDueTime()}` : "all up to date"}</p>
-        <div className={styles.statsGrid}>
-          <div className={styles.statCell}>
-            <span className={styles.statVal}>{accuracy !== null ? `${accuracy}%` : "—"}</span>
-            <span className={styles.statLbl}>accuracy</span>
+  // ── Session Summary ───────────────────────────────────────────────────────
+  if (phase === "complete") {
+    const resultsList = Object.values(sessionResults);
+    const graduated   = resultsList.filter(r => r.graduated);
+    const wrong       = resultsList.filter(r => !r.correct);
+    const correctList = resultsList.filter(r => r.correct);
+
+    return (
+      <div className={styles.center}>
+        <div className={styles.summaryCard}>
+          <div className={styles.summaryHeader}>
+            <span className={styles.summaryIcon}>🎉</span>
+            <h2 className={styles.summaryTitle}>Session Complete</h2>
+            <p className={styles.summarySubtitle}>
+              {words.length} word{words.length !== 1 ? "s" : ""} reviewed
+              {nextDueTime() ? ` · next due in ${nextDueTime()}` : " · all up to date"}
+            </p>
           </div>
-          <div className={styles.statCell}>
-            <span className={styles.statVal}>{streak}</span>
-            <span className={styles.statLbl}>streak</span>
+
+          <div className={styles.summaryStats}>
+            <div className={styles.summaryStat}>
+              <span className={styles.summaryStatVal}>{accuracy !== null ? `${accuracy}%` : "—"}</span>
+              <span className={styles.summaryStatLbl}>accuracy</span>
+            </div>
+            <div className={styles.summaryStat}>
+              <span className={styles.summaryStatVal}>{correctList.length}</span>
+              <span className={styles.summaryStatLbl}>correct</span>
+            </div>
+            <div className={styles.summaryStat}>
+              <span className={styles.summaryStatVal} style={{ color: graduated.length > 0 ? "#3b6d11" : undefined }}>
+                {graduated.length}
+              </span>
+              <span className={styles.summaryStatLbl}>leveled up</span>
+            </div>
           </div>
-          <div className={styles.statCell}>
-            <span className={styles.statVal}>{leveledUp}</span>
-            <span className={styles.statLbl}>leveled up</span>
+
+          {graduated.length > 0 && (
+            <div className={styles.summarySection}>
+              <p className={styles.summarySectionLabel}>⬆ TIER GRADUATIONS</p>
+              <div className={styles.summaryWordList}>
+                {graduated.map(r => (
+                  <div key={r.word} className={styles.summaryWordRow}>
+                    <span className={`${styles.summaryWordRu} ru`}>{r.word}</span>
+                    <span className={styles.summaryWordEn}>{r.translation}</span>
+                    <span className={styles.summaryTierBadge}>Tier {r.fromTier} → {r.toTier}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {wrong.length > 0 && (
+            <div className={styles.summarySection}>
+              <p className={styles.summarySectionLabel}>✗ NEEDS WORK</p>
+              <div className={styles.summaryWordList}>
+                {wrong.map(r => (
+                  <div key={r.word} className={`${styles.summaryWordRow} ${styles.summaryWordWrong}`}>
+                    <span className={`${styles.summaryWordRu} ru`}>{r.word}</span>
+                    <span className={styles.summaryWordEn}>{r.translation}</span>
+                    <span className={styles.summaryTierSmall}>Tier {r.fromTier} · {tierLabel(r.fromTier)}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          <div className={styles.summarySection}>
+            <p className={styles.summarySectionLabel}>ALL WORDS THIS SESSION</p>
+            <div className={styles.summaryWordList}>
+              {words.map(w => {
+                const r = sessionResults[w.id];
+                return (
+                  <div key={w.id} className={styles.summaryWordRow}>
+                    <span className={`${styles.summaryWordRu} ru`}>{w.word}</span>
+                    <span className={styles.summaryWordEn}>{w.translation}</span>
+                    {r ? (
+                      <span className={r.correct ? styles.summaryCorrectBadge : styles.summaryWrongBadge}>
+                        {r.correct ? "✓" : "✗"}
+                      </span>
+                    ) : (
+                      <span className={styles.summarySkippedBadge}>—</span>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+
+          <div className={styles.summaryActions}>
+            <button className={styles.retryBtn} onClick={handleRetry}>
+              Retry This Session
+            </button>
+            <button className={styles.backBtn} onClick={() => navigate("/vocabulary")}>
+              Back to Vocabulary
+            </button>
           </div>
         </div>
-        <button className={styles.backBtn} onClick={() => navigate("/vocabulary")}>Back to Vocabulary</button>
       </div>
-    </div>
-  );
+    );
+  }
 
-  // Active session
+  // ── Active session ────────────────────────────────────────────────────────
   return (
     <div className={styles.sessionPage}>
 
-      {/* Progress row */}
       {!isExplore && (
         <div className={styles.progressRow}>
           <div className={styles.streakBox}>
@@ -474,14 +622,15 @@ export default function Session() {
       <div className={styles.sessionBody}>
         <div className={styles.cardArea}>
 
-          {/* Exercise cards */}
           {exerciseType === "matching" && (
             <MatchingCard
-              words={words.slice(0, 4)}
-              onComplete={handleMatchComplete}
+              words={words.slice(currentIdx, currentIdx + 4)}
+              onComplete={async () => {
+                await handleMatchComplete();
+                handleNext();
+            }}
             />
           )}
-
           {exerciseType === "mc" && currentWord && (
             <MultipleChoiceCard
               word={currentWord}
@@ -491,7 +640,6 @@ export default function Session() {
               feedback={feedback}
             />
           )}
-
           {(exerciseType === "translate_ru_en" || exerciseType === "translate_en_ru") && currentWord && (
             <TranslateCard
               word={currentWord}
@@ -501,7 +649,6 @@ export default function Session() {
               grading={grading}
             />
           )}
-
           {exerciseType === "cloze" && currentWord && (
             <ClozeCard
               word={currentWord}
@@ -512,7 +659,6 @@ export default function Session() {
               grading={grading}
             />
           )}
-
           {exerciseType === "sentence" && currentWord && (
             <SentenceCard
               word={currentWord}
@@ -522,35 +668,76 @@ export default function Session() {
             />
           )}
 
-          {/* Next / Skip row */}
-          {phase === "active" && (
+          {phase === "active" && exerciseType !== "matching" && (
             <div className={styles.actionRow}>
-              {feedback ? (
-                <button className={styles.nextBtn} onClick={handleNext}>Next →</button>
-              ) : (
-                exerciseType !== "matching" && (
-                  <button className={styles.skipBtn} onClick={handleSkip}>I don't know</button>
-                )
-              )}
+                {feedback ? (
+                    <button className={styles.nextBtn} onClick={handleNext}>Next →</button>
+                ) : (
+                    <button className={styles.skipBtn} onClick={handleSkip}>I don't know</button>
+                )}
             </div>
-          )}
+        )}
         </div>
 
-        {/* Desktop sidebar */}
-        <div className={styles.sidebar}>
-          <div className={styles.sidebarCard}>
-            <p className={styles.sidebarLabel}>Words Due</p>
-            <p className={styles.sidebarVal}>{words.length}</p>
+        {!isExplore && (
+          <div className={styles.sidebar}>
+            <div className={styles.sidebarCard}>
+              <p className={styles.sidebarLabel}>Words Due</p>
+              <p className={styles.sidebarVal}>{words.length}</p>
+            </div>
+            <div className={styles.sidebarCard}>
+              <p className={styles.sidebarLabel}>Accuracy</p>
+              <p className={styles.sidebarVal}>{accuracy !== null ? `${accuracy}%` : "—"}</p>
+            </div>
+            <div className={styles.sidebarCard}>
+              <p className={styles.sidebarLabel}>Streak</p>
+              <p className={styles.sidebarVal} style={{ color: "#5B9EBD" }}>{streak}</p>
+            </div>
+
+            <div className={`${styles.sidebarCard} ${styles.sidebarWordList}`}>
+              <p className={styles.sidebarLabel}>This Session</p>
+              <div className={styles.sessionWordList}>
+                {words.map((w, i) => {
+                  const result    = sessionResults[w.id];
+                  const isCurrent = exerciseType === "matching"
+                    ? (i >= currentIdx && i < currentIdx + 4)
+                    : i === currentIdx;
+                  const isDone    = result !== undefined;
+
+                  return (
+                    <div
+                      key={w.id}
+                      className={[
+                        styles.sessionWordItem,
+                        isCurrent ? styles.sessionWordCurrent : "",
+                        isDone && result.correct  ? styles.sessionWordCorrect : "",
+                        isDone && !result.correct ? styles.sessionWordWrongItem : "",
+                      ].join(" ")}
+                    >
+                      <span
+                        className={styles.sessionWordStatus}
+                        style={{
+                            color: isDone
+                                ? (result.correct ? "#3b6d11" : "var(--c-wrong)")
+                                : isCurrent ? "var(--c-sky)" : undefined,
+                        }}
+                    >
+                        {isDone
+                            ? (result.correct ? "✓" : "✗")
+                            : isCurrent ? "▶" : "·"
+                        }
+                    </span>
+                      <span className={`${styles.sessionWordRu} ru`}>{w.word}</span>
+                      {result?.graduated && (
+                        <span className={styles.sessionWordGrad}>↑</span>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
           </div>
-          <div className={styles.sidebarCard}>
-            <p className={styles.sidebarLabel}>Accuracy</p>
-            <p className={styles.sidebarVal}>{accuracy !== null ? `${accuracy}%` : "—"}</p>
-          </div>
-          <div className={styles.sidebarCard}>
-            <p className={styles.sidebarLabel}>Streak</p>
-            <p className={styles.sidebarVal} style={{ color: "#5B9EBD" }}>{streak}</p>
-          </div>
-        </div>
+        )}
       </div>
     </div>
   );
