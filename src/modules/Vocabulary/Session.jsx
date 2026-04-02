@@ -209,7 +209,7 @@ export default function Session() {
       ...prev,
       [word.id]: {
         correct,
-        graduated: alreadyReviewed ? false : graduated, // no graduation credit on retry
+        graduated: alreadyReviewed ? false : graduated,
         fromTier:  word.tier ?? 0,
         toTier:    newTier,
         word:      word.word,
@@ -222,18 +222,31 @@ export default function Session() {
       w.id === word.id ? { ...w, tier: newTier, tier_streak: newStreak } : w
     ));
 
-    if (alreadyReviewed) return false; // skip DB write on retry
+    if (alreadyReviewed) return false;
 
-    // Mark as reviewed before the async write so rapid taps can't double-write
     reviewedThisSession.current.add(word.id);
 
     try {
-      const newSrs = await callSrsUpdate({
-        quality:       deriveQuality(exType, correct),
-        interval_days: word.interval_days ?? 0,
-        ease_factor:   word.ease_factor   ?? 2.5,
-        review_count:  word.review_count  ?? 0,
-      });
+      let newSrs;
+      if (word.is_mastered) {
+        // Mastered words get a fixed 30-day interval instead of SM-2 scaling.
+        // This keeps them in rotation without letting them crowd out active words.
+        const next = new Date();
+        next.setDate(next.getDate() + 30);
+        newSrs = {
+          next_review_at: next.toISOString(),
+          interval_days:  30,
+          ease_factor:    word.ease_factor  ?? 2.5, // preserve existing ease
+          review_count:   (word.review_count ?? 0) + 1,
+        };
+      } else {
+        newSrs = await callSrsUpdate({
+          quality:       deriveQuality(exType, correct),
+          interval_days: word.interval_days ?? 0,
+          ease_factor:   word.ease_factor   ?? 2.5,
+          review_count:  word.review_count  ?? 0,
+        });
+      }
       await updateWordSrs(user.uid, word.id, {
         ...newSrs,
         tier:        newTier,
@@ -241,7 +254,6 @@ export default function Session() {
       });
     } catch (e) {
       console.warn("SRS update failed silently:", e);
-      // Remove from set so a retry could attempt the write again
       reviewedThisSession.current.delete(word.id);
     }
 

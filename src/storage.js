@@ -111,27 +111,35 @@ export async function deleteWord(userId, word) {
  * so the Matching card always has a full set of 4.
  */
 export async function getDueWords(userId, limit = 20) {
-  // Primary: due words (null next_review_at counts as due)
+  // Primary: non-mastered words with null next_review_at (never reviewed)
+  // + any word (mastered or not) whose next_review_at is genuinely past due.
+  // Mastered words with null next_review_at are excluded from the primary
+  // fetch — they only appear via the padding fallback below.
   const { data: due, error: dueErr } = await supabase
     .from("words")
     .select("*")
     .eq("user_id", userId)
-    .or("next_review_at.is.null,next_review_at.lte." + new Date().toISOString())
+    .or(
+      "and(is_mastered.eq.false,next_review_at.is.null)," +
+      "next_review_at.lte." + new Date().toISOString()
+    )
     .order("next_review_at", { ascending: true, nullsFirst: true })
     .limit(limit);
   if (dueErr) throw dueErr;
 
   if (due.length >= 4) return due;
 
-  // Pad with mastered words so Matching always gets a full set of 4
+  // Pad with any non-due words to ensure Matching always has a full set of 4.
+  // Ordered by next_review_at ASC so soonest-due words are preferred over
+  // mastered words sitting at 30-day intervals.
   const dueIds = due.map(w => w.id);
   const needed = 4 - due.length;
   const { data: padded, error: padErr } = await supabase
     .from("words")
     .select("*")
     .eq("user_id", userId)
-    .eq("is_mastered", true)
     .not("id", "in", `(${dueIds.length > 0 ? dueIds.join(",") : "00000000-0000-0000-0000-000000000000"})`)
+    .order("next_review_at", { ascending: true, nullsFirst: false })
     .limit(needed);
   if (padErr) throw padErr;
 
