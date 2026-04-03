@@ -61,11 +61,11 @@ export default function VocabHome() {
   const { user }              = useAuth();
   const { words, setWords }   = useWordBank();
 
-  // Eagerly load words if the word bank overlay hasn't been opened yet
+  // Always re-fetch words when VocabHome mounts so stats reflect latest session
   useEffect(() => {
-    if (!user || words !== null) return;
+    if (!user) return;
     getWords(user.uid).then(fetched => setWords(fetched ?? []));
-  }, [user, words, setWords]);
+  }, [user]); // intentionally omits `words` — we want a fresh pull every mount
 
   // ── Derived stats ────────────────────────────────────────────────────────
   const totalWords    = words?.length ?? 0;

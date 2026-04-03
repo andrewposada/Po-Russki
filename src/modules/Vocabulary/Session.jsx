@@ -195,48 +195,20 @@ export default function Session() {
     }
   }, [level]);
 
-  // ── SRS + tier update ─────────────────────────────────────────────────────
-  // Returns true if SRS was actually written (first review this session),
-  // false if skipped (retry pass).
-  const handleSrsUpdate = async (word, exType, correct) => {
-    const alreadyReviewed = reviewedThisSession.current.has(word.id);
-
-    const { tier: newTier, tier_streak: newStreak } = computeTierProgression(word, correct);
-    const graduated = newTier > (word.tier ?? 0);
-
-    // Always record display result
-    setSessionResults(prev => ({
-      ...prev,
-      [word.id]: {
-        correct,
-        graduated: alreadyReviewed ? false : graduated,
-        fromTier:  word.tier ?? 0,
-        toTier:    newTier,
-        word:      word.word,
-        translation: word.translation,
-      },
-    }));
-
-    // Update local word state for live tier badge
-    setWords(prev => prev.map(w =>
-      w.id === word.id ? { ...w, tier: newTier, tier_streak: newStreak } : w
-    ));
-
-    if (alreadyReviewed) return false;
-
-    reviewedThisSession.current.add(word.id);
-
+  // ── Background DB writer with retry ──────────────────────────────────────
+// Attempts the full SRS write (API calc + DB upsert) up to maxAttempts times.
+// Called fire-and-forget — never awaited by UI code.
+async function writeSrsWithRetry(userId, word, exType, correct, newTier, newStreak, maxAttempts = 3) {
+  for (let attempt = 1; attempt <= maxAttempts; attempt++) {
     try {
       let newSrs;
       if (word.is_mastered) {
-        // Mastered words get a fixed 30-day interval instead of SM-2 scaling.
-        // This keeps them in rotation without letting them crowd out active words.
         const next = new Date();
         next.setDate(next.getDate() + 30);
         newSrs = {
           next_review_at: next.toISOString(),
           interval_days:  30,
-          ease_factor:    word.ease_factor  ?? 2.5, // preserve existing ease
+          ease_factor:    word.ease_factor ?? 2.5,
           review_count:   (word.review_count ?? 0) + 1,
         };
       } else {
@@ -247,22 +219,63 @@ export default function Session() {
           review_count:  word.review_count  ?? 0,
         });
       }
-      await updateWordSrs(user.uid, word.id, {
+      await updateWordSrs(userId, word.id, {
         ...newSrs,
         tier:        newTier,
         tier_streak: newStreak,
       });
+      return; // success — done
     } catch (e) {
-      console.warn("SRS update failed silently:", e);
-      reviewedThisSession.current.delete(word.id);
+      const isLastAttempt = attempt === maxAttempts;
+      if (isLastAttempt) {
+        console.warn(`SRS write failed after ${maxAttempts} attempts for word "${word.word}":`, e);
+      } else {
+        // Exponential backoff: 1s, 2s, 4s
+        await new Promise(res => setTimeout(res, 1000 * Math.pow(2, attempt - 1)));
+      }
     }
+  }
+}
 
-    return true;
-  };
+// ── SRS + tier update ─────────────────────────────────────────────────────
+// Updates local UI state immediately (optimistic), then fires DB write
+// in the background. Never awaited — caller returns instantly.
+const handleSrsUpdate = (word, exType, correct) => {
+  const alreadyReviewed = reviewedThisSession.current.has(word.id);
+
+  const { tier: newTier, tier_streak: newStreak } = computeTierProgression(word, correct);
+  const graduated = newTier > (word.tier ?? 0);
+
+  // Always update display state immediately
+  setSessionResults(prev => ({
+    ...prev,
+    [word.id]: {
+      correct,
+      graduated: alreadyReviewed ? false : graduated,
+      fromTier:  word.tier ?? 0,
+      toTier:    newTier,
+      word:      word.word,
+      translation: word.translation,
+    },
+  }));
+
+  // Update local word state for live tier badge
+  setWords(prev => prev.map(w =>
+    w.id === word.id ? { ...w, tier: newTier, tier_streak: newStreak } : w
+  ));
+
+  if (alreadyReviewed) return;
+
+  // Mark reviewed before the async work starts so rapid taps don't double-write
+  reviewedThisSession.current.add(word.id);
+
+  // Fire and forget — UI does not wait for this
+  writeSrsWithRetry(user.uid, word, exType, correct, newTier, newStreak);
+};
 
   // ── Answer handlers ───────────────────────────────────────────────────────
 
-  const handleMcAnswer = useCallback(async (correct) => {
+  const handleMcAnswer = useCallback((correct) => {
     const fb = {
       correct,
       feedback: correct ? "Good recall!" : `Correct answer: ${currentWord.translation}`,
@@ -276,7 +289,7 @@ export default function Session() {
       else setStreak(0);
     }
 
-    await handleSrsUpdate(currentWord, "mc", correct);
+    handleSrsUpdate(currentWord, "mc", correct);
   }, [currentWord]);
 
   const handleTextAnswer = useCallback(async (studentAnswer) => {
@@ -317,7 +330,7 @@ export default function Session() {
       else setStreak(0);
     }
 
-    if (!isExplore) await handleSrsUpdate(currentWord, exerciseType, correct);
+    if (!isExplore) handleSrsUpdate(currentWord, exerciseType, correct);
   }, [currentWord, exerciseType, clozeData, isExplore]);
 
   // Matching: fires when all 4 pairs are matched.
@@ -333,7 +346,7 @@ export default function Session() {
       setStreak(s => s + newCorrect);
     }
 
-    await Promise.all(matchWords.map(w => handleSrsUpdate(w, "matching", true)));
+    matchWords.forEach(w => handleSrsUpdate(w, "matching", true));
   }, [words, currentIdx]);
 
   const handleSkip = useCallback(async () => {
@@ -345,7 +358,7 @@ export default function Session() {
       setStreak(0);
     }
 
-    if (!isExplore) await handleSrsUpdate(currentWord, exerciseType, false);
+    if (!isExplore) handleSrsUpdate(currentWord, exerciseType, false);
     handleNext();
   }, [currentWord, exerciseType, isExplore]);
 
