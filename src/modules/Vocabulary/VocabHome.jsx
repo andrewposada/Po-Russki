@@ -11,29 +11,35 @@ import styles                              from "./VocabHome.module.css";
 
 // ── Tier config ────────────────────────────────────────────────────────────
 const TIERS = [
-  { key: "new",      label: "New",      tooltip: "Not yet reviewed\nWill start with matching"         },
-  { key: "matching", label: "Tier 1",   tooltip: "Matching + Multiple choice\n1–2 reviews"            },
-  { key: "translate",label: "Tier 2",   tooltip: "Translate + Cloze\n3–9 reviews"                     },
-  { key: "cloze",    label: "Tier 3",   tooltip: "Sentence building\n10+ reviews"                     },
-  { key: "mastered", label: "Mastered", tooltip: "Consistently recalled across all exercise types"    },
+  { key: "new",              label: "New",      tooltip: "Not yet reviewed\nWill start with Matching"       },
+  { key: "matching",         label: "Tier 1",   tooltip: "Matching\nRecognition by form"                    },
+  { key: "translate",        label: "Tier 2",   tooltip: "Multiple Choice\nRecognition under distraction"   },
+  { key: "cloze",            label: "Tier 3",   tooltip: "Translate RU→EN\nPassive recall"                  },
+  { key: "translate_active", label: "Tier 4",   tooltip: "Cloze\nContextual recall"                        },
+  { key: "sentence",         label: "Tier 5",   tooltip: "Translate EN→RU\nActive production"               },
+  { key: "mastered",         label: "Mastered", tooltip: "Sentence Builder\nCreative production"            },
 ];
 
 const TIER_COLORS = {
-  new:      { bar: "#D3D1C7", text: "#444441" },
-  matching: { bar: "#B5D4F4", text: "#0C447C" },
-  translate:{ bar: "#378ADD", text: "#E6F1FB" },
-  cloze:    { bar: "#185FA5", text: "#E6F1FB" },
-  mastered: { bar: "#3B6D11", text: "#EAF3DE" },
+  new:              { bar: "#D3D1C7", text: "#444441" },
+  matching:         { bar: "#DAEAF8", text: "#0C447C" },
+  translate:        { bar: "#B5D4F4", text: "#0C447C" },
+  cloze:            { bar: "#378ADD", text: "#E6F1FB" },
+  translate_active: { bar: "#185FA5", text: "#E6F1FB" },
+  sentence:         { bar: "#0D3D72", text: "#E6F1FB" },
+  mastered:         { bar: "#3B6D11", text: "#EAF3DE" },
 };
 
 // Map getExerciseType() return values → tier keys
 function wordToTierKey(word) {
-  if (word.is_mastered)                                             return "mastered";
-  const count = word.review_count ?? 0;
-  if (count === 0)                                                  return "new";
-  if (count <= 2)                                                   return "matching";
-  if (count <= 9)                                                   return "translate";
-  return "cloze";
+  if (word.is_mastered)      return "mastered";
+  const tier = word.tier ?? 0;
+  if (tier === 0)            return "new";
+  if (tier === 1)            return "matching";
+  if (tier === 2)            return "translate";
+  if (tier === 3)            return "cloze";
+  if (tier === 4)            return "translate_active";   // EN→RU
+  return                            "sentence";            // tier 5
 }
 
 // Dynamic color for mastered % and due-count tiles
@@ -86,7 +92,7 @@ export default function VocabHome() {
 
   // ── Tier counts ──────────────────────────────────────────────────────────
   const tierCounts = useMemo(() => {
-    const counts = { new: 0, matching: 0, mc: 0, translate: 0, cloze: 0, mastered: 0 };
+    const counts = { new: 0, matching: 0, translate: 0, cloze: 0, translate_active: 0, sentence: 0, mastered: 0 };
     words?.forEach(w => { counts[wordToTierKey(w)] += 1; });
     return counts;
   }, [words]);
@@ -342,6 +348,25 @@ export default function VocabHome() {
           <div className={styles.cardFooter}>
             <span className={styles.cardStat}>{totalWords} cards</span>
             <span className={`${styles.cardCta} ${styles.ctaPurple}`}>Start flipping</span>
+          </div>
+        </button>
+
+        <button
+          className={`${styles.modeCard} ${styles.modeCardOrange}`}
+          onClick={() => navigate("/vocabulary/freeplay")}
+          disabled={totalWords === 0}
+        >
+          <div className={styles.cardTop}>
+            <span className={styles.cardEmoji}>🔥</span>
+            <span className={styles.cardChevron}>›</span>
+          </div>
+          <div className={styles.cardName}>Freeplay</div>
+          <div className={styles.cardDesc}>
+            Drill any time — pick your exercise types, focus on specific tiers, go endless.
+          </div>
+          <div className={styles.cardFooter}>
+            <span className={styles.cardStat}>No SRS impact</span>
+            <span className={`${styles.cardCta} ${styles.ctaOrange}`}>Start drilling</span>
           </div>
         </button>
 

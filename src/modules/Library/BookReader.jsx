@@ -449,19 +449,25 @@ const totalSeconds  = priorSeconds + seconds;
         {segments.length > 0 && (
           <div className={styles.endOfChapter}>
             {showComprehension || hasExistingQuestions ? (
-              <ComprehensionBlock
-                chapter={activeChapter}
-                book={book}
-                onDone={() => {
-                  setShowComprehension(false);
-                  setHasExistingQuestions(false);
-                }}
-              />
+                <ComprehensionBlock
+                    chapter={activeChapter}
+                    book={book}
+                        onDone={async () => {
+                        setShowComprehension(false);
+                        setHasExistingQuestions(false);
+                        const nextNum = activeChapterNumRef.current + 1;
+                        if (nextNum <= chapters.length) {
+                            await goToChapter(nextNum);
+                            await setBookmarkAt(nextNum, 0);
+                            window.scrollTo({ top: 0, behavior: "smooth" });
+                        }
+                    }}
+                />
             ) : (
-              <button className={styles.comprehensionBtn}
-                onClick={() => setShowComprehension(true)}>
-                Test My Understanding
-              </button>
+                <button className={styles.comprehensionBtn}
+                    onClick={() => setShowComprehension(true)}>
+                    Test My Understanding
+                </button>
             )}
           </div>
         )}

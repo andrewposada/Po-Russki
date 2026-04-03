@@ -293,10 +293,13 @@
 /* ── Mode cards ── */
 .modeCards {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(4, 1fr);
   gap: 12px;
 }
-@media (max-width: 600px) {
+@media (max-width: 900px) {
+  .modeCards { grid-template-columns: repeat(2, 1fr); }
+}
+@media (max-width: 500px) {
   .modeCards { grid-template-columns: 1fr; }
 }
 
@@ -394,4 +397,13 @@
 .dictArrow {
   color: var(--c-text-light);
   font-size: 13px;
+}
+
+.modeCardOrange { border-left-color: var(--c-orange); }
+.ctaOrange {
+  background: #faeeda;
+  color: #633806;
+}
+.modeCardOrange:hover:not(:disabled) {
+  border-left-color: var(--c-orange);
 }

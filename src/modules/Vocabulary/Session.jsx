@@ -335,18 +335,25 @@ const handleSrsUpdate = (word, exType, correct) => {
 
   // Matching: fires when all 4 pairs are matched.
   // Updates SRS for all 4 words, counts them all toward accuracy.
-  const handleMatchComplete = useCallback(async () => {
+  const handleMatchAnswer = useCallback((wordId, correct) => {
     const matchWords = words.slice(currentIdx, currentIdx + 4);
-    console.log("handleMatchComplete fired, matchWords:", matchWords);
-    // Count toward accuracy only for words not yet reviewed this session
-    const newCorrect = matchWords.filter(w => !reviewedThisSession.current.has(w.id)).length;
-    if (newCorrect > 0) {
-      setTotalCount(t => t + newCorrect);
-      setCorrectCount(c => c + newCorrect);
-      setStreak(s => s + newCorrect);
+    const word = matchWords.find(w => w.id === wordId);
+    if (!word) return;
+
+    const counted = !reviewedThisSession.current.has(word.id);
+    if (counted) {
+      setTotalCount(t => t + 1);
+      if (correct) {
+        setCorrectCount(c => c + 1);
+        setStreak(s => s + 1);
+      } else {
+        setStreak(0);
+      }
     }
 
-    matchWords.forEach(w => handleSrsUpdate(w, "matching", true));
+    // Only write SRS on correct final match — wrong flashes are already
+    // counted above but we don't write SRS until the pair is resolved
+    if (correct) handleSrsUpdate(word, "matching", true);
   }, [words, currentIdx]);
 
   const handleSkip = useCallback(async () => {
@@ -650,10 +657,16 @@ const handleSrsUpdate = (word, exType, correct) => {
           {exerciseType === "matching" && (
             <MatchingCard
               words={words.slice(currentIdx, currentIdx + 4)}
-              onComplete={async () => {
-                await handleMatchComplete();
-                handleNext();
-            }}
+              onAnswer={(correct, wordId) => handleMatchAnswer(wordId, correct)}
+              onNext={() => {
+                const nextIdx = currentIdx + 4;
+                if (nextIdx >= words.length) {
+                  setPhase("complete");
+                } else {
+                  setCurrentIdx(nextIdx);
+                  setFeedback(null);
+                }
+              }}
             />
           )}
           {exerciseType === "mc" && currentWord && (

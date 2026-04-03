@@ -1,0 +1,335 @@
+/* Freeplay.module.css */
+
+.page {
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 24px 16px 48px;
+}
+
+.pageHeader {
+  margin-bottom: 24px;
+}
+
+.title {
+  font-size: 26px;
+  font-weight: 600;
+  color: var(--c-text-dark);
+  margin-bottom: 4px;
+}
+
+.subtitle {
+  font-size: 14px;
+  color: var(--c-text-light);
+}
+
+/* ── Config card ── */
+.configCard {
+  background: var(--c-bg-card);
+  border: 1px solid var(--c-border-soft);
+  border-radius: var(--radius-lg);
+  padding: 16px;
+  margin-bottom: 12px;
+}
+
+.configLabel {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  color: var(--c-text-light);
+  margin-bottom: 10px;
+}
+
+/* Toggle */
+.toggleRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.toggleDesc {
+  font-size: 14px;
+  color: var(--c-text-dark);
+  font-weight: 500;
+}
+
+.toggleSub {
+  font-size: 12px;
+  color: var(--c-text-light);
+  margin-top: 2px;
+}
+
+.toggle {
+  width: 40px;
+  height: 22px;
+  border-radius: 11px;
+  background: var(--c-orange);
+  position: relative;
+  cursor: pointer;
+  flex-shrink: 0;
+  border: none;
+  transition: background 0.15s;
+}
+
+.toggleOff {
+  background: var(--c-border);
+}
+
+.toggle::after {
+  content: '';
+  position: absolute;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: #fff;
+  top: 3px;
+  right: 3px;
+  transition: right 0.15s;
+}
+
+.toggleOff::after {
+  right: 21px;
+}
+
+/* Exercise groups */
+.groupRow {
+  margin-bottom: 10px;
+}
+
+.groupHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 6px;
+}
+
+.groupName {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--c-text-dark);
+}
+
+.groupBtn {
+  font-size: 11px;
+  color: var(--c-orange);
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+}
+
+.divider {
+  height: 1px;
+  background: var(--c-border-soft);
+  margin: 10px 0;
+}
+
+.pillRow {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.pill {
+  padding: 5px 12px;
+  border-radius: var(--radius-xl);
+  font-size: 13px;
+  cursor: pointer;
+  border: 1px solid var(--c-border);
+  background: var(--c-bg-panel);
+  color: var(--c-text-light);
+  user-select: none;
+  transition: background 0.1s, border-color 0.1s, color 0.1s;
+}
+
+.pillActiveOrange {
+  background: #faeeda;
+  border-color: var(--c-orange);
+  color: #633806;
+}
+
+.pillActiveBlue {
+  background: var(--c-sky-light);
+  border-color: var(--c-sky);
+  color: #0c4a6e;
+}
+
+.pillActiveGreen {
+  background: #eaf3de;
+  border-color: var(--c-sage);
+  color: #27500a;
+}
+
+/* Tier chips */
+.chipRow {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.chip {
+  padding: 5px 12px;
+  border-radius: var(--radius-xl);
+  font-size: 13px;
+  cursor: pointer;
+  border: 1px solid var(--c-border);
+  background: var(--c-bg-panel);
+  color: var(--c-text-light);
+  user-select: none;
+  transition: background 0.1s, border-color 0.1s, color 0.1s;
+}
+
+.chipAll   { background: var(--c-bg-deep); border-color: var(--c-border); color: var(--c-text-dark); }
+.chipNew   { background: #e8e6dc; border-color: #888780; color: #2c2c2a; }
+.chipT1    { background: #daeaf8; border-color: #378add; color: #0c447c; }
+.chipT2    { background: #b5d4f4; border-color: #185fa5; color: #0c447c; }
+.chipT3    { background: #378add; border-color: #185fa5; color: #e6f1fb; }
+.chipT4    { background: #185fa5; border-color: #0c447c; color: #e6f1fb; }
+.chipT5    { background: #0d3d72; border-color: #042c53; color: #e6f1fb; }
+.chipTM    { background: #eaf3de; border-color: var(--c-sage); color: #27500a; }
+
+/* Start button */
+.startBtn {
+  width: 100%;
+  padding: 13px;
+  background: var(--c-orange);
+  border: none;
+  border-radius: var(--radius-md);
+  color: #fff;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  margin-top: 4px;
+}
+
+.startBtn:hover { background: #b87228; }
+
+/* ── Drill header ── */
+.drillHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 14px;
+}
+
+.accuracyBadge {
+  font-size: 14px;
+  color: var(--c-text-mid);
+}
+
+.accuracyBadge strong {
+  color: var(--c-text-dark);
+  font-weight: 600;
+}
+
+.drillActions {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.gearBtn {
+  width: 34px;
+  height: 34px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--c-border);
+  background: var(--c-bg-card);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  font-size: 15px;
+  color: var(--c-text-light);
+}
+
+.stopBtn {
+  padding: 6px 14px;
+  border-radius: var(--radius-sm);
+  border: 1px solid #c07050;
+  background: #fcebeb;
+  color: #791f1f;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+/* Compact mid-session config bar */
+.configBar {
+  background: var(--c-bg-card);
+  border: 1px solid var(--c-border-soft);
+  border-radius: var(--radius-md);
+  padding: 12px 14px;
+  margin-bottom: 14px;
+}
+
+/* ── Summary ── */
+.summaryHeader {
+  margin-bottom: 20px;
+}
+
+.summaryTitle {
+  font-size: 22px;
+  font-weight: 600;
+  color: var(--c-text-dark);
+  margin-bottom: 4px;
+}
+
+.summarySub {
+  font-size: 13px;
+  color: var(--c-text-light);
+}
+
+.statGrid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+  margin-bottom: 20px;
+}
+
+.statBox {
+  background: var(--c-bg-card);
+  border: 1px solid var(--c-border-soft);
+  border-radius: var(--radius-md);
+  padding: 14px;
+  text-align: center;
+}
+
+.statVal {
+  font-size: 26px;
+  font-weight: 600;
+  color: var(--c-text-dark);
+}
+
+.statLbl {
+  font-size: 12px;
+  color: var(--c-text-light);
+  margin-top: 2px;
+}
+
+.summaryBtns {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.playAgainBtn {
+  padding: 13px;
+  background: var(--c-orange);
+  border: none;
+  border-radius: var(--radius-md);
+  color: #fff;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.backBtn {
+  padding: 12px;
+  background: none;
+  border: 1px solid var(--c-border);
+  border-radius: var(--radius-md);
+  font-size: 14px;
+  color: var(--c-text-mid);
+  cursor: pointer;
+}

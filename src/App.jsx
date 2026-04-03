@@ -70,6 +70,7 @@ function AppContent() {
           <Route path="/vocabulary/explore"  element={<ProtectedRoute><Vocabulary /></ProtectedRoute>} />
           <Route path="/vocabulary/flashcards"  element={<ProtectedRoute><Vocabulary /></ProtectedRoute>} />
           <Route path="/vocabulary/dictionary"  element={<ProtectedRoute><Vocabulary /></ProtectedRoute>} />
+          <Route path="/vocabulary/freeplay"    element={<ProtectedRoute><Vocabulary /></ProtectedRoute>} />
           {/* <Route path="/drill" element={<ProtectedRoute><Drill /></ProtectedRoute>} /> */}
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
