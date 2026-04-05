@@ -61,6 +61,12 @@
 .bookmarkBar {
   width: 8px; flex-shrink: 0; border-radius: 0 3px 3px 0;
   background: transparent; transition: background 0.15s ease; cursor: pointer;
+  position: relative;
+}
+.bookmarkBar::before {
+  content: ""; position: absolute;
+  top: 0; bottom: 0;
+  left: -150px; right: 0;
 }
 .bookmarkBar:hover { background: var(--c-border); }
 .bookmarkBarActive { background: var(--cover-color, var(--c-sage)); }
@@ -70,6 +76,11 @@
   background: transparent; cursor: pointer;
   position: relative; overflow: hidden;
   transition: background 0.15s ease;
+}
+.translateBar::after {
+  content: ""; position: absolute;
+  top: 0; bottom: 0;
+  left: 0; right: -150px;
 }
 .translateBar:hover { background: rgba(122, 174, 200, 0.2); }
 .translateBarActive { background: rgba(122, 174, 200, 0.35); }
