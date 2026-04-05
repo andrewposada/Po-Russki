@@ -1,6 +1,6 @@
 // src/modules/Vocabulary/Session.jsx
 
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import { useNavigate, useLocation }  from "react-router-dom";
 import { useAuth }                   from "../../AuthContext";
 import { useSettings }               from "../../context/SettingsContext";
@@ -142,9 +142,16 @@ export default function Session() {
   const wordsRef = useRef(words);
   useEffect(() => { wordsRef.current = words; }, [words]);
 
+  const currentIdxRef = useRef(currentIdx);
+  useEffect(() => { currentIdxRef.current = currentIdx; }, [currentIdx]);
+
   // Tracks which word IDs have already had SRS written this session.
   // Persists across retries — SRS only writes once per word per session.
   const reviewedThisSession = useRef(new Set());
+
+  // Accumulates matching pair results until all 4 are done, then flushes on Next.
+  // Prevents setWords from firing mid-card and resetting MatchingCard state.
+  const pendingMatchResults = useRef({});
 
   // ── Derived ───────────────────────────────────────────────────────────────
   const currentWord  = isExplore ? exploreWord : words[currentIdx];
@@ -153,6 +160,11 @@ export default function Session() {
   // How many words does the current exercise step consume?
   // Matching = 4 words at once, everything else = 1.
   const stepSize = exerciseType === "matching" ? 4 : 1;
+
+  const matchingWords = useMemo(
+  () => words.slice(currentIdx, currentIdx + 4),
+  [words.slice(currentIdx, currentIdx + 4).map(w => w.id).join(",")]
+);
 
   // ── Load due words ────────────────────────────────────────────────────────
   useEffect(() => {
@@ -196,82 +208,78 @@ export default function Session() {
   }, [level]);
 
   // ── Background DB writer with retry ──────────────────────────────────────
-// Attempts the full SRS write (API calc + DB upsert) up to maxAttempts times.
-// Called fire-and-forget — never awaited by UI code.
-async function writeSrsWithRetry(userId, word, exType, correct, newTier, newStreak, maxAttempts = 3) {
-  for (let attempt = 1; attempt <= maxAttempts; attempt++) {
-    try {
-      let newSrs;
-      if (word.is_mastered) {
-        const next = new Date();
-        next.setDate(next.getDate() + 30);
-        newSrs = {
-          next_review_at: next.toISOString(),
-          interval_days:  30,
-          ease_factor:    word.ease_factor ?? 2.5,
-          review_count:   (word.review_count ?? 0) + 1,
-        };
-      } else {
-        newSrs = await callSrsUpdate({
-          quality:       deriveQuality(exType, correct),
-          interval_days: word.interval_days ?? 0,
-          ease_factor:   word.ease_factor   ?? 2.5,
-          review_count:  word.review_count  ?? 0,
+  async function writeSrsWithRetry(userId, word, exType, correct, newTier, newStreak, maxAttempts = 3) {
+    for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+      try {
+        let newSrs;
+        if (word.is_mastered) {
+          const next = new Date();
+          next.setDate(next.getDate() + 30);
+          newSrs = {
+            next_review_at: next.toISOString(),
+            interval_days:  30,
+            ease_factor:    word.ease_factor ?? 2.5,
+            review_count:   (word.review_count ?? 0) + 1,
+          };
+        } else {
+          newSrs = await callSrsUpdate({
+            quality:       deriveQuality(exType, correct),
+            interval_days: word.interval_days ?? 0,
+            ease_factor:   word.ease_factor   ?? 2.5,
+            review_count:  word.review_count  ?? 0,
+          });
+        }
+        await updateWordSrs(userId, word.id, {
+          ...newSrs,
+          tier:        newTier,
+          tier_streak: newStreak,
         });
-      }
-      await updateWordSrs(userId, word.id, {
-        ...newSrs,
-        tier:        newTier,
-        tier_streak: newStreak,
-      });
-      return; // success — done
-    } catch (e) {
-      const isLastAttempt = attempt === maxAttempts;
-      if (isLastAttempt) {
-        console.warn(`SRS write failed after ${maxAttempts} attempts for word "${word.word}":`, e);
-      } else {
-        // Exponential backoff: 1s, 2s, 4s
-        await new Promise(res => setTimeout(res, 1000 * Math.pow(2, attempt - 1)));
+        return;
+      } catch (e) {
+        const isLastAttempt = attempt === maxAttempts;
+        if (isLastAttempt) {
+          console.warn(`SRS write failed after ${maxAttempts} attempts for word "${word.word}":`, e);
+        } else {
+          await new Promise(res => setTimeout(res, 1000 * Math.pow(2, attempt - 1)));
+        }
       }
     }
   }
-}
 
-// ── SRS + tier update ─────────────────────────────────────────────────────
-// Updates local UI state immediately (optimistic), then fires DB write
-// in the background. Never awaited — caller returns instantly.
-const handleSrsUpdate = (word, exType, correct) => {
-  const alreadyReviewed = reviewedThisSession.current.has(word.id);
+  // ── SRS + tier update ─────────────────────────────────────────────────────
+  // skipWordsMutation: pass true for matching to avoid mutating the words array
+  // mid-card, which would cause MatchingCard to reset via its useEffect([words]).
+  const handleSrsUpdate = (word, exType, correct, skipWordsMutation = false) => {
+    const alreadyReviewed = reviewedThisSession.current.has(word.id);
 
-  const { tier: newTier, tier_streak: newStreak } = computeTierProgression(word, correct);
-  const graduated = newTier > (word.tier ?? 0);
+    const { tier: newTier, tier_streak: newStreak } = computeTierProgression(word, correct);
+    const graduated = newTier > (word.tier ?? 0);
 
-  // Always update display state immediately
-  setSessionResults(prev => ({
-    ...prev,
-    [word.id]: {
-      correct,
-      graduated: alreadyReviewed ? false : graduated,
-      fromTier:  word.tier ?? 0,
-      toTier:    newTier,
-      word:      word.word,
-      translation: word.translation,
-    },
-  }));
+    setSessionResults(prev => ({
+      ...prev,
+      [word.id]: {
+        correct,
+        graduated: alreadyReviewed ? false : graduated,
+        fromTier:  word.tier ?? 0,
+        toTier:    newTier,
+        word:      word.word,
+        translation: word.translation,
+      },
+    }));
 
-  // Update local word state for live tier badge
-  setWords(prev => prev.map(w =>
-    w.id === word.id ? { ...w, tier: newTier, tier_streak: newStreak } : w
-  ));
+    // Only mutate words array for non-matching exercises.
+    // For matching, this is called after navigation so the card is already gone.
+    if (!skipWordsMutation) {
+      setWords(prev => prev.map(w =>
+        w.id === word.id ? { ...w, tier: newTier, tier_streak: newStreak } : w
+      ));
+    }
 
-  if (alreadyReviewed) return;
+    if (alreadyReviewed) return;
 
-  // Mark reviewed before the async work starts so rapid taps don't double-write
-  reviewedThisSession.current.add(word.id);
-
-  // Fire and forget — UI does not wait for this
-  writeSrsWithRetry(user.uid, word, exType, correct, newTier, newStreak);
-};
+    reviewedThisSession.current.add(word.id);
+    writeSrsWithRetry(user.uid, word, exType, correct, newTier, newStreak);
+  };
 
   // ── Answer handlers ───────────────────────────────────────────────────────
 
@@ -333,12 +341,14 @@ const handleSrsUpdate = (word, exType, correct) => {
     if (!isExplore) handleSrsUpdate(currentWord, exerciseType, correct);
   }, [currentWord, exerciseType, clozeData, isExplore]);
 
-  // Matching: fires when all 4 pairs are matched.
-  // Updates SRS for all 4 words, counts them all toward accuracy.
+  // Matching: accumulates one result per pair as each pair is matched.
+  // Does NOT write SRS or mutate words — that happens in handleMatchNext.
   const handleMatchAnswer = useCallback((wordId, correct) => {
-    const matchWords = words.slice(currentIdx, currentIdx + 4);
+    const matchWords = wordsRef.current.slice(currentIdxRef.current, currentIdxRef.current + 4);
     const word = matchWords.find(w => w.id === wordId);
     if (!word) return;
+
+    pendingMatchResults.current[wordId] = { word, correct };
 
     const counted = !reviewedThisSession.current.has(word.id);
     if (counted) {
@@ -350,11 +360,25 @@ const handleSrsUpdate = (word, exType, correct) => {
         setStreak(0);
       }
     }
+  }, []);
 
-    // Only write SRS on correct final match — wrong flashes are already
-    // counted above but we don't write SRS until the pair is resolved
-    if (correct) handleSrsUpdate(word, "matching", true);
-  }, [words, currentIdx]);
+  // Called when user taps "Next →" on the matching success banner.
+  // Flushes all 4 pending SRS writes (with skipWordsMutation=true so the
+  // words array stays stable), then advances the session index.
+  const handleMatchNext = useCallback(() => {
+    Object.values(pendingMatchResults.current).forEach(({ word, correct }) => {
+      handleSrsUpdate(word, "matching", correct, true);
+    });
+    pendingMatchResults.current = {};
+
+    const nextIdx = currentIdxRef.current + 4;
+    if (nextIdx >= wordsRef.current.length) {
+      setPhase("complete");
+    } else {
+      setCurrentIdx(nextIdx);
+      setFeedback(null);
+    }
+  }, []);
 
   const handleSkip = useCallback(async () => {
     if (!currentWord) return;
@@ -399,6 +423,7 @@ const handleSrsUpdate = (word, exType, correct) => {
     setSessionResults({});
     setDistractors([]);
     setClozeData(null);
+    pendingMatchResults.current = {};
     setPhase("active");
   }, []);
 
@@ -467,8 +492,7 @@ const handleSrsUpdate = (word, exType, correct) => {
 
   // ── Render helpers ────────────────────────────────────────────────────────
 
-  // Progress counts words, not steps. Matching jumps by 4.
-  const reviewedCount = currentIdx; // words completed so far
+  const reviewedCount = currentIdx;
   const progress      = words.length > 0 ? `${reviewedCount} / ${words.length}` : "";
   const pct           = words.length > 0 ? (reviewedCount / words.length) * 100 : 0;
   const accuracy      = totalCount > 0 ? Math.round((correctCount / totalCount) * 100) : null;
@@ -655,20 +679,12 @@ const handleSrsUpdate = (word, exType, correct) => {
         <div className={styles.cardArea}>
 
           {exerciseType === "matching" && (
-            <MatchingCard
-              words={words.slice(currentIdx, currentIdx + 4)}
-              onAnswer={(correct, wordId) => handleMatchAnswer(wordId, correct)}
-              onNext={() => {
-                const nextIdx = currentIdx + 4;
-                if (nextIdx >= words.length) {
-                  setPhase("complete");
-                } else {
-                  setCurrentIdx(nextIdx);
-                  setFeedback(null);
-                }
-              }}
-            />
-          )}
+  <MatchingCard
+    words={matchingWords}
+    onAnswer={(correct, wordId) => handleMatchAnswer(wordId, correct)}
+    onNext={handleMatchNext}
+  />
+)}
           {exerciseType === "mc" && currentWord && (
             <MultipleChoiceCard
               word={currentWord}
@@ -708,13 +724,13 @@ const handleSrsUpdate = (word, exType, correct) => {
 
           {phase === "active" && exerciseType !== "matching" && (
             <div className={styles.actionRow}>
-                {feedback ? (
-                    <button className={styles.nextBtn} onClick={handleNext}>Next →</button>
-                ) : (
-                    <button className={styles.skipBtn} onClick={handleSkip}>I don't know</button>
-                )}
+              {feedback ? (
+                <button className={styles.nextBtn} onClick={handleNext}>Next →</button>
+              ) : (
+                <button className={styles.skipBtn} onClick={handleSkip}>I don't know</button>
+              )}
             </div>
-        )}
+          )}
         </div>
 
         {!isExplore && (
@@ -755,16 +771,16 @@ const handleSrsUpdate = (word, exType, correct) => {
                       <span
                         className={styles.sessionWordStatus}
                         style={{
-                            color: isDone
-                                ? (result.correct ? "#3b6d11" : "var(--c-wrong)")
-                                : isCurrent ? "var(--c-sky)" : undefined,
+                          color: isDone
+                            ? (result.correct ? "#3b6d11" : "var(--c-wrong)")
+                            : isCurrent ? "var(--c-sky)" : undefined,
                         }}
-                    >
+                      >
                         {isDone
-                            ? (result.correct ? "✓" : "✗")
-                            : isCurrent ? "▶" : "·"
+                          ? (result.correct ? "✓" : "✗")
+                          : isCurrent ? "▶" : "·"
                         }
-                    </span>
+                      </span>
                       <span className={`${styles.sessionWordRu} ru`}>{w.word}</span>
                       {result?.graduated && (
                         <span className={styles.sessionWordGrad}>↑</span>
