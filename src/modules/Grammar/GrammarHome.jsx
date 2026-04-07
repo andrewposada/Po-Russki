@@ -5,6 +5,7 @@ import { useAuth } from "../../AuthContext";
 import { getAllLessonCompletions } from "../../storage";
 import { GRAMMAR_ROADMAP } from "../../data/roadmaps/grammarRoadmap";
 import { LESSON_STATE, getNodeState, prerequisitesMet } from "../../constants";
+import CheatSheet from "./CheatSheet";
 import styles from "./GrammarHome.module.css";
 
 // ── State display config ────────────────────────────────────────────────────
@@ -27,6 +28,7 @@ export default function GrammarHome() {
 
   const [completions, setCompletions]   = useState({});
   const [loading, setLoading]           = useState(true);
+  const [cheatSheetOpen, setCheatSheetOpen] = useState(false);
 
   // Build a node-id → nodeConfig lookup for prerequisitesMet()
   const nodeMap = GRAMMAR_ROADMAP.reduce((acc, n) => { acc[n.id] = n; return acc; }, {});
@@ -100,8 +102,7 @@ export default function GrammarHome() {
           </button>
           <button
             className={styles.btnSecondary}
-            disabled
-            title="Reference sheet — coming in the next update"
+            onClick={() => setCheatSheetOpen(true)}
           >
             📖 Reference
           </button>
@@ -169,6 +170,13 @@ export default function GrammarHome() {
           })}
         </div>
       </div>
+    {cheatSheetOpen && (
+        <CheatSheet
+          onClose={() => setCheatSheetOpen(false)}
+          completions={completions}
+          initialTopicId={null}
+        />
+      )}
     </div>
   );
 }
