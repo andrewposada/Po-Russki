@@ -696,6 +696,15 @@ export async function getLessonAnswers(userId, lessonId) {
   return data ?? [];
 }
 
+export async function updateLessonAnswerGrade(answerId, grade) {
+  const { error } = await supabase
+    .from('lesson_answers')
+    .update({ grade })
+    .eq('id', answerId);
+  if (error) { console.error('updateLessonAnswerGrade:', error); return false; }
+  return true;
+}
+
 export async function getPendingAssignments(userId) {
   const { data, error } = await supabase
     .from('lesson_answers')

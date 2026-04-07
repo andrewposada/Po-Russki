@@ -101,6 +101,9 @@ export default function LessonsHome() {
     return order.indexOf(sa) - order.indexOf(sb);
   });
 
+  // Build a { [lessonId]: title } lookup for the assignments drawer
+  const lessonTitleMap = Object.fromEntries(lessons.map(l => [l.id, l.title]));
+
   const filteredLessons = sortedLessons.filter(l => {
     const s = lessonState(l);
     if (filter === "in_progress") return s === LESSON_STATE.IN_PROGRESS;
@@ -173,26 +176,36 @@ export default function LessonsHome() {
         </div>
       </div>
 
-      {/* Assignments banner — conditional */}
-      {pending.length > 0 && (
-        <>
-          <div
-            className={`${styles.assignmentsBanner} ${bannerOpen ? styles.assignmentsBannerOpen : ""}`}
-            onClick={() => setBannerOpen(o => !o)}
-          >
+      {/* Assignments banner — always visible */}
+      <>
+        <div
+          className={`${styles.assignmentsBanner} ${bannerOpen ? styles.assignmentsBannerOpen : ""}`}
+          onClick={() => pending.length > 0 ? setBannerOpen(o => !o) : null}
+        >
             <div className={styles.assignmentsBannerIcon}>📋</div>
             <div className={styles.assignmentsBannerText}>
-              <div className={styles.assignmentsBannerTitle}>{pending.length} assignment{pending.length !== 1 ? "s" : ""} pending</div>
-              <div className={styles.assignmentsBannerSub}>Complete them to earn XP and build mastery</div>
+              {pending.length > 0 ? (
+                <>
+                  <div className={styles.assignmentsBannerTitle}>{pending.length} assignment{pending.length !== 1 ? "s" : ""} pending</div>
+                  <div className={styles.assignmentsBannerSub}>Complete them to earn XP and build mastery</div>
+                </>
+              ) : (
+                <>
+                  <div className={styles.assignmentsBannerTitle}>Assignments</div>
+                  <div className={styles.assignmentsBannerSub}>No pending assignments — complete lessons to unlock them</div>
+                </>
+              )}
             </div>
-            <span className={styles.assignmentsBannerToggle}>{bannerOpen ? "Hide ▲" : "Show ▼"}</span>
+            {pending.length > 0 && (
+              <span className={styles.assignmentsBannerToggle}>{bannerOpen ? "Hide ▲" : "Show ▼"}</span>
+            )}
           </div>
           {bannerOpen && (
             <div className={styles.assignmentsDrawer}>
               <div className={styles.assignmentsDrawerGrid}>
                 {pending.slice(0, 3).map((a, i) => (
                   <div key={i} className={styles.assignmentPreviewCard}>
-                    <div className={styles.assignmentPreviewSource}>{a.lesson_id}</div>
+                    <div className={styles.assignmentPreviewSource}>{lessonTitleMap[a.lesson_id] ?? a.lesson_id}</div>
                     <div className={styles.assignmentPreviewTitle}>{a.prompt ?? "Assignment"}</div>
                     <button
                       className={styles.assignmentPreviewStart}
@@ -209,7 +222,6 @@ export default function LessonsHome() {
             </div>
           )}
         </>
-      )}
 
       {/* Main two-column grid */}
       <div className={styles.mainGrid}>
