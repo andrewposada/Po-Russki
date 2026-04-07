@@ -283,6 +283,92 @@ export const pickWeightedTopic = (scores, selCases, selTypes) => {
   return weights[weights.length - 1];
 };
 
+// ─── Lesson System ────────────────────────────────────────────────────────
+
+export const LESSON_STATE = {
+  LOCKED:      0,
+  AVAILABLE:   1,
+  IN_PROGRESS: 2,
+  COMPLETED:   3,
+  MASTERED:    4,
+};
+
+export const XP_LEVELS = [
+  { level: 1,  name: "Новичок",      xp: 0     },
+  { level: 2,  name: "Ученик",       xp: 300   },
+  { level: 3,  name: "Читатель",     xp: 800   },
+  { level: 4,  name: "Говорящий",    xp: 1800  },
+  { level: 5,  name: "Знаток",       xp: 3500  },
+  { level: 6,  name: "Практик",      xp: 6000  },
+  { level: 7,  name: "Грамотный",    xp: 10000 },
+  { level: 8,  name: "Свободный",    xp: 16000 },
+  { level: 9,  name: "Мастер",       xp: 25000 },
+  { level: 10, name: "Знаток языка", xp: 40000 },
+];
+
+export function getLevelFromXP(xp) {
+  let current = XP_LEVELS[0];
+  for (const lvl of XP_LEVELS) {
+    if (xp >= lvl.xp) current = lvl;
+  }
+  return current;
+}
+
+export const GRAMMAR_EXERCISE_TYPES = [
+  { id: "fillin",    label: "Fill in the Blank", icon: "✏️" },
+  { id: "mc",        label: "Multiple Choice",   icon: "☑️" },
+  { id: "translate", label: "Translate",         icon: "🔄" },
+  { id: "error",     label: "Spot the Error",    icon: "🔍" },
+  { id: "transform", label: "Transform",         icon: "⚡" },
+];
+
+// Rolling weighted average — used by lesson completion system
+// attemptHistory: SMALLINT[] (0/1), oldest first
+export function computeCurrentScore(attemptHistory) {
+  const n = attemptHistory.length;
+  if (n === 0) return 0;
+  let weightedSum = 0;
+  let totalWeight = 0;
+  attemptHistory.forEach((result, i) => {
+    const weight = i + 1; // most recent = highest weight
+    weightedSum += result * weight;
+    totalWeight += weight;
+  });
+  return Math.round((weightedSum / totalWeight) * 100);
+}
+
+// Derive node-level state from a node's lessons array + a completions map.
+// completionsMap: { [lessonId]: completion_row }
+// Returns a LESSON_STATE integer for roadmap display.
+// NOTE: This function does not check prerequisites — caller must do that first
+// and pass LESSON_STATE.LOCKED as the fallback if prerequisites are not met.
+export function getNodeState(nodeLessons, completionsMap) {
+  if (!nodeLessons || nodeLessons.length === 0) return LESSON_STATE.LOCKED;
+  const states = nodeLessons.map(l => completionsMap[l.id]?.state ?? LESSON_STATE.LOCKED);
+  const allCompleted = states.every(s => s >= LESSON_STATE.COMPLETED);
+  if (allCompleted) {
+    return states.every(s => s >= LESSON_STATE.MASTERED)
+      ? LESSON_STATE.MASTERED
+      : LESSON_STATE.COMPLETED;
+  }
+  if (states.some(s => s >= LESSON_STATE.IN_PROGRESS)) return LESSON_STATE.IN_PROGRESS;
+  return states[0]; // LOCKED or AVAILABLE, set by caller based on prerequisite check
+}
+
+// Check whether all prerequisite nodes are fully completed.
+// prereqIds: string[] of node IDs from a node's prerequisites array
+// nodeMap: { [nodeId]: node config object } — build with GRAMMAR_ROADMAP.reduce(...)
+// completionsMap: { [lessonId]: completion_row }
+export function prerequisitesMet(prereqIds, nodeMap, completionsMap) {
+  return prereqIds.every(nodeId => {
+    const node = nodeMap[nodeId];
+    if (!node) return false;
+    return node.lessons.every(
+      l => (completionsMap[l.id]?.state ?? 0) >= LESSON_STATE.COMPLETED
+    );
+  });
+}
+
 // ── Changelog ─────────────────────────────────────────────────────────────────
 export const APP_VERSION = "3.1.0";
 export const CHANGELOG = [

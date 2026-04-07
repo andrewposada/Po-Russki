@@ -567,3 +567,193 @@ export async function getReadingLog(userId, bookId) {
   if (error) throw error;
   return data;
 }
+
+// ─────────────────────────────────────────────────────────────────────────────
+// LESSONS
+// ─────────────────────────────────────────────────────────────────────────────
+
+export async function getLessonById(userId, lessonId) {
+  const { data, error } = await supabase
+    .from('lessons')
+    .select('*')
+    .eq('id', lessonId)
+    .single();
+  if (error) { console.error('getLessonById:', error); return null; }
+  return data;
+}
+
+export async function getCoreLessons() {
+  const { data, error } = await supabase
+    .from('lessons')
+    .select('id, title, cefr_level, xp_reward, is_core, created_at')
+    .eq('is_core', true)
+    .order('created_at', { ascending: true });
+  if (error) { console.error('getCoreLessons:', error); return []; }
+  return data ?? [];
+}
+
+export async function getUserLessons(userId) {
+  // Returns non-core lessons the user has a completion row for
+  const { data, error } = await supabase
+    .from('lessons')
+    .select('id, title, cefr_level, xp_reward, is_core, created_at')
+    .eq('is_core', false)
+    .order('created_at', { ascending: false });
+  if (error) { console.error('getUserLessons:', error); return []; }
+  return data ?? [];
+}
+
+export async function insertLesson(lessonData) {
+  const payload = { ...lessonData, is_core: false };
+  const { data, error } = await supabase
+    .from('lessons')
+    .insert(payload)
+    .select()
+    .single();
+  if (error) { console.error('insertLesson:', error); return null; }
+  return data;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// LESSON COMPLETIONS
+// ─────────────────────────────────────────────────────────────────────────────
+
+export async function getLessonCompletion(userId, lessonId) {
+  const { data, error } = await supabase
+    .from('lesson_completions')
+    .select('*')
+    .eq('user_id', userId)
+    .eq('lesson_id', lessonId)
+    .single();
+  // PGRST116 = row not found — not an error, just means lesson not yet started
+  if (error && error.code !== 'PGRST116') {
+    console.error('getLessonCompletion:', error);
+  }
+  return data ?? null;
+}
+
+export async function upsertLessonCompletion(userId, lessonId, fields) {
+  const { data, error } = await supabase
+    .from('lesson_completions')
+    .upsert(
+      {
+        user_id:        userId,
+        lesson_id:      lessonId,
+        ...fields,
+        last_active_at: new Date().toISOString(),
+      },
+      { onConflict: 'user_id,lesson_id' }
+    )
+    .select()
+    .single();
+  if (error) { console.error('upsertLessonCompletion:', error); return null; }
+  return data;
+}
+
+export async function getAllLessonCompletions(userId) {
+  // Returns ALL completion rows for this user across all lessons.
+  // Callers build a completionsMap: { [lessonId]: row } for roadmap rendering.
+  // With multi-lesson nodes, one roadmap node may have 2–5 completion rows.
+  const { data, error } = await supabase
+    .from('lesson_completions')
+    .select('*')
+    .eq('user_id', userId);
+  if (error) { console.error('getAllLessonCompletions:', error); return []; }
+  return data ?? [];
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// LESSON ANSWERS
+// ─────────────────────────────────────────────────────────────────────────────
+
+export async function saveLessonAnswer(userId, lessonId, groupName, blockType, prompt, answer, grade) {
+  const { data, error } = await supabase
+    .from('lesson_answers')
+    .insert({
+      user_id:    userId,
+      lesson_id:  lessonId,
+      group_name: groupName,
+      block_type: blockType,
+      prompt,
+      answer,
+      grade,
+    })
+    .select()
+    .single();
+  if (error) { console.error('saveLessonAnswer:', error); return null; }
+  return data;
+}
+
+export async function getLessonAnswers(userId, lessonId) {
+  const { data, error } = await supabase
+    .from('lesson_answers')
+    .select('*')
+    .eq('user_id', userId)
+    .eq('lesson_id', lessonId)
+    .order('answered_at', { ascending: true });
+  if (error) { console.error('getLessonAnswers:', error); return []; }
+  return data ?? [];
+}
+
+export async function getPendingAssignments(userId) {
+  const { data, error } = await supabase
+    .from('lesson_answers')
+    .select('*')
+    .eq('user_id', userId)
+    .eq('block_type', 'assignment')
+    .is('grade', null)
+    .order('answered_at', { ascending: true });
+  if (error) { console.error('getPendingAssignments:', error); return []; }
+  return data ?? [];
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// USER PROGRESS (XP)
+// ─────────────────────────────────────────────────────────────────────────────
+
+export async function getUserProgress(userId) {
+  const { data, error } = await supabase
+    .from('user_progress')
+    .select('*')
+    .eq('user_id', userId)
+    .single();
+  if (error && error.code !== 'PGRST116') {
+    console.error('getUserProgress:', error);
+  }
+  // Return default shape if no row yet — row is created on first addXP call
+  return data ?? { user_id: userId, xp_total: 0, level: 1 };
+}
+
+export async function addXP(userId, amount) {
+  const current = await getUserProgress(userId);
+  const newXP = (current.xp_total ?? 0) + amount;
+
+  // XP thresholds duplicated inline to avoid circular import with constants/index.js
+  const thresholds = [
+    { level: 1, xp: 0 },  { level: 2, xp: 300 },  { level: 3, xp: 800 },
+    { level: 4, xp: 1800 }, { level: 5, xp: 3500 }, { level: 6, xp: 6000 },
+    { level: 7, xp: 10000 }, { level: 8, xp: 16000 }, { level: 9, xp: 25000 },
+    { level: 10, xp: 40000 },
+  ];
+  let newLevel = 1;
+  for (const t of thresholds) {
+    if (newXP >= t.xp) newLevel = t.level;
+  }
+
+  const { data, error } = await supabase
+    .from('user_progress')
+    .upsert(
+      {
+        user_id:    userId,
+        xp_total:   newXP,
+        level:      newLevel,
+        updated_at: new Date().toISOString(),
+      },
+      { onConflict: 'user_id' }
+    )
+    .select()
+    .single();
+  if (error) { console.error('addXP:', error); return null; }
+  // Returns { user_id, xp_total, level } — caller can detect level-up by comparing old vs new level
+  return data;
+}

@@ -6,11 +6,11 @@ import { useAuth } from "../../AuthContext";
 import styles from "./Home.module.css";
 
 const MODULES = [
-  { path: "/library",      label: "Библиотека", sub: "Reading library",   color: "#7aaec8" },
-  { path: "/grammar",      label: "Грамматика", sub: "Cases & grammar",   color: "#7a9e7e" },
-  { path: "/conjugations", label: "Спряжение",  sub: "Verb conjugations", color: "#b07c5a" },
-  { path: "/vocabulary",   label: "Словарь",    sub: "Vocabulary",        color: "#9a7ec8" },
-  { path: "/drill",        label: "Тренировка", sub: "Drill mistakes",    color: "#c87a7a" },
+  { path: "/library",    label: "Библиотека", sub: "Reading library",   color: "#7aaec8" },
+  { path: "/grammar",    label: "Грамматика", sub: "Cases & grammar",   color: "#7a9e7e" },
+  { path: "/lessons",    label: "Уроки",      sub: "Structured lessons", color: "#b07c5a" },
+  { path: "/vocabulary", label: "Словарь",    sub: "Vocabulary",        color: "#9a7ec8" },
+  { path: "/drill",      label: "Тренировка", sub: "Drill mistakes",    color: "#c87a7a" },
 ];
 
 export default function Home() {

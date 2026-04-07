@@ -1,0 +1,340 @@
+/* src/modules/Lessons/blocks/Blocks.module.css */
+
+.narrative {
+  font-size: 15px;
+  color: var(--c-text-dark);
+  line-height: 1.8;
+  margin-bottom: 18px;
+}
+.narrative strong { font-weight: 600; }
+.narrative em { font-family: var(--font-ru); font-style: normal; }
+
+.ruleTable {
+  width: 100%;
+  border-collapse: collapse;
+  margin-bottom: 20px;
+  font-size: 14px;
+}
+.ruleTable caption {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--c-text-light);
+  text-align: left;
+  padding-bottom: 8px;
+  letter-spacing: 0.03em;
+}
+.ruleTable th {
+  background: var(--c-bg-deep);
+  color: var(--c-text-mid);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  padding: 8px 12px;
+  text-align: left;
+  border-bottom: 1px solid var(--c-border);
+}
+.ruleTable td {
+  padding: 9px 12px;
+  border-bottom: 1px solid var(--c-border-soft);
+  color: var(--c-text-dark);
+  font-family: var(--font-ru);
+}
+.ruleTable tr:last-child td { border-bottom: none; }
+
+.exampleSet { margin-bottom: 20px; }
+.example {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--c-border-soft);
+}
+.example:last-child { border-bottom: none; }
+.exampleRu {
+  font-family: var(--font-ru);
+  font-size: 16px;
+  color: var(--c-text-dark);
+  line-height: 1.4;
+  flex: 1;
+}
+.exampleEn {
+  font-size: 13px;
+  color: var(--c-text-mid);
+  line-height: 1.4;
+  flex: 1;
+}
+.exampleNote {
+  font-size: 11px;
+  color: var(--c-text-light);
+  font-style: italic;
+  margin-top: 3px;
+}
+
+.callout {
+  border-radius: var(--radius-md);
+  padding: 13px 16px;
+  margin-bottom: 16px;
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+}
+.calloutWarning { background: #fff8e6; border-left: 3px solid var(--c-orange); }
+.calloutTip     { background: #eaf3ea; border-left: 3px solid var(--c-sage); }
+.calloutRemember{ background: #e6f1fb; border-left: 3px solid var(--c-sky); }
+.calloutIcon { font-size: 16px; flex-shrink: 0; margin-top: 1px; }
+.calloutText {
+  font-size: 14px;
+  color: var(--c-text-dark);
+  line-height: 1.6;
+}
+
+/* Quiz */
+.quiz { margin-bottom: 8px; }
+.quizQuestion {
+  font-family: var(--font-ru);
+  font-size: 17px;
+  font-weight: 600;
+  color: var(--c-text-dark);
+  margin-bottom: 16px;
+  line-height: 1.4;
+}
+.quizOptions { display: flex; flex-direction: column; gap: 8px; }
+.quizOption {
+  padding: 12px 16px;
+  border-radius: var(--radius-md);
+  border: 1.5px solid var(--c-border);
+  background: var(--c-bg-card);
+  font-size: 15px;
+  font-family: var(--font-ru);
+  color: var(--c-text-dark);
+  cursor: pointer;
+  text-align: left;
+  transition: background 0.1s;
+}
+.quizOption:hover:not(.quizOptionLocked) { background: var(--c-bg-panel); }
+.quizOptionLocked { cursor: default; }
+.quizOptionCorrect { background: #eaf3ea; border-color: var(--c-sage); color: #2a5a2e; }
+.quizOptionWrong   { background: #fbeaea; border-color: var(--c-wrong); color: #8b2020; }
+.quizExplanation {
+  margin-top: 14px;
+  padding: 12px 14px;
+  background: var(--c-bg-panel);
+  border-radius: var(--radius-md);
+  font-size: 13px;
+  color: var(--c-text-mid);
+  line-height: 1.6;
+}
+
+/* Practice */
+.practice { margin-bottom: 8px; }
+.practicePromptRu {
+  font-family: var(--font-ru);
+  font-size: 18px;
+  color: var(--c-text-dark);
+  margin-bottom: 6px;
+  line-height: 1.5;
+}
+.practicePromptEn {
+  font-size: 13px;
+  color: var(--c-text-light);
+  margin-bottom: 14px;
+}
+.practiceInputRow {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  margin-bottom: 10px;
+}
+.practiceInput {
+  flex: 1;
+  font-family: var(--font-ru);
+  font-size: 16px;
+  padding: 10px 14px;
+  border: 1.5px solid var(--c-border);
+  border-radius: var(--radius-md);
+  background: var(--c-bg-card);
+  color: var(--c-text-dark);
+  outline: none;
+}
+.practiceInput:focus { border-color: var(--c-sky); }
+.practiceInputCorrect { border-color: var(--c-correct); background: #eaf3ea; }
+.practiceInputWrong   { border-color: var(--c-wrong);   background: #fbeaea; }
+.practiceCheckBtn {
+  font-size: 13px;
+  font-weight: 600;
+  padding: 10px 18px;
+  border-radius: var(--radius-md);
+  border: none;
+  background: var(--c-text-dark);
+  color: var(--c-bg-card);
+  cursor: pointer;
+  white-space: nowrap;
+}
+.practiceCheckBtn:disabled { opacity: 0.4; cursor: default; }
+.practiceFeedback {
+  font-size: 13px;
+  line-height: 1.6;
+  padding: 10px 14px;
+  border-radius: var(--radius-md);
+  margin-bottom: 8px;
+}
+.practiceFeedbackCorrect { background: #eaf3ea; color: #2a5a2e; }
+.practiceFeedbackWrong   { background: #fbeaea; color: #8b2020; }
+.practiceHintToggle {
+  font-size: 12px;
+  color: var(--c-text-light);
+  cursor: pointer;
+  text-decoration: underline;
+  background: none;
+  border: none;
+  padding: 0;
+  margin-bottom: 8px;
+}
+.practiceHint {
+  font-size: 13px;
+  color: var(--c-text-mid);
+  font-style: italic;
+  margin-bottom: 8px;
+}
+.practiceRemember {
+  margin-top: 10px;
+  padding: 10px 13px;
+  background: #e6f1fb;
+  border-left: 3px solid var(--c-sky);
+  border-radius: var(--radius-md);
+  font-size: 13px;
+  color: var(--c-text-dark);
+}
+
+/* Free response */
+.freeResponse { margin-bottom: 8px; }
+.freeResponsePrompt {
+  font-size: 15px;
+  color: var(--c-text-dark);
+  line-height: 1.6;
+  margin-bottom: 6px;
+  font-weight: 600;
+}
+.freeResponseGuidance {
+  font-size: 13px;
+  color: var(--c-text-light);
+  margin-bottom: 12px;
+  line-height: 1.55;
+}
+.freeResponseTextarea {
+  width: 100%;
+  font-family: var(--font-ru);
+  font-size: 16px;
+  padding: 12px 14px;
+  border: 1.5px solid var(--c-border);
+  border-radius: var(--radius-md);
+  background: var(--c-bg-card);
+  color: var(--c-text-dark);
+  resize: vertical;
+  min-height: 90px;
+  outline: none;
+  box-sizing: border-box;
+}
+.freeResponseTextarea:focus { border-color: var(--c-sky); }
+.freeResponseSubmitBtn {
+  margin-top: 10px;
+  font-size: 13px;
+  font-weight: 600;
+  padding: 10px 20px;
+  border-radius: var(--radius-md);
+  border: none;
+  background: var(--c-text-dark);
+  color: var(--c-bg-card);
+  cursor: pointer;
+}
+.freeResponseSubmitBtn:disabled { opacity: 0.4; cursor: default; }
+.freeResponseGrading {
+  margin-top: 10px;
+  font-size: 13px;
+  color: var(--c-text-light);
+}
+.freeResponseGradeCard {
+  margin-top: 14px;
+  padding: 14px 16px;
+  background: var(--c-bg-panel);
+  border: 1px solid var(--c-border);
+  border-radius: var(--radius-lg);
+}
+.freeResponseScore {
+  font-size: 22px;
+  font-weight: 700;
+  font-family: var(--font-ru);
+  color: var(--c-text-dark);
+  margin-bottom: 8px;
+}
+.freeResponseTeacherNote {
+  font-size: 13px;
+  color: var(--c-text-mid);
+  line-height: 1.6;
+  margin-bottom: 10px;
+}
+.freeResponseCorrected {
+  font-family: var(--font-ru);
+  font-size: 15px;
+  color: var(--c-text-dark);
+  padding: 10px 12px;
+  background: #eaf3ea;
+  border-radius: var(--radius-md);
+  margin-bottom: 10px;
+}
+.freeResponseError {
+  font-size: 13px;
+  padding: 6px 0;
+  border-bottom: 1px solid var(--c-border-soft);
+  color: var(--c-text-mid);
+}
+.freeResponseError:last-child { border-bottom: none; }
+.freeResponseErrorOriginal  { color: var(--c-wrong); font-family: var(--font-ru); }
+.freeResponseErrorCorrected { color: var(--c-correct); font-family: var(--font-ru); }
+
+/* Assignment block */
+.assignment {
+  background: #fff8f0;
+  border: 1px solid var(--c-mushroom-lt, #e8d5b0);
+  border-radius: var(--radius-lg);
+  padding: 16px 18px;
+  margin-bottom: 8px;
+}
+.assignmentTitle {
+  font-family: var(--font-ru);
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--c-text-dark);
+  margin-bottom: 4px;
+}
+.assignmentDesc {
+  font-size: 13px;
+  color: var(--c-text-mid);
+  line-height: 1.55;
+  margin-bottom: 10px;
+}
+.assignmentMeta {
+  font-size: 11px;
+  color: var(--c-mushroom, #b07c5a);
+  font-weight: 600;
+}
+
+/* Summary */
+.summary {
+  padding: 16px 0 8px;
+}
+.summaryHeading {
+  font-family: var(--font-ru);
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--c-text-dark);
+  margin-bottom: 12px;
+}
+.summaryPoints { margin: 0; padding-left: 18px; }
+.summaryPoints li {
+  font-size: 14px;
+  color: var(--c-text-mid);
+  line-height: 1.7;
+  padding-left: 4px;
+}

@@ -1,0 +1,202 @@
+/* src/modules/Lessons/LessonPlayer.module.css */
+
+.page {
+  min-height: 100vh;
+  background: var(--c-bg);
+}
+
+/* Top bar */
+.topBar {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  background: var(--c-bg-card);
+  border-bottom: 1px solid var(--c-border);
+  padding: 13px 24px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+.exitBtn {
+  font-size: 13px;
+  color: var(--c-text-light);
+  cursor: pointer;
+  padding: 5px 11px;
+  border: 1px solid var(--c-border);
+  border-radius: var(--radius-sm);
+  background: var(--c-bg-panel);
+  white-space: nowrap;
+}
+.progressSection { flex: 1; }
+.segmentedBar {
+  display: flex;
+  gap: 3px;
+  margin-bottom: 5px;
+}
+.segment {
+  flex: 1;
+  height: 5px;
+  border-radius: 3px;
+}
+.segmentDone    { background: var(--c-sage); }
+.segmentCurrent { background: var(--c-text-dark); }
+.segmentPending { background: var(--c-bg-deep); }
+.progressLabel {
+  font-size: 11px;
+  color: var(--c-text-light);
+  text-align: center;
+}
+.lessonTitle {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--c-text-mid);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 220px;
+  font-family: var(--font-ru);
+}
+
+/* Body */
+.body {
+  max-width: 780px;
+  margin: 0 auto;
+  padding: 0 28px 120px;
+}
+
+/* Resume banner */
+.resumeBanner {
+  margin: 20px 0;
+  padding: 10px 14px;
+  background: var(--c-bg-panel);
+  border-radius: var(--radius-md);
+  font-size: 13px;
+  color: var(--c-text-mid);
+  animation: fadeOut 1.5s ease 1s forwards;
+}
+@keyframes fadeOut { to { opacity: 0; display: none; } }
+
+/* Group block */
+.groupDivider {
+  height: 1px;
+  background: var(--c-border);
+  margin: 28px 0 0;
+}
+.groupWrapper { padding-top: 32px; }
+.groupEyebrow {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--c-text-light);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  margin-bottom: 6px;
+}
+.groupTitle {
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--c-text-dark);
+  font-family: var(--font-ru);
+  line-height: 1.25;
+  margin-bottom: 18px;
+}
+
+/* Continue button */
+.continueRow {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: linear-gradient(to top, var(--c-bg) 60%, transparent);
+  padding: 20px 28px 28px;
+  display: flex;
+  justify-content: center;
+  z-index: 10;
+}
+.continueBtn {
+  font-size: 15px;
+  font-weight: 600;
+  padding: 13px 40px;
+  border-radius: var(--radius-lg);
+  border: none;
+  background: var(--c-text-dark);
+  color: var(--c-bg-card);
+  cursor: pointer;
+  min-width: 200px;
+  transition: opacity 0.15s;
+}
+.continueBtn:disabled { opacity: 0.35; cursor: default; }
+
+/* Completion screen */
+.completionScreen {
+  max-width: 520px;
+  margin: 60px auto;
+  padding: 0 24px;
+  text-align: center;
+}
+.completionTitle {
+  font-family: var(--font-ru);
+  font-size: 28px;
+  font-weight: 700;
+  color: var(--c-text-dark);
+  margin-bottom: 8px;
+}
+.completionSub {
+  font-size: 14px;
+  color: var(--c-text-mid);
+  margin-bottom: 28px;
+}
+.completionCard {
+  background: var(--c-bg-card);
+  border: 1px solid var(--c-border);
+  border-radius: var(--radius-xl);
+  padding: 28px 32px;
+  margin-bottom: 20px;
+}
+.completionScore {
+  font-family: var(--font-ru);
+  font-size: 56px;
+  font-weight: 700;
+  line-height: 1;
+  margin-bottom: 6px;
+}
+.completionScoreGreen  { color: var(--c-correct); }
+.completionScoreAmber  { color: var(--c-orange); }
+.completionScoreRed    { color: var(--c-wrong); }
+.completionScoreLabel {
+  font-size: 13px;
+  color: var(--c-text-light);
+  margin-bottom: 20px;
+}
+.xpBadge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: #eaf3ea;
+  border: 1px solid var(--c-sage-light, #a8c8a8);
+  border-radius: 20px;
+  padding: 6px 16px;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--c-sage);
+}
+.assignmentUnlockedBanner {
+  background: #fff8f0;
+  border: 1px solid #e8d5b0;
+  border-radius: var(--radius-md);
+  padding: 12px 16px;
+  margin-bottom: 16px;
+  font-size: 13px;
+  color: #7a5a20;
+}
+.completionContinueBtn {
+  width: 100%;
+  font-size: 15px;
+  font-weight: 600;
+  padding: 14px 0;
+  border-radius: var(--radius-lg);
+  border: none;
+  background: var(--c-text-dark);
+  color: var(--c-bg-card);
+  cursor: pointer;
+  margin-top: 4px;
+}

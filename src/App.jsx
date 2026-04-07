@@ -16,7 +16,8 @@ import styles from "./app.module.css";
 import { SettingsProvider } from "./context/SettingsContext";
 
 // Module imports — uncomment as each phase is built
-// import Grammar      from "./modules/Grammar/Grammar";
+import Lessons from "./modules/Lessons";
+import Grammar from "./modules/Grammar";
 // import Conjugations from "./modules/Conjugations/Conjugations";
 import Vocabulary   from "./modules/Vocabulary";
 // import Drill        from "./modules/Drill/Drill";
@@ -71,6 +72,13 @@ function AppContent() {
           <Route path="/vocabulary/flashcards"  element={<ProtectedRoute><Vocabulary /></ProtectedRoute>} />
           <Route path="/vocabulary/dictionary"  element={<ProtectedRoute><Vocabulary /></ProtectedRoute>} />
           <Route path="/vocabulary/freeplay"    element={<ProtectedRoute><Vocabulary /></ProtectedRoute>} />
+          <Route path="/lessons"                    element={<ProtectedRoute><Lessons /></ProtectedRoute>} />
+          <Route path="/lessons/roadmap/:roadmapId" element={<ProtectedRoute><Lessons /></ProtectedRoute>} />
+          <Route path="/lessons/play/:lessonId"     element={<ProtectedRoute><Lessons /></ProtectedRoute>} />
+          <Route path="/lessons/assignments"        element={<ProtectedRoute><Lessons /></ProtectedRoute>} />
+          <Route path="/lessons/import"             element={<ProtectedRoute><Lessons /></ProtectedRoute>} />
+          <Route path="/grammar"                    element={<ProtectedRoute><Grammar /></ProtectedRoute>} />
+          <Route path="/grammar/freeplay"           element={<ProtectedRoute><Grammar /></ProtectedRoute>} />
           {/* <Route path="/drill" element={<ProtectedRoute><Drill /></ProtectedRoute>} /> */}
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>

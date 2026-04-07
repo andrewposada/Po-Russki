@@ -1,0 +1,380 @@
+/* src/modules/Lessons/LessonsHome.module.css */
+
+.page {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 24px 20px 40px;
+}
+
+/* Dashboard strip */
+.strip {
+  background: var(--c-bg-card);
+  border: 1px solid var(--c-border);
+  border-radius: var(--radius-lg);
+  padding: 16px 22px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  flex-wrap: wrap;
+  margin-bottom: 22px;
+}
+.stripLeft { display: flex; flex-direction: column; gap: 3px; min-width: 130px; }
+.stripTitle {
+  font-family: var(--font-ru);
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--c-text-dark);
+  line-height: 1.2;
+}
+.stripLevel {
+  font-size: 13px;
+  color: var(--c-sage);
+  font-weight: 500;
+}
+.stripXp {
+  flex: 2;
+  min-width: 180px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.xpTrack {
+  flex: 1;
+  height: 6px;
+  background: var(--c-bg-deep);
+  border-radius: 3px;
+  overflow: clip;
+}
+.xpFill {
+  height: 6px;
+  background: var(--c-sage);
+  border-radius: 3px;
+  transition: width 0.4s ease;
+}
+.xpLabel {
+  font-size: 12px;
+  color: var(--c-text-light);
+  white-space: nowrap;
+}
+.stripStats { display: flex; gap: 10px; flex-wrap: wrap; }
+.statTile {
+  background: var(--c-bg-panel);
+  border: 1px solid var(--c-border);
+  border-radius: var(--radius-md);
+  padding: 8px 16px;
+  text-align: center;
+  min-width: 72px;
+}
+.statValue {
+  font-family: var(--font-ru);
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--c-text-dark);
+  line-height: 1;
+}
+.statLabel {
+  font-size: 10px;
+  color: var(--c-text-light);
+  margin-top: 3px;
+  letter-spacing: 0.02em;
+}
+
+/* Assignments banner */
+.assignmentsBanner {
+  background: #fff8f0;
+  border: 1px solid #e8d5b0;
+  border-radius: var(--radius-lg);
+  padding: 13px 18px;
+  margin-bottom: 20px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  cursor: pointer;
+}
+.assignmentsBannerOpen {
+  border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+  border-bottom-color: transparent;
+}
+.assignmentsBannerIcon {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  background: #f0dfc0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  font-size: 16px;
+}
+.assignmentsBannerText { flex: 1; }
+.assignmentsBannerTitle {
+  font-family: var(--font-ru);
+  font-size: 14px;
+  font-weight: 600;
+  color: #7a5a20;
+}
+.assignmentsBannerSub {
+  font-size: 12px;
+  color: #b07c5a;
+}
+.assignmentsBannerToggle {
+  font-size: 12px;
+  color: #b07c5a;
+  font-weight: 500;
+  white-space: nowrap;
+}
+.assignmentsDrawer {
+  background: #fff8f0;
+  border: 1px solid #e8d5b0;
+  border-top: none;
+  border-radius: 0 0 var(--radius-lg) var(--radius-lg);
+  padding: 4px 18px 16px;
+  margin-bottom: 20px;
+}
+.assignmentsDrawerGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 10px;
+  margin-bottom: 12px;
+}
+.assignmentPreviewCard {
+  background: var(--c-bg-card);
+  border: 1px solid var(--c-border);
+  border-radius: var(--radius-md);
+  padding: 12px 14px;
+}
+.assignmentPreviewSource {
+  font-size: 10px;
+  color: var(--c-text-light);
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  margin-bottom: 4px;
+}
+.assignmentPreviewTitle {
+  font-family: var(--font-ru);
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--c-text-dark);
+  margin-bottom: 8px;
+}
+.assignmentPreviewStart {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--c-sage);
+  background: #eaf3ea;
+  border: 1px solid var(--c-sage-light, #a8c8a8);
+  border-radius: 14px;
+  padding: 5px 13px;
+  cursor: pointer;
+}
+.assignmentsViewAll {
+  font-size: 12px;
+  color: #b07c5a;
+  font-weight: 600;
+  text-align: right;
+  padding-top: 8px;
+  border-top: 1px solid #e8d5b0;
+  cursor: pointer;
+}
+
+/* Main two-column layout */
+.mainGrid {
+  display: grid;
+  grid-template-columns: 1fr 400px;
+  gap: 22px;
+  align-items: start;
+}
+@media (max-width: 780px) {
+  .mainGrid { grid-template-columns: 1fr; }
+}
+
+/* Panels */
+.panel {
+  background: var(--c-bg-card);
+  border: 1px solid var(--c-border);
+  border-radius: var(--radius-lg);
+  padding: 20px;
+}
+.panelHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 6px;
+}
+.panelTitle {
+  font-family: var(--font-ru);
+  font-size: 17px;
+  font-weight: 700;
+  color: var(--c-text-dark);
+}
+.panelSub {
+  font-size: 12px;
+  color: var(--c-text-light);
+  margin-bottom: 14px;
+}
+.cefrBadge {
+  font-size: 11px;
+  background: #eaf3ea;
+  color: #3a6a3e;
+  padding: 3px 9px;
+  border-radius: var(--radius-md);
+  font-weight: 500;
+}
+
+/* Roadmap panel progress row */
+.roadmapProgressRow {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 14px;
+}
+.roadmapProgressTrack {
+  flex: 1;
+  height: 5px;
+  background: var(--c-bg-deep);
+  border-radius: 3px;
+  overflow: clip;
+}
+.roadmapProgressFill {
+  height: 5px;
+  background: var(--c-sage);
+  border-radius: 3px;
+}
+.roadmapProgressLabel {
+  font-size: 12px;
+  color: var(--c-sage);
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+/* Roadmap placeholder (until 3F.3) */
+.roadmapPlaceholder {
+  background: var(--c-bg-panel);
+  border-radius: var(--radius-md);
+  height: 220px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 13px;
+  color: var(--c-text-light);
+  margin-bottom: 14px;
+}
+
+/* Library panel */
+.importBtn {
+  font-size: 12px;
+  color: var(--c-sage);
+  font-weight: 500;
+  background: #eaf3ea;
+  border: 1px solid var(--c-sage-light, #a8c8a8);
+  border-radius: 14px;
+  padding: 5px 12px;
+  cursor: pointer;
+}
+.filterPills {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 14px;
+  flex-wrap: wrap;
+}
+.filterPill {
+  font-size: 11px;
+  padding: 4px 11px;
+  border-radius: 20px;
+  border: 1px solid var(--c-border);
+  background: var(--c-bg-panel);
+  color: var(--c-text-mid);
+  font-weight: 500;
+  cursor: pointer;
+}
+.filterPillActive {
+  background: var(--c-text-dark);
+  color: var(--c-bg-card);
+  border-color: var(--c-text-dark);
+}
+.lessonsDivider {
+  height: 1px;
+  background: var(--c-border-soft);
+  margin: 4px 0;
+}
+.lessonCard {
+  border-radius: var(--radius-md);
+  padding: 14px 15px;
+  border: 1px solid var(--c-border);
+  background: var(--c-bg-card);
+  cursor: pointer;
+  margin-bottom: 8px;
+  transition: background 0.1s;
+}
+.lessonCard:hover { background: var(--c-bg-panel); }
+.lessonCardCompleted {
+  background: var(--c-bg-panel);
+  border-color: var(--c-border-soft);
+  opacity: 0.72;
+}
+.lessonCardCompleted:hover { opacity: 0.88; }
+.lessonCardTop {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 8px;
+  margin-bottom: 4px;
+}
+.lessonCardTitle {
+  font-family: var(--font-ru);
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--c-text-dark);
+  line-height: 1.3;
+}
+.lessonCardBadges {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 4px;
+  flex-shrink: 0;
+}
+.cefrA1 { font-size: 10px; padding: 2px 7px; border-radius: 8px; background: #e6f1fb; color: #185fa5; font-weight: 600; }
+.cefrA2 { font-size: 10px; padding: 2px 7px; border-radius: 8px; background: #eaf3de; color: #3b6d11; font-weight: 600; }
+.cefrB1 { font-size: 10px; padding: 2px 7px; border-radius: 8px; background: #faeeda; color: #854f0b; font-weight: 600; }
+.cefrB2 { font-size: 10px; padding: 2px 7px; border-radius: 8px; background: #fbeaf0; color: #993556; font-weight: 600; }
+.stateInProgress { font-size: 10px; padding: 2px 7px; border-radius: 8px; background: #faeeda; color: #854f0b; font-weight: 600; }
+.stateAvailable   { font-size: 10px; padding: 2px 7px; border-radius: 8px; background: #eaf3ea; color: #3a6a3e; font-weight: 600; }
+.stateCompleted   { font-size: 10px; padding: 2px 7px; border-radius: 8px; background: var(--c-bg-deep); color: var(--c-text-mid); font-weight: 600; }
+.lessonCardSummary {
+  font-size: 12px;
+  color: var(--c-text-mid);
+  line-height: 1.55;
+  margin: 5px 0 10px;
+}
+.lessonCardFooter {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.lessonCardMeta {
+  font-size: 11px;
+  color: var(--c-text-light);
+}
+.btnContinue {
+  font-size: 12px; font-weight: 600; padding: 5px 14px;
+  border-radius: 14px; border: 1px solid var(--c-sage-dark, #5a7a5e);
+  background: var(--c-sage); color: #fff; cursor: pointer;
+}
+.btnStart {
+  font-size: 12px; font-weight: 600; padding: 5px 14px;
+  border-radius: 14px; border: 1px solid var(--c-text-dark);
+  background: var(--c-text-dark); color: var(--c-bg-card); cursor: pointer;
+}
+.btnReview {
+  font-size: 12px; font-weight: 600; padding: 5px 14px;
+  border-radius: 14px; border: 1px solid var(--c-border);
+  background: var(--c-bg-panel); color: var(--c-text-mid); cursor: pointer;
+}
+
+.emptyState {
+  padding: 30px 0;
+  text-align: center;
+  font-size: 13px;
+  color: var(--c-text-light);
+}
