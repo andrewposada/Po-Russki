@@ -12,9 +12,8 @@ import {
 import { getLevelFromXP, XP_LEVELS, LESSON_STATE } from "../../constants";
 import { ROADMAPS } from "../../data/roadmaps";
 import styles from "./LessonsHome.module.css";
-import { computeNodeStates, getAllLessonIds, GRAMMAR_ROADMAP } from "../../data/roadmaps/grammarRoadmap";
-import RoadmapSVG   from "./RoadmapSVG";
-import NodeHubPanel from "./NodeHubPanel";
+import { computeNodeStates, GRAMMAR_ROADMAP } from "../../data/roadmaps/grammarRoadmap";
+import RoadmapPanel from "./RoadmapPanel";
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -54,8 +53,7 @@ export default function LessonsHome() {
   const [bannerOpen, setBannerOpen]         = useState(false);
   const [filter, setFilter]                 = useState("all");
   const [loading, setLoading]               = useState(true);
-  const [activeNode, setActiveNode]   = useState(null);   // node tapped — drives NodeHubPanel
-  const [roadmapExpanded, setRoadmapExpanded] = useState(false); // expand toggle
+  // (roadmap state is now internal to RoadmapPanel)
 
   useEffect(() => {
     if (!user) return;
@@ -227,47 +225,14 @@ export default function LessonsHome() {
       {/* Main two-column grid */}
       <div className={styles.mainGrid}>
         {/* Roadmap panel */}
-        <div className={styles.panel}>
-          <div className={styles.panelHeader}>
-            <span className={styles.panelTitle}>{ROADMAPS[0]?.title ?? "Grammar Foundations"}</span>
-            <span className={styles.cefrBadge}>A1 → B2</span>
-          </div>
-          <p className={styles.panelSub}>{ROADMAPS[0]?.subtitle ?? "Cases, conjugation, and aspect"}</p>
-          <div className={styles.roadmapProgressRow}>
-            <div className={styles.roadmapProgressTrack}>
-              <div
-                className={styles.roadmapProgressFill}
-                style={{ width: totalNodes > 0 ? `${(completedNodes / totalNodes) * 100}%` : "0%" }}
-              />
-            </div>
-            <span className={styles.roadmapProgressLabel}>{completedNodes} of {totalNodes} complete</span>
-          </div>
-          {/* Roadmap SVG — truncated preview (3 nodes max) */}
-            <RoadmapSVG
-            nodes={GRAMMAR_ROADMAP}
-            nodeStates={nodeStates}
-            lessonStateMap={lessonStateMap}
-            onNodeTap={setActiveNode}
-            maxY={roadmapExpanded ? undefined : (() => {
-                // Show: last completed node, active/next node, and 1 locked node after it.
-                // Find the index of the "deepest" non-locked node + 1 buffer node.
-                const deepestActive = GRAMMAR_ROADMAP.reduce((acc, node, i) => {
-                const s = nodeStates[node.id] ?? LESSON_STATE.LOCKED;
-                return s > LESSON_STATE.LOCKED ? i : acc;
-                }, 0);
-                const cutoffIndex = Math.min(deepestActive + 2, GRAMMAR_ROADMAP.length - 1);
-                return GRAMMAR_ROADMAP[cutoffIndex]?.position.y ?? 400;
-            })()}
-            />
-
-            {/* Expand toggle */}
-            <button
-            className={styles.expandToggle}
-            onClick={() => setRoadmapExpanded(prev => !prev)}
-            >
-            {roadmapExpanded ? "Hide full roadmap ▲" : "Show full roadmap ▼"}
-            </button>
-        </div>
+        <RoadmapPanel
+          nodes={GRAMMAR_ROADMAP}
+          nodeStates={nodeStates}
+          lessonStateMap={lessonStateMap}
+          completions={completions}
+          totalNodes={totalNodes}
+          completedNodes={completedNodes}
+        />
 
         {/* Library panel */}
         <div className={styles.panel}>
@@ -330,14 +295,7 @@ export default function LessonsHome() {
           })}
         </div>
       </div>
-    {activeNode && (
-        <NodeHubPanel
-          node={activeNode}
-          lessonStateMap={lessonStateMap}
-          completions={completions}
-          onClose={() => setActiveNode(null)}
-        />
-      )}
+    
     </div>
   );
 }

@@ -222,47 +222,9 @@
 }
 
 /* Roadmap panel progress row */
-.roadmapProgressRow {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  margin-bottom: 14px;
-}
-.roadmapProgressTrack {
-  flex: 1;
-  height: 5px;
-  background: var(--c-bg-deep);
-  border-radius: 3px;
-  overflow: clip;
-}
-.roadmapProgressFill {
-  height: 5px;
-  background: var(--c-sage);
-  border-radius: 3px;
-}
-.roadmapProgressLabel {
-  font-size: 12px;
-  color: var(--c-sage);
-  font-weight: 600;
-  white-space: nowrap;
-}
 
-.expandToggle {
-  width: 100%;
-  font-size: 12px;
-  color: var(--c-sage);
-  font-weight: 500;
-  cursor: pointer;
-  text-align: center;
-  padding: 10px 0 0;
-  border: none;
-  border-top: 1px solid var(--c-border-soft);
-  margin-top: 6px;
-  background: transparent;
-}
-.expandToggle:hover {
-  color: var(--c-sage-dark);
-}
+
+/* expandToggle removed — roadmap is now RoadmapPanel with internal scroll */
 
 /* Library panel */
 .importBtn {
