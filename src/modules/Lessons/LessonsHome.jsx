@@ -12,6 +12,9 @@ import {
 import { getLevelFromXP, XP_LEVELS, LESSON_STATE } from "../../constants";
 import { ROADMAPS } from "../../data/roadmaps";
 import styles from "./LessonsHome.module.css";
+import { computeNodeStates, getAllLessonIds, GRAMMAR_ROADMAP } from "../../data/roadmaps/grammarRoadmap";
+import RoadmapSVG   from "./RoadmapSVG";
+import NodeHubPanel from "./NodeHubPanel";
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -51,6 +54,8 @@ export default function LessonsHome() {
   const [bannerOpen, setBannerOpen]         = useState(false);
   const [filter, setFilter]                 = useState("all");
   const [loading, setLoading]               = useState(true);
+  const [activeNode, setActiveNode]   = useState(null);   // node tapped — drives NodeHubPanel
+  const [roadmapExpanded, setRoadmapExpanded] = useState(false); // expand toggle
 
   useEffect(() => {
     if (!user) return;
@@ -106,6 +111,15 @@ export default function LessonsHome() {
 
   // Divider index: last index of non-completed
   const lastActiveIdx = filteredLessons.reduce((acc, l, i) => lessonState(l) < LESSON_STATE.COMPLETED ? i : acc, -1);
+
+  // Build a plain { [lessonId]: state } map for the SVG and hub panel
+  const lessonStateMap = {};
+  Object.entries(completions).forEach(([id, row]) => {
+    lessonStateMap[id] = row.state ?? LESSON_STATE.AVAILABLE;
+  });
+
+  // Derive per-node states from lesson completions
+  const nodeStates = computeNodeStates(lessonStateMap);
 
   // Roadmap progress
   const roadmapConfig = ROADMAPS[0]?.config ?? [];
@@ -215,10 +229,31 @@ export default function LessonsHome() {
             </div>
             <span className={styles.roadmapProgressLabel}>{completedNodes} of {totalNodes} complete</span>
           </div>
-          {/* Roadmap SVG placeholder — replaced in Phase 3F.3 */}
-          <div className={styles.roadmapPlaceholder}>
-            Roadmap visual — coming in Phase 3F.3
-          </div>
+          {/* Roadmap SVG — truncated preview (3 nodes max) */}
+            <RoadmapSVG
+            nodes={GRAMMAR_ROADMAP}
+            nodeStates={nodeStates}
+            lessonStateMap={lessonStateMap}
+            onNodeTap={setActiveNode}
+            maxY={roadmapExpanded ? undefined : (() => {
+                // Show: last completed node, active/next node, and 1 locked node after it.
+                // Find the index of the "deepest" non-locked node + 1 buffer node.
+                const deepestActive = GRAMMAR_ROADMAP.reduce((acc, node, i) => {
+                const s = nodeStates[node.id] ?? LESSON_STATE.LOCKED;
+                return s > LESSON_STATE.LOCKED ? i : acc;
+                }, 0);
+                const cutoffIndex = Math.min(deepestActive + 2, GRAMMAR_ROADMAP.length - 1);
+                return GRAMMAR_ROADMAP[cutoffIndex]?.position.y ?? 400;
+            })()}
+            />
+
+            {/* Expand toggle */}
+            <button
+            className={styles.expandToggle}
+            onClick={() => setRoadmapExpanded(prev => !prev)}
+            >
+            {roadmapExpanded ? "Hide full roadmap ▲" : "Show full roadmap ▼"}
+            </button>
         </div>
 
         {/* Library panel */}
@@ -282,6 +317,14 @@ export default function LessonsHome() {
           })}
         </div>
       </div>
+    {activeNode && (
+        <NodeHubPanel
+          node={activeNode}
+          lessonStateMap={lessonStateMap}
+          completions={completions}
+          onClose={() => setActiveNode(null)}
+        />
+      )}
     </div>
   );
 }

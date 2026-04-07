@@ -1,0 +1,239 @@
+/* src/modules/Grammar/GrammarHome.module.css */
+
+.root {
+  max-width: 680px;
+  margin: 0 auto;
+  padding: 24px 16px 80px;
+  font-family: var(--font-ui);
+}
+
+/* ── Header ──────────────────────────────────────────────────────────── */
+
+.header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.headerText {
+  flex: 1;
+}
+
+.title {
+  font-family: var(--font-ru);
+  font-size: 28px;
+  font-weight: 700;
+  color: var(--c-text-dark);
+  margin: 0 0 4px;
+}
+
+.subtitle {
+  font-size: 14px;
+  color: var(--c-text-mid);
+  margin: 0;
+}
+
+.headerActions {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.btnPrimary {
+  background: var(--c-sage);
+  color: #fff;
+  border: none;
+  border-radius: var(--radius-md);
+  padding: 10px 18px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: opacity 0.15s;
+}
+.btnPrimary:hover:not(:disabled) { opacity: 0.88; }
+.btnPrimary:disabled {
+  background: var(--c-border);
+  color: var(--c-text-light);
+  cursor: not-allowed;
+}
+
+.btnSecondary {
+  background: var(--c-bg-card);
+  color: var(--c-text-mid);
+  border: 1px solid var(--c-border);
+  border-radius: var(--radius-md);
+  padding: 9px 18px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: not-allowed;
+  white-space: nowrap;
+  opacity: 0.6;
+}
+
+/* ── Summary strip ────────────────────────────────────────────────────── */
+
+.summaryStrip {
+  display: flex;
+  align-items: center;
+  background: var(--c-bg-card);
+  border: 1px solid var(--c-border-soft);
+  border-radius: var(--radius-lg);
+  padding: 16px;
+  margin-bottom: 28px;
+  gap: 0;
+}
+
+.summaryTile {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+}
+
+.summaryNum {
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--c-text-dark);
+  font-family: var(--font-ru);
+}
+
+.summaryLabel {
+  font-size: 11px;
+  color: var(--c-text-light);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.summaryDivider {
+  width: 1px;
+  height: 32px;
+  background: var(--c-border-soft);
+}
+
+/* ── Topic list ──────────────────────────────────────────────────────── */
+
+.section {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.sectionHeader {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--c-text-light);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  margin-bottom: 4px;
+}
+
+.emptyHint {
+  background: var(--c-bg-panel);
+  border: 1px solid var(--c-border-soft);
+  border-radius: var(--radius-md);
+  padding: 14px 16px;
+  font-size: 13px;
+  color: var(--c-text-mid);
+  margin-bottom: 8px;
+}
+
+.topicList {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.topicRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  background: var(--c-bg-card);
+  border: 1px solid var(--c-border-soft);
+  border-radius: var(--radius-md);
+  padding: 12px 14px;
+  transition: background 0.12s, border-color 0.12s;
+}
+
+.topicRowDrillable {
+  cursor: pointer;
+}
+.topicRowDrillable:hover {
+  background: var(--c-bg-panel);
+  border-color: var(--c-border);
+}
+
+.topicRowLocked {
+  opacity: 0.55;
+  cursor: default;
+}
+
+.topicLeft {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.topicTitle {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--c-text-dark);
+  white-space: nowrap;
+  overflow: clip;
+  text-overflow: ellipsis;
+}
+
+.topicSub {
+  font-size: 12px;
+  color: var(--c-text-light);
+  white-space: nowrap;
+  overflow: clip;
+  text-overflow: ellipsis;
+}
+
+.topicRight {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.cefrChip {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+}
+
+.stateChip {
+  font-size: 11px;
+  font-weight: 600;
+  padding: 3px 8px;
+  border-radius: 999px;
+  border: 1px solid transparent;
+}
+
+.stateLocked      { background: var(--c-bg-deep);   color: var(--c-text-xlight); border-color: var(--c-border-soft); }
+.stateAvailable   { background: var(--c-sky-light);  color: var(--c-sky);         border-color: var(--c-sky);         }
+.stateInProgress  { background: var(--c-cream);      color: var(--c-orange);      border-color: var(--c-orange);      }
+.stateCompleted   { background: #eaf3ea;             color: var(--c-correct);     border-color: var(--c-correct);     }
+.stateMastered    { background: #f5f0ff;             color: #7060c0;              border-color: #c0b0ee;              }
+
+/* ── Skeleton ────────────────────────────────────────────────────────── */
+
+.skeleton {
+  height: 20px;
+  background: var(--c-bg-panel);
+  border-radius: var(--radius-sm);
+  animation: shimmer 1.4s ease infinite;
+}
+
+@keyframes shimmer {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0.4; }
+}

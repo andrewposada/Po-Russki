@@ -1,10 +1,15 @@
 // src/modules/Grammar/index.jsx
-// Stub — full implementation in Phase 3F.5 and later
+import { useLocation } from "react-router-dom";
+import GrammarHome    from "./GrammarHome";
+import GrammarFreeplay from "./GrammarFreeplay";
 
 export default function Grammar() {
-  return (
-    <div style={{ padding: '2rem', fontFamily: 'var(--font-ui)', color: 'var(--c-text-dark)' }}>
-      <p>Grammar module — coming soon</p>
-    </div>
-  );
+  const location = useLocation();
+  const path     = location.pathname;
+
+  if (path.startsWith("/grammar/freeplay")) return <GrammarFreeplay />;
+  // Future sub-screens wired here:
+  // /grammar/cheatsheet → CheatSheet (Phase 3F.6)
+
+  return <GrammarHome />;
 }

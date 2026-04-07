@@ -8,9 +8,10 @@ import {
   upsertLessonCompletion,
   saveLessonAnswer,
   addXP,
+  getUserProgress,
   getPendingAssignments,
 } from "../../storage";
-import { LESSON_STATE } from "../../constants";
+import { LESSON_STATE, getLevelFromXP, XP_LEVELS } from "../../constants";
 
 import NarrativeBlock    from "./blocks/NarrativeBlock";
 import RuleTableBlock    from "./blocks/RuleTableBlock";
@@ -42,6 +43,22 @@ function groupBlocks(content) {
 
 const ANSWERABLE = new Set(["quiz", "practice", "free_response_sentence", "free_response_paragraph"]);
 
+// ── Level-up banner ────────────────────────────────────────────────────────────
+
+function LevelUpBanner({ level, name }) {
+  const [visible, setVisible] = useState(true);
+  useEffect(() => {
+    const t = setTimeout(() => setVisible(false), 3000);
+    return () => clearTimeout(t);
+  }, []);
+  if (!visible) return null;
+  return (
+    <div className={styles.levelUpBanner}>
+      ⭐ Уровень {level} — {name}!
+    </div>
+  );
+}
+
 // ── Main component ─────────────────────────────────────────────────────────────
 
 export default function LessonPlayer() {
@@ -60,10 +77,12 @@ export default function LessonPlayer() {
   const [xpEarned,  setXpEarned]  = useState(0);
   const [hasAssignments, setHasAssignments] = useState(false);
   const [showResume, setShowResume] = useState(false);
+  const [leveledUp, setLeveledUp] = useState(null); // { level: number, name: string } | null
 
   // Stale closure guard
-  const currentGroupIndexRef = useRef(0);
-  const answeredRef          = useRef({});
+  const currentGroupIndexRef    = useRef(0);
+  const answeredRef             = useRef({});
+  const wasAlreadyCompletedRef  = useRef(false);
 
   // Refs for scroll targets
   const groupRefs = useRef([]);
@@ -94,6 +113,11 @@ export default function LessonPlayer() {
         setRevealedCount(savedIndex + 1);
         setShowResume(true);
         setTimeout(() => setShowResume(false), 2000);
+      }
+
+      // Mark if already completed (for XP idempotency check)
+      if (completion && completion.state >= LESSON_STATE.COMPLETED) {
+        wasAlreadyCompletedRef.current = true;
       }
 
       // Upsert in_progress
@@ -186,10 +210,23 @@ export default function LessonPlayer() {
       completed_at:   new Date().toISOString(),
     });
 
-    // Award XP
-    const xp = lesson.xp_reward ?? 100;
-    await addXP(user.uid, xp);
-    setXpEarned(xp);
+    // Award XP only if this is the first completion (not a review)
+    if (!wasAlreadyCompletedRef.current) {
+      const xp = lesson.xp_reward ?? 100;
+      // Snapshot level before awarding XP so we can detect level-up
+      const prevProgress = await getUserProgress(user.uid);
+      const prevLevel = prevProgress?.level ?? 1;
+      const result = await addXP(user.uid, xp);
+      setXpEarned(xp);
+      // Detect level-up: if the new level from addXP is higher, show banner
+      if (result && result.level > prevLevel) {
+        const newLevelInfo = getLevelFromXP(result.xp_total);
+        setLeveledUp({ level: result.level, name: newLevelInfo.name });
+      }
+    } else {
+      setXpEarned(0);
+    }
+
 
     setCompleted(true);
   }
@@ -268,8 +305,15 @@ export default function LessonPlayer() {
           <div className={styles.completionCard}>
             <div className={`${styles.completionScore} ${scoreColorClass}`}>{baselineScore}%</div>
             <div className={styles.completionScoreLabel}>Lesson score</div>
-            <div className={styles.xpBadge}>+{xpEarned} XP</div>
+            {xpEarned > 0 ? (
+              <div className={styles.xpBadge}>+{xpEarned} XP</div>
+            ) : (
+              <div className={styles.reviewNote}>Lesson reviewed — XP already earned</div>
+            )}
           </div>
+          {leveledUp && (
+            <LevelUpBanner level={leveledUp.level} name={leveledUp.name} />
+          )}
           {hasAssignments && (
             <div className={styles.assignmentUnlockedBanner}>
               📋 Assignment unlocked and added to your queue
