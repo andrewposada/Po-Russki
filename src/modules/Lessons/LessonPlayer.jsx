@@ -75,7 +75,12 @@ export default function LessonPlayer() {
         getLessonById(lessonId),
         getLessonCompletion(user.uid, lessonId),
       ]);
-      if (!lessonData) { navigate("/lessons"); return; }
+      if (!lessonData) {
+        console.error("Lesson not found or access denied:", lessonId);
+        // Don't navigate immediately — show error state instead
+        setLoading(false);
+        return;
+       }
 
       const grouped = groupBlocks(lessonData.content || []);
       setLesson(lessonData);
@@ -283,13 +288,24 @@ export default function LessonPlayer() {
 
   // ── Loading ───────────────────────────────────────────────────────────────────
 
-  if (loading || !lesson || groups.length === 0) {
-    return (
-      <div style={{ padding: "40px 20px", textAlign: "center", color: "var(--c-text-light)", fontFamily: "var(--font-ui)" }}>
-        Loading lesson…
-      </div>
-    );
-  }
+  if (loading) {
+  return (
+    <div style={{ padding: "40px 20px", textAlign: "center", color: "var(--c-text-light)", fontFamily: "var(--font-ui)" }}>
+      Loading lesson…
+    </div>
+  );
+}
+
+if (!lesson) {
+  return (
+    <div style={{ padding: "40px 20px", textAlign: "center", fontFamily: "var(--font-ui)" }}>
+      <p style={{ color: "var(--c-wrong)", marginBottom: 12 }}>Could not load lesson. Check console for details.</p>
+      <button onClick={() => navigate("/lessons")} style={{ fontSize: 13, color: "var(--c-text-mid)", cursor: "pointer", background: "none", border: "1px solid var(--c-border)", borderRadius: "var(--radius-md)", padding: "8px 16px" }}>
+        ← Back to Lessons
+      </button>
+    </div>
+  );
+}
 
   // ── Player ────────────────────────────────────────────────────────────────────
 

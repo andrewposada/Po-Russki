@@ -572,15 +572,16 @@ export async function getReadingLog(userId, bookId) {
 // LESSONS
 // ─────────────────────────────────────────────────────────────────────────────
 
-export async function getLessonById(userId, lessonId) {
+export async function getLessonById(lessonId) {
   const { data, error } = await supabase
-    .from('lessons')
-    .select('*')
-    .eq('id', lessonId)
-    .single();
-  if (error) { console.error('getLessonById:', error); return null; }
+    .from("lessons")
+    .select("*")
+    .eq("id", lessonId)
+    .maybeSingle();
+  if (error) { console.error("getLessonById:", error); return null; }
   return data;
 }
+
 
 export async function getCoreLessons() {
   const { data, error } = await supabase
