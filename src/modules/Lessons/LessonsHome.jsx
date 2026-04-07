@@ -105,6 +105,7 @@ export default function LessonsHome() {
   const lessonTitleMap = Object.fromEntries(lessons.map(l => [l.id, l.title]));
 
   const filteredLessons = sortedLessons.filter(l => {
+    if (l.is_core) return false;
     const s = lessonState(l);
     if (filter === "in_progress") return s === LESSON_STATE.IN_PROGRESS;
     if (filter === "available")   return s === LESSON_STATE.AVAILABLE;

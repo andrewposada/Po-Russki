@@ -1,6 +1,7 @@
 // src/modules/Lessons/LessonImport.jsx
 import { useState, useRef } from "react";
 import { useNavigate }      from "react-router-dom";
+import { useAuth }          from "../../AuthContext";
 import { insertLesson }     from "../../storage";
 import styles               from "./LessonImport.module.css";
 
@@ -113,6 +114,7 @@ function validateLesson(data) {
 
 export default function LessonImport() {
   const navigate   = useNavigate();
+  const { user }   = useAuth();
   const fileRef    = useRef(null);
 
   // Step 1 — form state
@@ -177,8 +179,6 @@ export default function LessonImport() {
           setFileWarnings([]);
           setParsedLesson(null);
         } else {
-          // Force is_core false on import regardless of what Claude produced
-          data.is_core = false;
           setParsedLesson(data);
           setFileErrors([]);
           setFileWarnings(warnings);
@@ -195,10 +195,18 @@ export default function LessonImport() {
   }
 
 async function handleImport() {
-  if (!parsedLesson || importStatus !== "idle") return;
-  setImportStatus("importing");
-  try {
-    await insertLesson(parsedLesson);
+    if (!parsedLesson || importStatus !== "idle") return;
+    setImportStatus("importing");
+
+    // TEMP DIAGNOSTIC — remove after fix
+  const { auth } = await import("../../firebase");
+  const token = await auth.currentUser?.getIdToken(false);
+  console.log("currentUser:", auth.currentUser?.uid);
+  console.log("token first 50 chars:", token?.substring(0, 50));
+  // END TEMP DIAGNOSTIC
+
+    try {
+      await insertLesson(user.uid, parsedLesson);
     setImportStatus("done");
     setTimeout(() => navigate("/lessons"), 1200);
   } catch (err) {

@@ -37,7 +37,7 @@ export const GRAMMAR_ROADMAP = [
     cefr: "A1",
     tier: 1,
     prerequisites: [],
-    status: "coming_soon",
+    status: "content_ready",
     position: { x: 50, y: 0 },
     lessons: [
       {
@@ -71,7 +71,7 @@ export const GRAMMAR_ROADMAP = [
     cefr: "A1",
     tier: 1,
     prerequisites: ["nom"],
-    status: "coming_soon",
+    status: "content_ready",
     position: { x: 30, y: 180 },
     lessons: [
       {
@@ -98,7 +98,7 @@ export const GRAMMAR_ROADMAP = [
     cefr: "A1",
     tier: 1,
     prerequisites: ["nom"],
-    status: "coming_soon",
+    status: "content_ready",
     position: { x: 70, y: 180 },
     lessons: [
       {
@@ -132,7 +132,7 @@ export const GRAMMAR_ROADMAP = [
     cefr: "A1",
     tier: 1,
     prerequisites: ["acc"],
-    status: "coming_soon",
+    status: "content_ready",
     position: { x: 30, y: 380 },
     lessons: [
       {
@@ -173,7 +173,7 @@ export const GRAMMAR_ROADMAP = [
     cefr: "A1",
     tier: 1,
     prerequisites: ["conj-present"],
-    status: "coming_soon",
+    status: "content_ready",
     position: { x: 70, y: 380 },
     lessons: [
       {
@@ -200,7 +200,7 @@ export const GRAMMAR_ROADMAP = [
     cefr: "A2",
     tier: 1,
     prerequisites: ["gen"],
-    status: "coming_soon",
+    status: "content_ready",
     position: { x: 30, y: 570 },
     lessons: [
       {
@@ -234,7 +234,7 @@ export const GRAMMAR_ROADMAP = [
     cefr: "A2",
     tier: 1,
     prerequisites: ["conj-past"],
-    status: "coming_soon",
+    status: "content_ready",
     position: { x: 70, y: 570 },
     lessons: [
       {
@@ -265,7 +265,7 @@ export const GRAMMAR_ROADMAP = [
     cefr: "A2",
     tier: 2,
     prerequisites: ["dat"],
-    status: "coming_soon",
+    status: "content_ready",
     position: { x: 30, y: 780 },
     lessons: [
       {
@@ -299,7 +299,7 @@ export const GRAMMAR_ROADMAP = [
     cefr: "A2",
     tier: 2,
     prerequisites: ["conj-future"],
-    status: "coming_soon",
+    status: "content_ready",
     position: { x: 70, y: 780 },
     lessons: [
       {
@@ -326,7 +326,7 @@ export const GRAMMAR_ROADMAP = [
     cefr: "A2",
     tier: 2,
     prerequisites: ["instr"],
-    status: "coming_soon",
+    status: "content_ready",
     position: { x: 30, y: 970 },
     lessons: [
       {
@@ -353,7 +353,7 @@ export const GRAMMAR_ROADMAP = [
     cefr: "B1",
     tier: 2,
     prerequisites: ["aspect"],
-    status: "coming_soon",
+    status: "content_ready",
     position: { x: 70, y: 970 },
     lessons: [
       {
@@ -387,7 +387,7 @@ export const GRAMMAR_ROADMAP = [
     cefr: "A2",
     tier: 2,
     prerequisites: ["prep"],
-    status: "coming_soon",
+    status: "content_ready",
     position: { x: 30, y: 1160 },
     lessons: [
       {
@@ -421,7 +421,7 @@ export const GRAMMAR_ROADMAP = [
     cefr: "B1",
     tier: 2,
     prerequisites: ["aspect-practice"],
-    status: "coming_soon",
+    status: "content_ready",
     position: { x: 70, y: 1160 },
     lessons: [
       {
@@ -448,7 +448,7 @@ export const GRAMMAR_ROADMAP = [
     cefr: "B1",
     tier: 2,
     prerequisites: ["adj"],
-    status: "coming_soon",
+    status: "content_ready",
     position: { x: 30, y: 1340 },
     lessons: [
       {
@@ -475,7 +475,7 @@ export const GRAMMAR_ROADMAP = [
     cefr: "B1",
     tier: 2,
     prerequisites: ["motion"],
-    status: "coming_soon",
+    status: "content_ready",
     position: { x: 70, y: 1340 },
     lessons: [
       {
@@ -506,7 +506,7 @@ export const GRAMMAR_ROADMAP = [
     cefr: "B1",
     tier: 3,
     prerequisites: ["adj-short"],
-    status: "coming_soon",
+    status: "content_ready",
     position: { x: 20, y: 1560 },
     lessons: [
       {
@@ -540,7 +540,7 @@ export const GRAMMAR_ROADMAP = [
     cefr: "B1",
     tier: 3,
     prerequisites: ["adj-short", "motion-prefix"],
-    status: "coming_soon",
+    status: "content_ready",
     position: { x: 42, y: 1560 },
     lessons: [
       {
@@ -567,7 +567,7 @@ export const GRAMMAR_ROADMAP = [
     cefr: "B1",
     tier: 3,
     prerequisites: ["motion-prefix"],
-    status: "coming_soon",
+    status: "content_ready",
     position: { x: 64, y: 1560 },
     lessons: [
       {
@@ -601,7 +601,7 @@ export const GRAMMAR_ROADMAP = [
     cefr: "B1",
     tier: 3,
     prerequisites: ["conditional"],
-    status: "coming_soon",
+    status: "content_ready",
     position: { x: 30, y: 1760 },
     lessons: [
       {
@@ -628,7 +628,7 @@ export const GRAMMAR_ROADMAP = [
     cefr: "B1",
     tier: 3,
     prerequisites: ["conditional", "participles"],
-    status: "coming_soon",
+    status: "content_ready",
     position: { x: 50, y: 1760 },
     lessons: [
       {
@@ -655,7 +655,7 @@ export const GRAMMAR_ROADMAP = [
     cefr: "B2",
     tier: 3,
     prerequisites: ["participles"],
-    status: "coming_soon",
+    status: "content_ready",
     position: { x: 70, y: 1760 },
     lessons: [
       {
@@ -682,7 +682,7 @@ export const GRAMMAR_ROADMAP = [
     cefr: "B1",
     tier: 3,
     prerequisites: ["reflexive", "imperative"],
-    status: "coming_soon",
+    status: "content_ready",
     position: { x: 30, y: 1960 },
     lessons: [
       {
@@ -709,7 +709,7 @@ export const GRAMMAR_ROADMAP = [
     cefr: "B2",
     tier: 3,
     prerequisites: ["imperative", "verbal-adverbs"],
-    status: "coming_soon",
+    status: "content_ready",
     position: { x: 60, y: 1960 },
     lessons: [
       {
@@ -736,7 +736,7 @@ export const GRAMMAR_ROADMAP = [
     cefr: "B2",
     tier: 3,
     prerequisites: ["comparatives", "subjunctive"],
-    status: "coming_soon",
+    status: "content_ready",
     position: { x: 50, y: 2150 },
     lessons: [
       {

@@ -604,8 +604,8 @@ export async function getUserLessons(userId) {
   return data ?? [];
 }
 
-export async function insertLesson(lessonData) {
-  const payload = { ...lessonData, is_core: false };
+export async function insertLesson(userId, lessonData) {
+  const payload = { ...lessonData, inserted_by: userId };
   const { data, error } = await supabase
     .from('lessons')
     .insert(payload)
