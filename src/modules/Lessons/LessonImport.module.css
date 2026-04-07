@@ -1,0 +1,383 @@
+/* LessonImport.module.css */
+
+.page {
+  min-height: 100vh;
+  background: var(--c-bg);
+  font-family: var(--font-ui);
+}
+
+/* ── Header ──────────────────────────────────────────────────────────────── */
+
+.header {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 18px 20px 14px;
+  border-bottom: 1px solid var(--c-border-soft);
+  background: var(--c-bg-card);
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+
+.backBtn {
+  background: none;
+  border: none;
+  font-family: var(--font-ui);
+  font-size: 13px;
+  color: var(--c-text-mid);
+  cursor: pointer;
+  padding: 6px 10px;
+  border-radius: var(--radius-sm);
+  flex-shrink: 0;
+}
+
+.backBtn:hover {
+  background: var(--c-bg-panel);
+  color: var(--c-text-dark);
+}
+
+.pageTitle {
+  font-family: Georgia, serif;
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--c-text-dark);
+  margin: 0;
+}
+
+/* ── Body ────────────────────────────────────────────────────────────────── */
+
+.body {
+  max-width: 640px;
+  margin: 0 auto;
+  padding: 28px 20px 60px;
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+.divider {
+  height: 1px;
+  background: var(--c-border);
+  margin: 24px 0;
+}
+
+/* ── Step rows ───────────────────────────────────────────────────────────── */
+
+.stepRow {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 16px;
+}
+
+.stepCircle {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: var(--c-text-dark);
+  color: var(--c-bg-card);
+  font-size: 11px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  transition: background 0.2s;
+}
+
+.stepCircleDone {
+  background: var(--c-sage);
+}
+
+.stepTitle {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--c-text-dark);
+}
+
+.stepContent {
+  margin-left: 31px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.stepInstruction {
+  font-size: 13px;
+  color: var(--c-text-mid);
+  margin: 0 0 4px;
+  line-height: 1.55;
+}
+
+/* ── Step 1 form fields ──────────────────────────────────────────────────── */
+
+.fieldGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.fieldLabel {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--c-text-mid);
+}
+
+.textInput {
+  font-size: 14px;
+  padding: 9px 12px;
+  border: 1.5px solid var(--c-border);
+  border-radius: var(--radius-md);
+  background: var(--c-bg-card);
+  color: var(--c-text-dark);
+  outline: none;
+  width: 100%;
+  font-family: var(--font-ui);
+  box-sizing: border-box;
+}
+
+.textInput:focus {
+  border-color: var(--c-sage);
+}
+
+.textareaInput {
+  font-size: 14px;
+  padding: 9px 12px;
+  border: 1.5px solid var(--c-border);
+  border-radius: var(--radius-md);
+  background: var(--c-bg-card);
+  color: var(--c-text-dark);
+  outline: none;
+  width: 100%;
+  font-family: var(--font-ui);
+  min-height: 72px;
+  resize: vertical;
+  line-height: 1.55;
+  box-sizing: border-box;
+}
+
+.textareaInput:focus {
+  border-color: var(--c-sage);
+}
+
+.pillRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.pill {
+  font-size: 12px;
+  padding: 5px 12px;
+  border-radius: 20px;
+  border: 1.5px solid var(--c-border);
+  background: var(--c-bg-card);
+  color: var(--c-text-mid);
+  cursor: pointer;
+  font-weight: 500;
+  font-family: var(--font-ui);
+  transition: background 0.15s, color 0.15s, border-color 0.15s;
+}
+
+.pill:hover {
+  background: var(--c-bg-panel);
+}
+
+.pillActive {
+  background: var(--c-text-dark);
+  color: var(--c-bg-card);
+  border-color: var(--c-text-dark);
+}
+
+/* ── Step 2 — Generate ───────────────────────────────────────────────────── */
+
+.generateBtn {
+  font-size: 14px;
+  font-weight: 700;
+  padding: 11px 24px;
+  border-radius: var(--radius-md);
+  border: none;
+  cursor: pointer;
+  background: var(--c-text-dark);
+  color: var(--c-bg-card);
+  font-family: var(--font-ui);
+  align-self: flex-start;
+  transition: background 0.15s;
+}
+
+.generateBtn:hover:not(:disabled) {
+  background: #2a2018;
+}
+
+.generateBtnDisabled {
+  background: var(--c-border);
+  color: var(--c-text-light);
+  cursor: default;
+}
+
+.promptOutput {
+  width: 100%;
+  min-height: 120px;
+  padding: 11px 13px;
+  border: 1.5px solid var(--c-border);
+  border-radius: var(--radius-md);
+  background: #faf8f3;
+  color: var(--c-text-dark);
+  font-size: 12px;
+  font-family: monospace;
+  line-height: 1.6;
+  resize: none;
+  outline: none;
+  box-sizing: border-box;
+}
+
+.actionsRow {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.copyBtn {
+  font-size: 13px;
+  font-weight: 600;
+  padding: 9px 18px;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--c-border);
+  background: var(--c-bg-panel);
+  color: var(--c-text-dark);
+  cursor: pointer;
+  font-family: var(--font-ui);
+  transition: background 0.15s;
+}
+
+.copyBtn:hover {
+  background: var(--c-bg-deep);
+}
+
+.copiedConfirm {
+  font-size: 12px;
+  color: var(--c-sage);
+  font-weight: 600;
+}
+
+.claudeBtn {
+  font-size: 13px;
+  font-weight: 700;
+  padding: 9px 18px;
+  border-radius: var(--radius-md);
+  border: none;
+  background: var(--c-sage);
+  color: #fff;
+  cursor: pointer;
+  font-family: var(--font-ui);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  transition: background 0.15s;
+}
+
+.claudeBtn:hover {
+  background: var(--c-sage-dark);
+}
+
+/* ── Step 3 — Import ─────────────────────────────────────────────────────── */
+
+.fileSelectBtn {
+  font-size: 13px;
+  font-weight: 600;
+  padding: 10px 18px;
+  border-radius: var(--radius-md);
+  border: 1.5px dashed var(--c-border);
+  background: var(--c-bg-card);
+  color: var(--c-text-mid);
+  cursor: pointer;
+  width: 100%;
+  text-align: center;
+  font-family: var(--font-ui);
+  transition: background 0.15s, border-color 0.15s;
+}
+
+.fileSelectBtn:hover {
+  background: var(--c-bg-panel);
+  border-color: var(--c-text-xlight);
+}
+
+.errorMsg {
+  font-size: 12px;
+  color: var(--c-wrong);
+  padding: 8px 11px;
+  background: #fdf0ec;
+  border: 1px solid #e8c0b0;
+  border-radius: var(--radius-sm);
+  line-height: 1.55;
+}
+
+.warningMsg {
+  font-size: 12px;
+  color: var(--c-orange);
+  padding: 8px 11px;
+  background: color-mix(in srgb, var(--c-orange) 10%, transparent);
+  border: 1px solid color-mix(in srgb, var(--c-orange) 30%, transparent);
+  border-radius: var(--radius-sm);
+  line-height: 1.55;
+}
+
+.previewCard {
+  background: var(--c-bg-card);
+  border: 1px solid var(--c-sage-light);
+  border-radius: var(--radius-md);
+  padding: 14px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.previewTitle {
+  font-family: Georgia, serif;
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--c-text-dark);
+}
+
+.previewMeta {
+  font-size: 12px;
+  color: var(--c-text-light);
+}
+
+.previewCefr {
+  color: var(--c-sage);
+  font-weight: 600;
+}
+
+.importBtn {
+  font-size: 14px;
+  font-weight: 700;
+  padding: 10px 22px;
+  border-radius: var(--radius-md);
+  border: none;
+  cursor: pointer;
+  background: var(--c-sage);
+  color: #fff;
+  width: 100%;
+  font-family: var(--font-ui);
+  transition: background 0.2s;
+  margin-top: 4px;
+}
+
+.importBtn:hover:not(:disabled) {
+  background: var(--c-sage-dark);
+}
+
+.importBtn:disabled {
+  cursor: default;
+}
+
+.importBtnLoading {
+  background: var(--c-text-light);
+}
+
+.importBtnDone {
+  background: var(--c-correct);
+}

@@ -6,6 +6,12 @@ const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
 export const supabase = createClient(supabaseUrl, supabaseKey, {
   accessToken: async () => {
-    return (await auth.currentUser?.getIdToken(false)) ?? null;
-  },
+  const user = auth.currentUser;
+  if (!user) return null;
+  try {
+    return await user.getIdToken(true);
+  } catch {
+    return null;
+  }
+},
 });

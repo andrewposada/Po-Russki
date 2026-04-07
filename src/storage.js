@@ -611,7 +611,10 @@ export async function insertLesson(lessonData) {
     .insert(payload)
     .select()
     .single();
-  if (error) { console.error('insertLesson:', error); return null; }
+  if (error) {
+    console.error('insertLesson:', error);
+    throw error;
+  }
   return data;
 }
 
