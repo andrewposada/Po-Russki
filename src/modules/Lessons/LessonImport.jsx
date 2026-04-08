@@ -36,6 +36,21 @@ free_response_paragraph:
 
 summary:
 { "type": "summary", "group": "What You Learned", "points": ["Point 1", "Point 2", "Point 3"] }
+
+dialogue:
+{ "type": "dialogue", "group": "Conversation", "setup": "Scene description in English.", "speakers": ["Аня", "Борис"], "lines": [{ "speaker": "Аня", "ru": "Russian line.", "en": "English translation." }], "focus_note": "Notice how the noun changes here." }
+
+mini_story:
+{ "type": "mini_story", "group": "Read the Story", "story_ru": "Short Russian narrative 3–8 sentences.", "story_en": "Full English translation.", "focus_note": "Notice the endings on these nouns." }
+
+discovery:
+{ "type": "discovery", "group": "What Do You Notice?", "prompt": "Look at these endings. What do they share?", "reveal": "The pattern is..." }
+
+sentence_choice:
+{ "type": "sentence_choice", "group": "Choose the Correct Sentence", "instruction": "Which sentence is grammatically correct?", "options": [{ "ru": "Russian sentence.", "en": "English translation." }, { "ru": "Russian sentence.", "en": "English translation." }, { "ru": "Russian sentence.", "en": "English translation." }], "correct_index": 0, "explanation": "Why this one is correct." }
+
+error_correction:
+{ "type": "error_correction", "group": "Spot the Error", "sentence_ru": "Full Russian sentence with error.", "sentence_en": "What the sentence should mean.", "error_word": "incorrectForm", "corrected_word": "correctForm", "explanation": "Why this form is correct." }
 `.trim();
 
 const CEFR_LEVELS = ["A1", "A2", "B1", "B2", "C1"];
@@ -91,8 +106,22 @@ function validateLesson(data) {
     const missing = data.content.filter(b => !b.group);
     if (missing.length > 0) errors.push(`${missing.length} block(s) are missing the required "group" field.`);
 
+    // Check for unknown block types
+    const VALID_TYPES = new Set([
+      "narrative", "rule_table", "example_set", "callout", "quiz", "practice",
+      "assignment", "free_response_sentence", "free_response_paragraph", "summary",
+      "dialogue", "mini_story", "discovery", "sentence_choice", "error_correction",
+    ]);
+    const unknownTypes = [...new Set(data.content.map(b => b.type).filter(t => t && !VALID_TYPES.has(t)))];
+    if (unknownTypes.length > 0) {
+      warnings.push(`Unknown block type(s) will be skipped: ${unknownTypes.map(t => `"${t}"`).join(", ")}.`);
+    }
+
     // Check for duplicate answerable blocks within the same group
-    const ANSWERABLE = ["quiz", "practice", "assignment", "free_response_sentence", "free_response_paragraph"];
+    const ANSWERABLE = [
+      "quiz", "practice", "assignment", "free_response_sentence", "free_response_paragraph",
+      "sentence_choice", "error_correction",
+    ];
     const groupAnswerCount = {};
     data.content.forEach(b => {
       if (ANSWERABLE.includes(b.type)) {
@@ -104,6 +133,17 @@ function validateLesson(data) {
       warnings.push(
         `${overloaded.length} group(s) contain more than one answerable block: ${overloaded.map(([g]) => `"${g}"`).join(", ")}. Only the first will be graded.`
       );
+    }
+  }
+
+  // Validate vocabulary array if present
+  if (data.vocabulary && !Array.isArray(data.vocabulary)) {
+    warnings.push("vocabulary field exists but is not an array — it will be ignored.");
+  }
+  if (Array.isArray(data.vocabulary)) {
+    const badEntries = data.vocabulary.filter(v => !v.word || !v.translation);
+    if (badEntries.length > 0) {
+      warnings.push(`${badEntries.length} vocabulary entry/entries are missing word or translation and will be skipped.`);
     }
   }
 
@@ -197,14 +237,6 @@ export default function LessonImport() {
 async function handleImport() {
     if (!parsedLesson || importStatus !== "idle") return;
     setImportStatus("importing");
-
-    // TEMP DIAGNOSTIC — remove after fix
-  const { auth } = await import("../../firebase");
-  const token = await auth.currentUser?.getIdToken(false);
-  console.log("currentUser:", auth.currentUser?.uid);
-  console.log("token first 50 chars:", token?.substring(0, 50));
-  // END TEMP DIAGNOSTIC
-
     try {
       await insertLesson(user.uid, parsedLesson);
     setImportStatus("done");

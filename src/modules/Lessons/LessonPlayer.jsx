@@ -13,15 +13,22 @@ import {
 } from "../../storage";
 import { LESSON_STATE, getLevelFromXP, XP_LEVELS } from "../../constants";
 
-import NarrativeBlock    from "./blocks/NarrativeBlock";
-import RuleTableBlock    from "./blocks/RuleTableBlock";
-import ExampleSetBlock   from "./blocks/ExampleSetBlock";
-import CalloutBlock      from "./blocks/CalloutBlock";
-import QuizBlock         from "./blocks/QuizBlock";
-import PracticeBlock     from "./blocks/PracticeBlock";
-import AssignmentBlock   from "./blocks/AssignmentBlock";
-import FreeResponseBlock from "./blocks/FreeResponseBlock";
-import SummaryBlock      from "./blocks/SummaryBlock";
+import NarrativeBlock       from "./blocks/NarrativeBlock";
+import RuleTableBlock       from "./blocks/RuleTableBlock";
+import ExampleSetBlock      from "./blocks/ExampleSetBlock";
+import CalloutBlock         from "./blocks/CalloutBlock";
+import QuizBlock            from "./blocks/QuizBlock";
+import PracticeBlock        from "./blocks/PracticeBlock";
+import AssignmentBlock      from "./blocks/AssignmentBlock";
+import FreeResponseBlock    from "./blocks/FreeResponseBlock";
+import SummaryBlock         from "./blocks/SummaryBlock";
+import DialogueBlock        from "./blocks/DialogueBlock";
+import MiniStoryBlock       from "./blocks/MiniStoryBlock";
+import DiscoveryBlock       from "./blocks/DiscoveryBlock";
+import SentenceChoiceBlock  from "./blocks/SentenceChoiceBlock";
+import ErrorCorrectionBlock from "./blocks/ErrorCorrectionBlock";
+import { VocabContext }     from "./VocabContext";
+import { upsertWord }       from "../../storage";
 
 import styles from "./LessonPlayer.module.css";
 
@@ -41,7 +48,68 @@ function groupBlocks(content) {
   return groups;
 }
 
-const ANSWERABLE = new Set(["quiz", "practice", "free_response_sentence", "free_response_paragraph"]);
+const ANSWERABLE = new Set([
+  "quiz", "practice", "sentence_choice", "error_correction",
+  "free_response_sentence", "free_response_paragraph",
+]);
+
+// ── Vocab review panel (completion screen) ────────────────────────────────────
+
+function VocabReviewPanel({ vocab, userId }) {
+  const [added, setAdded] = useState({});
+
+  if (!vocab || vocab.length === 0) return null;
+
+  async function handleAdd(entry, key) {
+    if (added[key] || !userId) return;
+    try {
+      await upsertWord(userId, {
+        word:          entry.word,
+        translation:   entry.translation,
+        pronunciation: entry.pronunciation ?? "",
+        etymology:     "",
+        usage_example: "",
+        cefr_level:    "A1",
+      });
+      setAdded(a => ({ ...a, [key]: true }));
+    } catch {
+      // silently fail — word may already exist
+    }
+  }
+
+  async function handleAddAll() {
+    for (let i = 0; i < vocab.length; i++) {
+      if (!added[i]) await handleAdd(vocab[i], i);
+    }
+  }
+
+  return (
+    <div className={styles.vocabReviewPanel}>
+      <div className={styles.vocabReviewTitle}>New Words</div>
+      <button className={styles.vocabReviewAddAll} onClick={handleAddAll}>
+        Add all to word bank
+      </button>
+      <div className={styles.vocabReviewList}>
+        {vocab.map((entry, i) => (
+          <div key={i} className={styles.vocabReviewEntry}>
+            <span className={styles.vocabReviewWord}>{entry.word}</span>
+            {entry.gender && (
+              <span className={styles.vocabReviewGender}>{entry.gender}</span>
+            )}
+            <span className={styles.vocabReviewTranslation}>{entry.translation}</span>
+            <button
+              className={`${styles.vocabReviewAddBtn} ${added[i] ? styles.vocabReviewAddBtnDone : ""}`}
+              onClick={() => handleAdd(entry, i)}
+              disabled={!!added[i]}
+            >
+              {added[i] ? "✓" : "+ Add"}
+            </button>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
 
 // ── Level-up banner ────────────────────────────────────────────────────────────
 
@@ -101,7 +169,7 @@ export default function LessonPlayer() {
         return;
        }
 
-      const grouped = groupBlocks(lessonData.content || []);
+      const grouped = groupBlocks(lessonData.content?.content || []);
       setLesson(lessonData);
       setGroups(grouped);
 
@@ -244,7 +312,7 @@ export default function LessonPlayer() {
   // ── Block renderer (inline JSX variable — do not extract) ─────────────────────
 
   function renderBlocks(group, groupIndex) {
-    return group.blocks.map((block, i) => {
+    const blocks = group.blocks.map((block, i) => {
       switch (block.type) {
         case "narrative":
           return <NarrativeBlock key={i} block={block} />;
@@ -283,10 +351,38 @@ export default function LessonPlayer() {
           );
         case "summary":
           return <SummaryBlock key={i} block={block} />;
+        case "dialogue":
+          return <DialogueBlock key={i} block={block} />;
+        case "mini_story":
+          return <MiniStoryBlock key={i} block={block} />;
+        case "discovery":
+          return <DiscoveryBlock key={i} block={block} />;
+        case "sentence_choice":
+          return (
+            <SentenceChoiceBlock
+              key={i}
+              block={block}
+              onAnswer={(correct) => handleAnswer(groupIndex, correct)}
+            />
+          );
+        case "error_correction":
+          return (
+            <ErrorCorrectionBlock
+              key={i}
+              block={block}
+              onSubmit={(answer, correct) => handleSubmit(groupIndex, answer, correct, null)}
+            />
+          );
         default:
           return null;
       }
     });
+
+    return (
+      <VocabContext.Provider value={lesson?.content?.vocabulary ?? []}>
+        {blocks}
+      </VocabContext.Provider>
+    );
   }
 
   // ── Completion screen ─────────────────────────────────────────────────────────
@@ -319,6 +415,9 @@ export default function LessonPlayer() {
               📋 Assignment unlocked and added to your queue
             </div>
           )}
+
+          <VocabReviewPanel vocab={lesson?.vocabulary ?? []} userId={user?.uid} />
+
           <button
             className={styles.completionContinueBtn}
             onClick={() => navigate(hasAssignments ? "/lessons/assignments" : "/lessons")}

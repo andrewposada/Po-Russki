@@ -605,7 +605,16 @@ export async function getUserLessons(userId) {
 }
 
 export async function insertLesson(userId, lessonData) {
-  const payload = { ...lessonData, inserted_by: userId };
+  const { id, title, is_core, cefr_level, xp_reward, ...contentFields } = lessonData;
+  const payload = {
+    id,
+    title,
+    is_core:     is_core     ?? false,
+    cefr_level:  cefr_level  ?? null,
+    xp_reward:   xp_reward   ?? 100,
+    content:     contentFields,
+    inserted_by: userId,
+  };
   const { data, error } = await supabase
     .from('lessons')
     .insert(payload)

@@ -228,3 +228,87 @@
   cursor: pointer;
   margin-top: 4px;
 }
+
+/* ── Vocab Review Panel (completion screen) ───────────────────────────────── */
+
+.vocabReviewPanel {
+  margin-top: 24px;
+  padding-top: 20px;
+  border-top: 1px solid var(--c-border-soft);
+}
+.vocabReviewTitle {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--c-text-light);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  margin-bottom: 14px;
+  font-family: var(--font-ui);
+}
+.vocabReviewAddAll {
+  font-size: 12px;
+  font-weight: 600;
+  padding: 7px 14px;
+  border-radius: var(--radius-md);
+  border: 1.5px solid var(--c-border);
+  background: var(--c-bg-panel);
+  color: var(--c-text-dark);
+  cursor: pointer;
+  font-family: var(--font-ui);
+  margin-bottom: 14px;
+}
+.vocabReviewAddAll:hover {
+  background: var(--c-bg-deep);
+}
+.vocabReviewList {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.vocabReviewEntry {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  background: var(--c-bg-panel);
+  border-radius: var(--radius-md);
+}
+.vocabReviewWord {
+  font-family: var(--font-ru);
+  font-size: 15px;
+  color: var(--c-text-dark);
+  flex: 1;
+}
+.vocabReviewTranslation {
+  font-size: 13px;
+  color: var(--c-text-mid);
+  flex: 1;
+}
+.vocabReviewGender {
+  font-size: 11px;
+  color: var(--c-text-xlight);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  min-width: 16px;
+}
+.vocabReviewAddBtn {
+  font-size: 12px;
+  font-weight: 600;
+  padding: 5px 10px;
+  border-radius: var(--radius-sm);
+  border: 1.5px solid var(--c-border);
+  background: var(--c-bg-card);
+  color: var(--c-text-dark);
+  cursor: pointer;
+  font-family: var(--font-ui);
+  flex-shrink: 0;
+}
+.vocabReviewAddBtn:hover {
+  background: var(--c-bg-panel);
+}
+.vocabReviewAddBtnDone {
+  border-color: var(--c-sage);
+  color: var(--c-sage);
+  background: #eaf3ea;
+  cursor: default;
+}

@@ -338,3 +338,401 @@
   line-height: 1.7;
   padding-left: 4px;
 }
+
+/* ── Dialogue ─────────────────────────────────────────────────────────────── */
+
+.dialogue {
+  margin-bottom: 8px;
+}
+.dialogueSetup {
+  font-size: 13px;
+  font-style: italic;
+  color: var(--c-text-light);
+  margin-bottom: 14px;
+  line-height: 1.6;
+}
+.dialogueLines {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-bottom: 14px;
+}
+.dialogueLine {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.dialogueSpeaker {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+.dialogueRu {
+  font-family: var(--font-ru);
+  font-size: 16px;
+  color: var(--c-text-dark);
+  line-height: 1.5;
+  cursor: pointer;
+  border-bottom: 1px dotted var(--c-border);
+  padding-bottom: 2px;
+}
+.dialogueRu:hover {
+  border-bottom-color: var(--c-text-mid);
+}
+.dialogueEn {
+  font-size: 13px;
+  color: var(--c-text-mid);
+  line-height: 1.4;
+  margin-top: 2px;
+  padding-left: 2px;
+}
+
+/* ── Mini Story ───────────────────────────────────────────────────────────── */
+
+.miniStory {
+  margin-bottom: 8px;
+}
+.miniStoryRu {
+  font-family: var(--font-ru);
+  font-size: 16px;
+  color: var(--c-text-dark);
+  line-height: 1.8;
+  margin-bottom: 12px;
+}
+.miniStoryToggle {
+  font-size: 13px;
+  color: var(--c-sky);
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+  text-decoration: underline;
+  margin-bottom: 10px;
+  font-family: var(--font-ui);
+}
+.miniStoryEn {
+  font-size: 14px;
+  color: var(--c-text-mid);
+  line-height: 1.7;
+  margin-bottom: 10px;
+  padding: 10px 14px;
+  background: var(--c-bg-panel);
+  border-radius: var(--radius-md);
+}
+
+/* ── Focus Note (shared by Dialogue and MiniStory) ───────────────────────── */
+
+.focusNote {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  background: var(--c-bg-deep);
+  border-radius: var(--radius-md);
+  padding: 10px 13px;
+  font-size: 13px;
+  color: var(--c-text-mid);
+  line-height: 1.6;
+  margin-top: 4px;
+}
+.focusNoteIcon {
+  font-size: 14px;
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+
+/* ── Discovery ────────────────────────────────────────────────────────────── */
+
+.discovery {
+  background: var(--c-bg-deep);
+  border-radius: var(--radius-lg);
+  padding: 16px 18px;
+  margin-bottom: 8px;
+}
+.discoveryPrompt {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  font-size: 15px;
+  color: var(--c-text-dark);
+  line-height: 1.6;
+  margin-bottom: 14px;
+  font-family: var(--font-ui);
+}
+.discoveryIcon {
+  font-size: 16px;
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+.discoveryRevealBtn {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--c-text-dark);
+  background: var(--c-bg-card);
+  border: 1.5px solid var(--c-border);
+  border-radius: var(--radius-md);
+  padding: 9px 16px;
+  cursor: pointer;
+  font-family: var(--font-ui);
+}
+.discoveryRevealBtn:hover {
+  background: var(--c-bg-panel);
+}
+.discoveryReveal {
+  font-size: 14px;
+  color: var(--c-sage);
+  line-height: 1.7;
+  border-left: 3px solid var(--c-sage);
+  padding-left: 12px;
+  font-family: var(--font-ui);
+}
+
+/* ── Sentence Choice ──────────────────────────────────────────────────────── */
+
+.sentenceChoice {
+  margin-bottom: 8px;
+}
+.sentenceChoiceInstruction {
+  font-size: 14px;
+  color: var(--c-text-mid);
+  margin-bottom: 12px;
+  line-height: 1.5;
+  font-family: var(--font-ui);
+}
+.sentenceChoiceOptions {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.sentenceChoiceOption {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  padding: 12px 14px;
+  border-radius: var(--radius-md);
+  border: 1.5px solid var(--c-border);
+  background: var(--c-bg-card);
+  text-align: left;
+  cursor: pointer;
+  position: relative;
+  transition: background 0.1s;
+}
+.sentenceChoiceOption:hover:not(.sentenceChoiceLocked) {
+  background: var(--c-bg-panel);
+}
+.sentenceChoiceLocked {
+  cursor: default;
+}
+.sentenceChoiceCorrect {
+  background: #eaf3ea;
+  border-color: var(--c-sage);
+}
+.sentenceChoiceWrong {
+  background: #fbeaea;
+  border-color: var(--c-wrong);
+}
+.sentenceChoiceRu {
+  font-family: var(--font-ru);
+  font-size: 16px;
+  color: var(--c-text-dark);
+  line-height: 1.4;
+}
+.sentenceChoiceEn {
+  font-size: 12px;
+  color: var(--c-text-light);
+  line-height: 1.4;
+}
+.sentenceChoiceMark {
+  position: absolute;
+  right: 14px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 16px;
+}
+.sentenceChoiceExplanation {
+  margin-top: 14px;
+  padding: 12px 14px;
+  background: var(--c-bg-panel);
+  border-radius: var(--radius-md);
+  font-size: 13px;
+  color: var(--c-text-mid);
+  line-height: 1.6;
+}
+
+/* ── Error Correction ─────────────────────────────────────────────────────── */
+
+.errorCorrection {
+  margin-bottom: 8px;
+}
+.errorCorrectionSentence {
+  font-family: var(--font-ru);
+  font-size: 17px;
+  color: var(--c-text-dark);
+  margin-bottom: 6px;
+  line-height: 1.5;
+}
+.errorWord {
+  text-decoration: underline;
+  text-decoration-color: var(--c-wrong);
+  text-decoration-style: wavy;
+  color: var(--c-wrong);
+}
+.errorCorrectionEn {
+  font-size: 13px;
+  color: var(--c-text-light);
+  margin-bottom: 14px;
+  line-height: 1.5;
+}
+
+/* ── Vocabulary TappableWord ──────────────────────────────────────────────── */
+
+.vocabTokenWrapper {
+  position: relative;
+  display: inline;
+}
+.vocabToken {
+  border-bottom: 1.5px dotted var(--c-sage);
+  cursor: pointer;
+  display: inline;
+}
+.vocabToken:hover {
+  color: var(--c-sage);
+}
+.vocabPopover {
+  position: absolute;
+  bottom: calc(100% + 6px);
+  left: 0;
+  z-index: 200;
+  background: var(--c-bg-card);
+  border: 1px solid var(--c-border);
+  border-radius: var(--radius-md);
+  padding: 10px 12px;
+  min-width: 160px;
+  max-width: 220px;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.12);
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-family: var(--font-ui);
+}
+.vocabPopoverWord {
+  font-family: var(--font-ru);
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--c-text-dark);
+}
+.vocabPopoverGender {
+  font-size: 11px;
+  color: var(--c-text-light);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+.vocabPopoverTranslation {
+  font-size: 13px;
+  color: var(--c-text-mid);
+  margin-bottom: 4px;
+}
+.vocabPopoverAddBtn {
+  font-size: 12px;
+  font-weight: 600;
+  padding: 5px 10px;
+  border-radius: var(--radius-sm);
+  border: 1.5px solid var(--c-border);
+  background: var(--c-bg-panel);
+  color: var(--c-text-dark);
+  cursor: pointer;
+  font-family: var(--font-ui);
+  align-self: flex-start;
+}
+.vocabPopoverAddBtn:hover {
+  background: var(--c-bg-deep);
+}
+.vocabPopoverAddBtnDone {
+  border-color: var(--c-sage);
+  color: var(--c-sage);
+  background: #eaf3ea;
+}
+
+/* ── Vocab Review Panel (completion screen) ───────────────────────────────── */
+
+.vocabReviewPanel {
+  margin-top: 24px;
+  padding-top: 20px;
+  border-top: 1px solid var(--c-border-soft);
+}
+.vocabReviewTitle {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--c-text-light);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  margin-bottom: 14px;
+  font-family: var(--font-ui);
+}
+.vocabReviewAddAll {
+  font-size: 12px;
+  font-weight: 600;
+  padding: 7px 14px;
+  border-radius: var(--radius-md);
+  border: 1.5px solid var(--c-border);
+  background: var(--c-bg-panel);
+  color: var(--c-text-dark);
+  cursor: pointer;
+  font-family: var(--font-ui);
+  margin-bottom: 14px;
+}
+.vocabReviewAddAll:hover {
+  background: var(--c-bg-deep);
+}
+.vocabReviewList {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.vocabReviewEntry {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  background: var(--c-bg-panel);
+  border-radius: var(--radius-md);
+}
+.vocabReviewWord {
+  font-family: var(--font-ru);
+  font-size: 15px;
+  color: var(--c-text-dark);
+  flex: 1;
+}
+.vocabReviewTranslation {
+  font-size: 13px;
+  color: var(--c-text-mid);
+  flex: 1;
+}
+.vocabReviewGender {
+  font-size: 11px;
+  color: var(--c-text-xlight);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  min-width: 16px;
+}
+.vocabReviewAddBtn {
+  font-size: 12px;
+  font-weight: 600;
+  padding: 5px 10px;
+  border-radius: var(--radius-sm);
+  border: 1.5px solid var(--c-border);
+  background: var(--c-bg-card);
+  color: var(--c-text-dark);
+  cursor: pointer;
+  font-family: var(--font-ui);
+  flex-shrink: 0;
+}
+.vocabReviewAddBtn:hover {
+  background: var(--c-bg-panel);
+}
+.vocabReviewAddBtnDone {
+  border-color: var(--c-sage);
+  color: var(--c-sage);
+  background: #eaf3ea;
+  cursor: default;
+}

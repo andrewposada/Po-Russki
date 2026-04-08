@@ -115,10 +115,28 @@ export default function LessonsHome() {
   const lastActiveIdx = filteredLessons.reduce((acc, l, i) => lessonState(l) < LESSON_STATE.COMPLETED ? i : acc, -1);
 
   // Build a plain { [lessonId]: state } map for the SVG and hub panel
-  const lessonStateMap = {};
-  Object.entries(completions).forEach(([id, row]) => {
-    lessonStateMap[id] = row.state ?? LESSON_STATE.AVAILABLE;
+// First pass: seed from completion rows
+const lessonStateMap = {};
+Object.entries(completions).forEach(([id, row]) => {
+  lessonStateMap[id] = row.state ?? LESSON_STATE.AVAILABLE;
+});
+
+// Second pass: for lessons with no completion row, derive from node state.
+// If the node is AVAILABLE (prerequisites met), its lessons default to AVAILABLE.
+// If the node is LOCKED, its lessons stay LOCKED.
+// We need nodeStates for this — compute a preliminary version first.
+const prelimNodeStates = computeNodeStates(lessonStateMap);
+GRAMMAR_ROADMAP.forEach(node => {
+  const nodeState = prelimNodeStates[node.id] ?? LESSON_STATE.LOCKED;
+  (node.lessons ?? []).forEach(lesson => {
+    if (lessonStateMap[lesson.id] === undefined) {
+      lessonStateMap[lesson.id] =
+        nodeState >= LESSON_STATE.AVAILABLE
+          ? LESSON_STATE.AVAILABLE
+          : LESSON_STATE.LOCKED;
+    }
   });
+});
 
   // Derive per-node states from lesson completions
   const nodeStates = computeNodeStates(lessonStateMap);

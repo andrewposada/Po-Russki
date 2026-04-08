@@ -1,5 +1,6 @@
 // src/modules/Lessons/blocks/ExampleSetBlock.jsx
-import styles from "./Blocks.module.css";
+import TappableWord from "./TappableWord";
+import styles       from "./Blocks.module.css";
 
 export default function ExampleSetBlock({ block }) {
   return (
@@ -7,7 +8,9 @@ export default function ExampleSetBlock({ block }) {
       {block.examples.map((ex, i) => (
         <div key={i} className={styles.example}>
           <div style={{ flex: 1 }}>
-            <div className={styles.exampleRu}>{ex.ru}</div>
+            <div className={styles.exampleRu}>
+              <TappableWord text={ex.ru} />
+            </div>
             <div className={styles.exampleEn}>{ex.en}</div>
             {ex.note && <div className={styles.exampleNote}>{ex.note}</div>}
           </div>
