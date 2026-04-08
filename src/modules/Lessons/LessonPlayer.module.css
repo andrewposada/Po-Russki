@@ -8,10 +8,11 @@
 /* Top bar */
 .topBar {
   position: sticky;
-  top: 0;
+  top: var(--header-total-height, 88px);
   z-index: 20;
   background: var(--c-bg-card);
-  border-bottom: 1px solid var(--c-border);
+  border: 1px solid var(--c-border);
+  border-radius: var(--radius-lg);
   padding: 13px 24px;
   display: flex;
   align-items: center;
@@ -32,6 +33,8 @@
   display: flex;
   gap: 3px;
   margin-bottom: 5px;
+  border-radius: 3px;
+  overflow: clip;
 }
 .segment {
   flex: 1;

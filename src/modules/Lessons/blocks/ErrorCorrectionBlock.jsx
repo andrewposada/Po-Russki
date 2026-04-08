@@ -1,11 +1,16 @@
 // src/modules/Lessons/blocks/ErrorCorrectionBlock.jsx
-import { useState } from "react";
+import { useState, useRef } from "react";
+import { useRussianKeyboard } from "../../../hooks/useRussianKeyboard";
 import styles        from "./Blocks.module.css";
 
 export default function ErrorCorrectionBlock({ block, onSubmit }) {
   const [answer,    setAnswer]    = useState("");
   const [submitted, setSubmitted] = useState(false);
   const [correct,   setCorrect]   = useState(null);
+  const [ruMode,    setRuMode]    = useState(true);
+
+  const inputRef = useRef(null);
+  useRussianKeyboard(inputRef, ruMode);
 
   function handleCheck() {
     if (!answer.trim() || submitted) return;
@@ -43,22 +48,33 @@ export default function ErrorCorrectionBlock({ block, onSubmit }) {
       </div>
       <div className={styles.errorCorrectionEn}>{block.sentence_en}</div>
 
-      <div className={styles.practiceInputRow}>
-        <input
-          className={inputClass}
-          type="text"
-          value={answer}
-          onChange={e => setAnswer(e.target.value)}
-          onKeyDown={handleKeyDown}
-          placeholder="Type the corrected word"
-          disabled={submitted}
-        />
+      <div className={styles.inputWithToggle}>
+        <div className={styles.practiceInputRow}>
+          <input
+            ref={inputRef}
+            className={inputClass}
+            type="text"
+            value={answer}
+            onChange={e => setAnswer(e.target.value)}
+            onKeyDown={handleKeyDown}
+            placeholder="Type the corrected word"
+            disabled={submitted}
+          />
+          <button
+            className={styles.practiceCheckBtn}
+            onClick={handleCheck}
+            disabled={!answer.trim() || submitted}
+          >
+            Check
+          </button>
+        </div>
         <button
-          className={styles.practiceCheckBtn}
-          onClick={handleCheck}
-          disabled={!answer.trim() || submitted}
+          type="button"
+          className={`${styles.kbToggle} ${ruMode ? styles.kbToggleActive : ""}`}
+          onClick={() => setRuMode(m => !m)}
+          aria-label="Toggle Russian keyboard"
         >
-          Check
+          {ruMode ? "РУ" : "EN"}
         </button>
       </div>
 

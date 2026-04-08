@@ -736,3 +736,31 @@
   background: #eaf3ea;
   cursor: default;
 }
+
+/* ── Russian keyboard toggle (shared across exercise blocks) ─────────────── */
+
+.inputWithToggle {
+  position: relative;
+}
+.kbToggle {
+  position: absolute;
+  top: 0;
+  right: 0;
+  font-size: 11px;
+  font-weight: 700;
+  padding: 4px 8px;
+  border-radius: var(--radius-sm);
+  border: 1.5px solid var(--c-border);
+  background: var(--c-bg-panel);
+  color: var(--c-text-light);
+  cursor: pointer;
+  font-family: var(--font-ui);
+  line-height: 1;
+  transform: translateY(-100%);
+  margin-top: -4px;
+}
+.kbToggleActive {
+  border-color: var(--c-sage);
+  color: var(--c-sage);
+  background: #eaf3ea;
+}

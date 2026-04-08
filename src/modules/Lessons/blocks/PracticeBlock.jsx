@@ -1,5 +1,6 @@
 // src/modules/Lessons/blocks/PracticeBlock.jsx
-import { useState } from "react";
+import { useState, useRef } from "react";
+import { useRussianKeyboard } from "../../../hooks/useRussianKeyboard";
 import styles from "./Blocks.module.css";
 
 export default function PracticeBlock({ block, onSubmit }) {
@@ -9,6 +10,10 @@ export default function PracticeBlock({ block, onSubmit }) {
   const [feedback, setFeedback]   = useState("");
   const [loading, setLoading]     = useState(false);
   const [hintVisible, setHintVisible] = useState(false);
+  const [ruMode, setRuMode]       = useState(true);
+
+  const inputRef = useRef(null);
+  useRussianKeyboard(inputRef, ruMode);
 
   async function handleCheck() {
     if (!answer.trim() || submitted) return;
@@ -65,26 +70,37 @@ export default function PracticeBlock({ block, onSubmit }) {
         </>
       )}
 
-      <div className={styles.practiceInputRow}>
-        <input
-          className={inputClass}
-          type="text"
-          value={answer}
-          onChange={e => setAnswer(e.target.value)}
-          onKeyDown={handleKeyDown}
-          disabled={submitted}
-          placeholder="Type your answer…"
-          autoComplete="off"
-          autoCorrect="off"
-          autoCapitalize="off"
-          spellCheck={false}
-        />
+      <div className={styles.inputWithToggle}>
+        <div className={styles.practiceInputRow}>
+          <input
+            ref={inputRef}
+            className={inputClass}
+            type="text"
+            value={answer}
+            onChange={e => setAnswer(e.target.value)}
+            onKeyDown={handleKeyDown}
+            disabled={submitted}
+            placeholder="Type your answer…"
+            autoComplete="off"
+            autoCorrect="off"
+            autoCapitalize="off"
+            spellCheck={false}
+          />
+          <button
+            className={styles.practiceCheckBtn}
+            onClick={handleCheck}
+            disabled={!answer.trim() || submitted || loading}
+          >
+            {loading ? "…" : "Check"}
+          </button>
+        </div>
         <button
-          className={styles.practiceCheckBtn}
-          onClick={handleCheck}
-          disabled={!answer.trim() || submitted || loading}
+          type="button"
+          className={`${styles.kbToggle} ${ruMode ? styles.kbToggleActive : ""}`}
+          onClick={() => setRuMode(m => !m)}
+          aria-label="Toggle Russian keyboard"
         >
-          {loading ? "…" : "Check"}
+          {ruMode ? "РУ" : "EN"}
         </button>
       </div>
 

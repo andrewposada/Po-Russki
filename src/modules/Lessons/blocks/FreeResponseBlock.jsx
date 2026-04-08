@@ -1,5 +1,6 @@
 // src/modules/Lessons/blocks/FreeResponseBlock.jsx
-import { useState } from "react";
+import { useState, useRef } from "react";
+import { useRussianKeyboard } from "../../../hooks/useRussianKeyboard";
 import styles from "./Blocks.module.css";
 
 export default function FreeResponseBlock({ block, onSubmit }) {
@@ -7,6 +8,10 @@ export default function FreeResponseBlock({ block, onSubmit }) {
   const [submitted, setSubmitted] = useState(false);
   const [loading, setLoading] = useState(false);
   const [grade, setGrade]     = useState(null);
+  const [ruMode, setRuMode]   = useState(true);
+
+  const textareaRef = useRef(null);
+  useRussianKeyboard(textareaRef, ruMode);
 
   const isMultiLine = block.type === "free_response_paragraph";
 
@@ -41,14 +46,25 @@ export default function FreeResponseBlock({ block, onSubmit }) {
       <p className={styles.freeResponsePrompt}>{block.prompt}</p>
       {block.guidance && <p className={styles.freeResponseGuidance}>{block.guidance}</p>}
 
-      <textarea
-        className={styles.freeResponseTextarea}
-        value={answer}
-        onChange={e => setAnswer(e.target.value)}
-        disabled={submitted}
-        rows={isMultiLine ? 5 : 3}
-        placeholder="Write your answer in Russian…"
-      />
+      <div className={styles.inputWithToggle}>
+        <textarea
+          ref={textareaRef}
+          className={styles.freeResponseTextarea}
+          value={answer}
+          onChange={e => setAnswer(e.target.value)}
+          disabled={submitted}
+          rows={isMultiLine ? 5 : 3}
+          placeholder="Write your answer in Russian…"
+        />
+        <button
+          type="button"
+          className={`${styles.kbToggle} ${ruMode ? styles.kbToggleActive : ""}`}
+          onClick={() => setRuMode(m => !m)}
+          aria-label="Toggle Russian keyboard"
+        >
+          {ruMode ? "РУ" : "EN"}
+        </button>
+      </div>
 
       {!submitted && (
         <button
