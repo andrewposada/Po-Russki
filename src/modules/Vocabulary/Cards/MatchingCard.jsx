@@ -17,20 +17,22 @@ function shuffle(arr) {
 
 export default function MatchingCard({ words, onAnswer, onNext }) {
   const speakWord = async (text) => {
-    try {
-      const res = await fetch("/api/tts", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ text }),
-      });
-      const { audioContent } = await res.json();
-      if (!audioContent) return;
-      const audio = new Audio(`data:audio/mp3;base64,${audioContent}`);
-      audio.play();
-    } catch (e) {
-      // silent fail — TTS is enhancement only
-    }
-  };
+  try {
+    // Create and "unlock" audio in the synchronous click context
+    const audio = new Audio();
+    audio.play().catch(() => {}); // unlocks autoplay policy immediately
+    const res = await fetch("/api/tts", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ text }),
+    });
+    const { audioContent } = await res.json();
+    if (!audioContent) return;
+    audio.pause();
+    audio.src = `data:audio/mp3;base64,${audioContent}`;
+    audio.play();
+  } catch (e) { /* silent fail */ }
+};
   const pairs = words.slice(0, 4).map(w => ({
     id:      w.id,
     russian: w.word,
