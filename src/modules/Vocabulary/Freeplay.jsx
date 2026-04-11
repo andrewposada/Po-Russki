@@ -252,6 +252,9 @@ export default function Freeplay() {
   const [streak,          setStreak]          = useState(0);
   const [bestStreak,      setBestStreak]       = useState(0);
   const [waiting,         setWaiting]         = useState(false); // between answer and next
+  const [distractors,     setDistractors]     = useState([]);
+  const [loadingMC,       setLoadingMC]       = useState(false);
+  const [feedback,        setFeedback]        = useState(null);
 
   // ── Weighted pool (rebuilt when config or words change) ──────────────────
   const pool = useMemo(
@@ -276,7 +279,39 @@ export default function Freeplay() {
     setCurrentExercise(exercise);
     setCardKey(k => k + 1);
     setWaiting(false);
+    setFeedback(null);
   }, [pool, config.enabledExercises]);
+
+  // ── Fetch distractors when MC card appears ───────────────────────────────
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  useEffect(() => {
+    if (currentExercise !== "mc" || !currentWord) return;
+    let cancelled = false;
+    setDistractors([]);
+    setFeedback(null);
+    setLoadingMC(true);
+    fetch("/api/vocab-generate", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        mode: "distractors",
+        word: currentWord.word,
+        translation: currentWord.translation,
+        part_of_speech: currentWord.part_of_speech ?? "",
+      }),
+    })
+      .then(r => r.json())
+      .then(data => {
+        if (!cancelled) setDistractors(data.distractors ?? []);
+      })
+      .catch(() => {
+        if (!cancelled) setDistractors([]);
+      })
+      .finally(() => {
+        if (!cancelled) setLoadingMC(false);
+      });
+    return () => { cancelled = true; };
+  }, [currentWord, currentExercise]);
 
   // ── Start session ────────────────────────────────────────────────────────
   function startSession() {
@@ -294,10 +329,7 @@ export default function Freeplay() {
   function handleAnswer(isCorrect) {
     setAnswered(a => a + 1);
     if (isCorrect) {
-      setCorrect(c => {
-        const next = c + 1;
-        return next;
-      });
+      setCorrect(c => c + 1);
       setStreak(s => {
         const next = s + 1;
         setBestStreak(b => Math.max(b, next));
@@ -306,6 +338,7 @@ export default function Freeplay() {
     } else {
       setStreak(0);
     }
+    setFeedback({ correct: isCorrect });
     setWaiting(true);
   }
 
@@ -364,10 +397,10 @@ export default function Freeplay() {
           <MultipleChoiceCard
             key={cardKey}
             word={currentWord}
-            allWords={words}
+            distractors={distractors}
+            loading={loadingMC}
             onAnswer={handleAnswer}
-            onNext={nextWord}
-            waiting={waiting}
+            feedback={feedback}
           />
         )}
         {currentWord && currentExercise === "matching" && (
