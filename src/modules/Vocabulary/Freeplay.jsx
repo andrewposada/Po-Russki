@@ -294,11 +294,11 @@ export default function Freeplay() {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        mode: "distractors",
-        word: currentWord.word,
-        translation: currentWord.translation,
-        part_of_speech: currentWord.part_of_speech ?? "",
-      }),
+      mode: "mc_distractors",
+      word: currentWord.word,
+      part_of_speech: currentWord.part_of_speech ?? "",
+    }),
+
     })
       .then(r => r.json())
       .then(data => {
