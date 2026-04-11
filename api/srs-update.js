@@ -39,7 +39,11 @@ export default function handler(req, res) {
   } else {
     // Passed — advance interval
     if (review_count === 0)      newInterval = 1;
-    else if (review_count === 1) newInterval = 6;
+    else if (review_count === 1) newInterval = 1;
+    else if (review_count === 2) newInterval = 2;
+    else if (review_count === 3) newInterval = 2;
+    else if (review_count === 4) newInterval = 4;
+    else if (review_count === 5) newInterval = 4;
     else                         newInterval = Math.round(interval_days * ease_factor);
 
     newRepetitions = review_count + 1;
