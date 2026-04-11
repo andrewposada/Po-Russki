@@ -1,5 +1,5 @@
 // src/modules/Vocabulary/Freeplay.jsx
-import { useState, useMemo, useCallback, useRef } from "react";
+import { useState, useEffect, useMemo, useCallback, useRef } from "react";
 import { useNavigate }    from "react-router-dom";
 import { useWordBank }    from "../../context/WordBankContext";
 import styles             from "./Freeplay.module.css";
