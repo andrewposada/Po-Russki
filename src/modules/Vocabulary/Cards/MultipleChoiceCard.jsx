@@ -1,7 +1,7 @@
 // src/modules/Vocabulary/cards/MultipleChoiceCard.jsx
 // Tier 1 — show Russian word, pick correct English translation from 4 options.
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import styles from "./Cards.module.css";
 
 function shuffle(arr) {
@@ -22,6 +22,31 @@ export default function MultipleChoiceCard({
 }) {
   const [options, setOptions] = useState([]);
   const [selected, setSelected] = useState(null);
+  const [playing, setPlaying] = useState(false);
+  const audioRef = useRef(null);
+
+  const playAudio = async () => {
+    if (playing) return;
+    setPlaying(true);
+    try {
+      const res = await fetch("/api/tts", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ text: word.word }),
+      });
+      const data = await res.json();
+      if (data.audioContent) {
+        const audio = new Audio(`data:audio/mp3;base64,${data.audioContent}`);
+        audioRef.current = audio;
+        audio.onended = () => setPlaying(false);
+        audio.play();
+      } else {
+        setPlaying(false);
+      }
+    } catch {
+      setPlaying(false);
+    }
+  };
 
   useEffect(() => {
     if (distractors?.length) {
@@ -49,7 +74,12 @@ export default function MultipleChoiceCard({
         Tier 1
       </div>
       <p className={styles.taskLabel}>CHOOSE THE CORRECT TRANSLATION</p>
-      <p className={`${styles.wordRu} ru`}>{word.word}</p>
+      <div className={styles.wordRow}>
+        <p className={`${styles.wordRu} ru`} style={{ margin: 0 }}>{word.word}</p>
+        <button className={styles.audioBtn} onClick={playAudio} disabled={playing} title="Play pronunciation">
+          {playing ? "…" : "🔊"}
+        </button>
+      </div>
       {word.part_of_speech && (
         <p className={styles.posLabel}>{word.part_of_speech}</p>
       )}
