@@ -116,7 +116,7 @@ export default function MatchingCard({ words, onAnswer, onNext }) {
             <button
               className={ruClass(p.id)}
               disabled={matched.includes(p.id) || allDone || wrongFlashRu !== null}
-              onClick={() => setRuSelected(p.id)}
+              onClick={() => { setRuSelected(p.id); speakWord(p.russian); }}
             >
               <span className="ru">{p.russian}</span>
             </button>
