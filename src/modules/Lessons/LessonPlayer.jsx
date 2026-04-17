@@ -256,8 +256,11 @@ export default function LessonPlayer() {
 
   async function finishLesson() {
     // Compute baseline score from quiz blocks
-    const quizGroups = groups.filter(g => g.blocks.some(b => b.type === "quiz"));
-    const answeredCorrect = quizGroups.filter((_, i) => answeredRef.current[i]).length;
+   const quizGroupsWithIndex = groups
+  .map((g, i) => ({ group: g, index: i }))
+  .filter(({ group }) => group.blocks.some(b => b.type === "quiz"));
+const answeredCorrect = quizGroupsWithIndex.filter(({ index }) => answeredRef.current[index]).length;
+const quizGroups = quizGroupsWithIndex.map(({ group }) => group); // for the length check below
     const score = quizGroups.length > 0
       ? Math.round((answeredCorrect / quizGroups.length) * 100)
       : 100;
