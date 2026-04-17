@@ -333,3 +333,26 @@
   color: var(--c-text-mid);
   cursor: pointer;
 }
+
+/* ── Action row (post-answer navigation) ── */
+.actionRow {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 10px;
+}
+
+.nextBtn {
+  padding: 10px 22px;
+  background: var(--c-sky);
+  border: none;
+  border-radius: var(--radius-md);
+  color: #fff;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.nextBtn:hover {
+  background: #3a8ab0;
+}
