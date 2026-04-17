@@ -255,6 +255,7 @@ export default function Freeplay() {
   const [distractors,     setDistractors]     = useState([]);
   const [loadingMC,       setLoadingMC]       = useState(false);
   const [feedback,        setFeedback]        = useState(null);
+const [grading,         setGrading]         = useState(false);
 
   // ── Weighted pool (rebuilt when config or words change) ──────────────────
   const pool = useMemo(
@@ -311,6 +312,58 @@ export default function Freeplay() {
         if (!cancelled) setLoadingMC(false);
       });
     return () => { cancelled = true; };
+  }, [currentWord, currentExercise]);
+
+  // ── Grade translate answer ───────────────────────────────────────────────
+  const handleTranslateAnswer = useCallback(async (studentAnswer) => {
+    if (!currentWord) return;
+    setGrading(true);
+    let correct = false;
+    let feedbackText = "";
+    try {
+      if (currentExercise === "translate") {
+        // RU→EN: try exact match first, fall back to API
+        const exact = studentAnswer.trim().toLowerCase() === currentWord.translation?.trim().toLowerCase();
+        if (exact) {
+          correct = true;
+          feedbackText = "Correct!";
+        } else {
+          const res = await fetch("/api/vocab-grade", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              mode: "translate_ru_en",
+              word_ru: currentWord.word,
+              word_en: currentWord.translation,
+              student_answer: studentAnswer,
+            }),
+          });
+          const data = await res.json();
+          correct = Boolean(data.correct);
+          feedbackText = data.feedback ?? "";
+        }
+      } else {
+        // EN→RU (translate_active)
+        const res = await fetch("/api/vocab-grade", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            mode: "translate_en_ru",
+            word_ru: currentWord.word,
+            word_en: currentWord.translation,
+            student_answer: studentAnswer,
+          }),
+        });
+        const data = await res.json();
+        correct = Boolean(data.correct);
+        feedbackText = data.feedback ?? "";
+      }
+    } catch {
+      feedbackText = "Could not grade — please try again.";
+    }
+    setGrading(false);
+    setFeedback({ correct, feedback: feedbackText });
+    handleAnswer(correct);
   }, [currentWord, currentExercise]);
 
   // ── Start session ────────────────────────────────────────────────────────
@@ -415,9 +468,10 @@ export default function Freeplay() {
           <TranslateCard
             key={cardKey}
             word={currentWord}
-            onAnswer={handleAnswer}
-            onNext={nextWord}
-            waiting={waiting}
+            direction="ru_en"
+            onAnswer={handleTranslateAnswer}
+            feedback={feedback}
+            grading={grading}
           />
         )}
         {currentWord && currentExercise === "cloze" && (
@@ -429,7 +483,25 @@ export default function Freeplay() {
             waiting={waiting}
           />
         )}
-        {(currentWord && (currentExercise === "translate_active" || currentExercise === "sentence")) && (
+        {feedback && (currentExercise === "translate" || currentExercise === "translate_active") && (
+          <div className={styles.actionRow}>
+            <button className={styles.nextBtn} onClick={() => { setFeedback(null); nextWord(); }}>
+              Next →
+            </button>
+          </div>
+        )}
+
+        {currentWord && currentExercise === "translate_active" && (
+          <TranslateCard
+            key={cardKey}
+            word={currentWord}
+            direction="en_ru"
+            onAnswer={handleTranslateAnswer}
+            feedback={feedback}
+            grading={grading}
+          />
+        )}
+        {currentWord && currentExercise === "sentence" && (
           <SentenceCard
             key={cardKey}
             word={currentWord}
