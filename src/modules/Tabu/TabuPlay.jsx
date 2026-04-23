@@ -323,6 +323,10 @@ export default function TabuPlay({
       {nextIsLoading && (
         <p className={styles.nextLoading}>Подготовка следующей карточки…</p>
       )}
+
+      <button className={styles.endGameBtn} onClick={endRound}>
+        Завершить игру
+      </button>
     </div>
   );
 }
