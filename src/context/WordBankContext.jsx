@@ -10,12 +10,16 @@ export function WordBankProvider({ children }) {
   const [isOpen, setOpen] = useState(false);
   const [words,  setWords] = useState(null); // null = not yet loaded
 
-  const open = useCallback(async () => {
-    setOpen(true);
+  const loadWords = useCallback(async () => {
     if (!user || words !== null) return;
     const fetched = await getWords(user.uid);
     setWords(fetched ?? []);
   }, [user, words]);
+
+  const open = useCallback(async () => {
+    setOpen(true);
+    await loadWords();
+  }, [loadWords]);
 
   const close = useCallback(() => setOpen(false), []);
 
@@ -72,7 +76,7 @@ export function WordBankProvider({ children }) {
   const dismissEnrichError = useCallback(() => setEnrichError(null), []);
 
   return (
-    <WordBankContext.Provider value={{ isOpen, words, open, close, enrich, setWords, enrichError, enrichPending, retryEnrich, dismissEnrichError }}>
+    <WordBankContext.Provider value={{ isOpen, words, open, close, loadWords, enrich, setWords, enrichError, enrichPending, retryEnrich, dismissEnrichError }}>
       {children}
     </WordBankContext.Provider>
   );

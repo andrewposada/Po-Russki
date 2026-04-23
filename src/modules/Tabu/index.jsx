@@ -17,15 +17,16 @@ import TabuSummary from "./TabuSummary";
 // "gameover"→ final scores (handled inside TabuSummary)
 
 export default function Tabu() {
-  const { user }   = useAuth();
-  const { words }  = useWordBank();
-  const navigate   = useNavigate();
+  const { user }             = useAuth();
+  const { words, loadWords } = useWordBank();
+  const navigate             = useNavigate();
 
   // ── User settings ────────────────────────────────────────────────────
   const [cefrLevel, setCefrLevel] = useState("B1");
 
   useEffect(() => {
     if (!user) return;
+    loadWords();
     getSettings(user.uid).then(s => {
       if (s?.cefr_level) setCefrLevel(s.cefr_level);
     });

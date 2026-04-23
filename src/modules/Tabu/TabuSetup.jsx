@@ -5,6 +5,7 @@ import styles from "./Tabu.module.css";
 const CEFR_LEVELS = ["A1", "A2", "B1", "B2", "C1"];
 
 export default function TabuSetup({ words, onStart, onBack }) {
+  const wordsLoading = words === null;
   // ── Config state ─────────────────────────────────────────────────────
   const [roundMinutes, setRoundMinutes] = useState(3);
   const [teamCount,    setTeamCount]    = useState(2);
@@ -160,17 +161,19 @@ export default function TabuSetup({ words, onStart, onBack }) {
       </div>
 
       <p className={styles.wordCount}>
-        {filteredWords.length === 0
-          ? "Нет слов для выбранных фильтров"
-          : `${filteredWords.length} слов доступно`}
+        {wordsLoading
+          ? "Загрузка слов…"
+          : filteredWords.length === 0
+            ? "Нет слов для выбранных фильтров"
+            : `${filteredWords.length} слов доступно`}
       </p>
 
       <button
         className={styles.startBtn}
         onClick={handleStart}
-        disabled={!canStart}
+        disabled={!canStart || wordsLoading}
       >
-        Начать игру
+        {wordsLoading ? "Загрузка…" : "Начать игру"}
       </button>
 
       <button className={styles.backBtn} onClick={onBack} style={{ marginTop: 8 }}>
