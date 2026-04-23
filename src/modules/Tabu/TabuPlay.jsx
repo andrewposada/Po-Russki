@@ -46,13 +46,14 @@ export default function TabuPlay({
   // ── Fetch hints for a word ───────────────────────────────────────────
   const fetchHints = useCallback(async (word) => {
     try {
-      const res = await fetch("/api/tabu-generate", {
+      const res = await fetch("/api/vocab-generate", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          word:      word.word,
-          word_en:   word.translation ?? "",
-          cefr_level: cefrLevel,
+          mode:    "tabu_hints",
+          word:    word.word,
+          word_en: word.translation ?? "",
+          level:   cefrLevel,
         }),
       });
       const data = await res.json();
