@@ -33,12 +33,17 @@ async function callSrsUpdate({ quality, interval_days, ease_factor, review_count
 }
 
 async function generateDistractors(word, level) {
+  const definitions = word.translation
+    ? word.translation.split(",").map(d => d.trim()).filter(Boolean)
+    : [];
   const res = await fetch("/api/vocab-generate", {
     method:  "POST",
     headers: { "Content-Type": "application/json" },
     body:    JSON.stringify({
       mode:           "mc_distractors",
       word:           word.word,
+      word_en:        word.translation,
+      definitions,
       part_of_speech: word.part_of_speech,
       level,
     }),
@@ -128,8 +133,9 @@ export default function Session() {
   const [sessionResults, setSessionResults] = useState({});
 
   // Card-specific state
-  const [distractors, setDistractors] = useState([]);
-  const [clozeData,   setClozeData]   = useState(null);
+  const [distractors,      setDistractors]      = useState([]);
+  const [displayTranslation, setDisplayTranslation] = useState(null);
+  const [clozeData,        setClozeData]        = useState(null);
   const [cardLoading, setCardLoading] = useState(false);
   const [grading,     setGrading]     = useState(false);
 
@@ -194,6 +200,11 @@ export default function Session() {
 
   const prepareCard = useCallback(async (word, exType) => {
     if (exType === "mc") {
+      const definitions = word.translation
+        ? word.translation.split(",").map(d => d.trim()).filter(Boolean)
+        : [word.translation ?? "—"];
+      const picked = definitions[Math.floor(Math.random() * definitions.length)];
+      setDisplayTranslation(picked);
       setCardLoading(true);
       try   { setDistractors(await generateDistractors(word, level)); }
       catch { setDistractors(["—", "—", "—"]); }
@@ -689,6 +700,7 @@ export default function Session() {
             <MultipleChoiceCard
               word={currentWord}
               distractors={distractors}
+              displayTranslation={displayTranslation ?? currentWord.translation}
               loading={cardLoading}
               onAnswer={handleMcAnswer}
               feedback={feedback}

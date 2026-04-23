@@ -9,8 +9,8 @@
 const MODEL_HAIKU = "claude-haiku-4-5-20251001";
 
 const PROMPTS = {
-  mc_distractors: ({ word, pos, level }) =>
-    `Give 3 wrong English translations for "${word}" (${pos}). Level:${level}.\nReturn: {"distractors":["<a>","<b>","<c>"]}`,
+  mc_distractors: ({ word, pos, level, definitions }) =>
+    `Give 3 wrong ${pos} English translations for the Russian word "${word}". Level:${level}. Do NOT use or paraphrase any of these: [${definitions}]. Return plausible but clearly incorrect options.\nReturn: {"distractors":["<a>","<b>","<c>"]}`,
 
   cloze: ({ word, word_en, pos, level }) =>
     `Target word:"${word}"(${pos},"${word_en}"). Level:${level}.\nReturn: {"sentence_before":"<Russian before blank>","sentence_after":"<Russian after blank>","answer":"<word in correct form>","grammar_hint":"<case/form name only, e.g. accusative singular>"}`,
@@ -44,8 +44,13 @@ export default async function handler(req, res) {
     return res.status(500).json({ error: "Anthropic API key not configured" });
   }
 
+  const { definitions } = req.body ?? {};
+
   const userPrompt = PROMPTS[mode]({
     word, word_en,
+    definitions: Array.isArray(definitions) && definitions.length
+      ? definitions.join(", ")
+      : (word_en ?? ""),
     pos: part_of_speech,
     level: level ?? "A2",
     topics: topics ?? "any",

@@ -14,11 +14,12 @@ function shuffle(arr) {
 }
 
 export default function MultipleChoiceCard({
-  word,           // word object
-  distractors,    // string[] — 3 wrong options from api/vocab-generate.js
-  loading,        // bool — true while fetching distractors
-  onAnswer,       // (correct: bool) => void
-  feedback,       // { correct, feedback } | null — set after answer
+  word,                // word object
+  distractors,         // string[] — 3 wrong options from api/vocab-generate.js
+  displayTranslation,  // string — single picked definition to show as correct option
+  loading,             // bool — true while fetching distractors
+  onAnswer,            // (correct: bool) => void
+  feedback,            // { correct, feedback } | null — set after answer
 }) {
   const [options, setOptions] = useState([]);
   const [selected, setSelected] = useState(null);
@@ -48,23 +49,25 @@ export default function MultipleChoiceCard({
     }
   };
 
+  const correctOption = displayTranslation ?? word.translation;
+
   useEffect(() => {
     if (distractors?.length) {
-      setOptions(shuffle([word.translation, ...distractors]));
+      setOptions(shuffle([correctOption, ...distractors]));
       setSelected(null);
     }
-  }, [distractors, word]);
+  }, [distractors, word.id]);
 
   const handleSelect = (opt) => {
     if (feedback) return; // already answered
     setSelected(opt);
-    onAnswer(opt === word.translation);
+    onAnswer(opt === correctOption);
   };
 
   const optClass = (opt) => {
     if (!feedback) return selected === opt ? `${styles.mcOption} ${styles.selected}` : styles.mcOption;
-    if (opt === word.translation) return `${styles.mcOption} ${styles.correct}`;
-    if (opt === selected)         return `${styles.mcOption} ${styles.wrong}`;
+    if (opt === correctOption) return `${styles.mcOption} ${styles.correct}`;
+    if (opt === selected)      return `${styles.mcOption} ${styles.wrong}`;
     return `${styles.mcOption} ${styles.dimmed}`;
   };
 
