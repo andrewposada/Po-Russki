@@ -20,6 +20,7 @@ import Lessons from "./modules/Lessons";
 import Grammar from "./modules/Grammar";
 // import Conjugations from "./modules/Conjugations/Conjugations";
 import Vocabulary   from "./modules/Vocabulary";
+import Tabu         from "./modules/Tabu";
 // import Drill        from "./modules/Drill/Drill";
 
 function ProtectedRoute({ children }) {
@@ -79,6 +80,7 @@ function AppContent() {
           <Route path="/lessons/import"             element={<ProtectedRoute><Lessons /></ProtectedRoute>} />
           <Route path="/grammar"                    element={<ProtectedRoute><Grammar /></ProtectedRoute>} />
           <Route path="/grammar/freeplay"           element={<ProtectedRoute><Grammar /></ProtectedRoute>} />
+          <Route path="/tabu"                        element={<ProtectedRoute><Tabu /></ProtectedRoute>} />
           {/* <Route path="/drill" element={<ProtectedRoute><Drill /></ProtectedRoute>} /> */}
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>

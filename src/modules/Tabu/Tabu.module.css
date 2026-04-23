@@ -1,0 +1,607 @@
+/* src/modules/Tabu/Tabu.module.css */
+
+/* ── Shared page shell ── */
+.page {
+  max-width: 560px;
+  margin: 0 auto;
+  padding: 24px 16px 48px;
+}
+
+.pageHeader {
+  text-align: center;
+  margin-bottom: 24px;
+}
+
+.pageTitle {
+  font-size: 28px;
+  font-weight: 700;
+  color: var(--c-text-dark);
+  font-family: Georgia, serif;
+  margin-bottom: 4px;
+}
+
+.pageSub {
+  font-size: 13px;
+  color: var(--c-text-light);
+}
+
+/* ── Setup screen ── */
+.setupSection {
+  margin-bottom: 16px;
+}
+
+.sectionLabel {
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--c-text-xlight);
+  margin-bottom: 8px;
+}
+
+.filterGroup {
+  background: var(--c-bg-card);
+  border: 1px solid var(--c-border-soft);
+  border-radius: var(--radius-lg);
+  overflow: clip;
+  margin-bottom: 8px;
+}
+
+.filterGroupHead {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--c-text-mid);
+  padding: 7px 12px;
+  background: var(--c-bg-panel);
+  border-bottom: 1px solid var(--c-border-soft);
+}
+
+.filterPills {
+  padding: 10px 12px;
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.pill {
+  padding: 5px 12px;
+  border-radius: var(--radius-xl);
+  font-size: 13px;
+  cursor: pointer;
+  border: 1px solid var(--c-border);
+  background: var(--c-bg-panel);
+  color: var(--c-text-light);
+  user-select: none;
+  transition: background 0.1s, border-color 0.1s, color 0.1s;
+}
+
+.pillActive {
+  background: #f4c0d1;
+  border-color: #c05a8a;
+  color: #4b1528;
+}
+
+/* Stepper */
+.stepper {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: var(--c-bg-card);
+  border: 1px solid var(--c-border-soft);
+  border-radius: var(--radius-lg);
+  padding: 12px 16px;
+}
+
+.stepBtn {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  border: 1px solid var(--c-border);
+  background: var(--c-bg-panel);
+  font-size: 18px;
+  color: var(--c-text-dark);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  line-height: 1;
+  transition: background 0.1s;
+}
+
+.stepBtn:hover {
+  background: var(--c-bg-deep);
+}
+
+.stepBtn:disabled {
+  opacity: 0.35;
+  cursor: default;
+}
+
+.stepVal {
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--c-text-dark);
+  min-width: 24px;
+  text-align: center;
+}
+
+.stepUnit {
+  font-size: 13px;
+  color: var(--c-text-light);
+}
+
+.wordCount {
+  font-size: 12px;
+  color: var(--c-text-xlight);
+  text-align: center;
+  margin-top: 6px;
+}
+
+.startBtn {
+  width: 100%;
+  padding: 14px;
+  background: #c05a8a;
+  border: none;
+  border-radius: var(--radius-md);
+  color: #fff;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  margin-top: 8px;
+  transition: background 0.15s;
+}
+
+.startBtn:hover {
+  background: #a84878;
+}
+
+.startBtn:disabled {
+  background: var(--c-border);
+  color: var(--c-text-light);
+  cursor: default;
+}
+
+/* ── Play screen ── */
+
+/* Progress bar + timer */
+.progressWrap {
+  margin-bottom: 12px;
+}
+
+.progressTop {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 5px;
+}
+
+.progressTeam {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--c-text-mid);
+}
+
+.progressTime {
+  font-size: 14px;
+  font-weight: 700;
+  color: #c05a8a;
+}
+
+.progressTimeWarning {
+  color: #c87a7a;
+}
+
+.progressTrack {
+  height: 5px;
+  background: var(--c-border-soft);
+  border-radius: 3px;
+  overflow: clip;
+}
+
+.progressFill {
+  height: 100%;
+  background: #c05a8a;
+  border-radius: 3px;
+  transition: width 1s linear;
+}
+
+.progressFillWarning {
+  background: #c87a7a;
+}
+
+/* Score strip */
+.scoreStrip {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 14px;
+}
+
+.scoreChip {
+  flex: 1;
+  background: var(--c-bg-card);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--c-border-soft);
+  padding: 7px 10px;
+  text-align: center;
+}
+
+.scoreChipActive {
+  border-color: #c05a8a;
+  background: #fbeaf0;
+}
+
+.scoreChipName {
+  font-size: 10px;
+  color: var(--c-text-light);
+  margin-bottom: 1px;
+}
+
+.scoreChipVal {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--c-text-dark);
+}
+
+.scoreChipActive .scoreChipVal {
+  color: #c05a8a;
+}
+
+/* Taboo card */
+.tabuCard {
+  background: #fff;
+  border-radius: var(--radius-lg);
+  border: 2px solid #2a2a2a;
+  overflow: clip;
+  margin-bottom: 12px;
+}
+
+.tabuCardTop {
+  background: #3a3a3a;
+  padding: 18px 16px 16px;
+  text-align: center;
+}
+
+.tabuMainWord {
+  font-size: 26px;
+  font-weight: 700;
+  color: #fff;
+  letter-spacing: 0.04em;
+  font-family: Georgia, serif;
+  text-transform: uppercase;
+}
+
+.tabuMainWordEn {
+  font-size: 13px;
+  color: rgba(255,255,255,0.6);
+  font-style: italic;
+  margin-top: 4px;
+}
+
+.tabuCardBody {
+  padding: 8px 0 12px;
+}
+
+.tabuHintRow {
+  display: flex;
+  align-items: baseline;
+  justify-content: center;
+  gap: 10px;
+  text-align: center;
+  padding: 7px 16px;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.tabuHintRow:last-child {
+  border-bottom: none;
+}
+
+.tabuHintWord {
+  font-size: 14px;
+  font-weight: 600;
+  color: #1a1a1a;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+}
+
+.tabuHintEn {
+  font-size: 12px;
+  color: #888;
+  font-style: italic;
+}
+
+.tabuCardLoading {
+  padding: 32px 16px;
+  text-align: center;
+  font-size: 13px;
+  color: var(--c-text-light);
+}
+
+/* Translate toggle button */
+.translateToggle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  width: 100%;
+  padding: 7px;
+  background: none;
+  border: 1px solid var(--c-border-soft);
+  border-radius: var(--radius-sm);
+  font-size: 12px;
+  color: var(--c-text-light);
+  cursor: pointer;
+  margin-bottom: 10px;
+  transition: background 0.1s, color 0.1s;
+}
+
+.translateToggle:hover {
+  background: var(--c-bg-panel);
+  color: var(--c-text-mid);
+}
+
+.translateToggleActive {
+  background: var(--c-sky-light);
+  border-color: var(--c-sky);
+  color: #0c4a6e;
+}
+
+/* Action buttons */
+.actionBtns {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.btnCorrect {
+  background: #e8f5ec;
+  border: 1.5px solid #4caf50;
+  color: #2e7d32;
+  border-radius: var(--radius-md);
+  padding: 13px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  text-align: center;
+  transition: background 0.1s;
+}
+
+.btnCorrect:hover {
+  background: #d4edda;
+}
+
+.btnWrong {
+  background: #fdecea;
+  border: 1.5px solid #f44336;
+  color: #c62828;
+  border-radius: var(--radius-md);
+  padding: 13px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  text-align: center;
+  transition: background 0.1s;
+}
+
+.btnWrong:hover {
+  background: #fbd8d7;
+}
+
+.btnSkip {
+  width: 100%;
+  text-align: center;
+  font-size: 12px;
+  color: var(--c-text-xlight);
+  padding: 6px;
+  cursor: pointer;
+  background: none;
+  border: none;
+  transition: color 0.1s;
+}
+
+.btnSkip:hover {
+  color: var(--c-text-mid);
+}
+
+/* Loading next card overlay — subtle */
+.nextLoading {
+  font-size: 11px;
+  text-align: center;
+  color: var(--c-text-xlight);
+  margin-top: 4px;
+}
+
+/* ── Round summary ── */
+.summaryCard {
+  background: var(--c-bg-card);
+  border: 1px solid var(--c-border-soft);
+  border-radius: var(--radius-lg);
+  padding: 20px 18px;
+  margin-bottom: 12px;
+}
+
+.summaryRoundLabel {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  color: var(--c-text-xlight);
+  margin-bottom: 6px;
+}
+
+.summaryTeamName {
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--c-text-dark);
+  margin-bottom: 16px;
+  font-family: Georgia, serif;
+}
+
+.summaryStats {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin-bottom: 16px;
+}
+
+.statBox {
+  background: var(--c-bg-panel);
+  border-radius: var(--radius-md);
+  padding: 14px;
+  text-align: center;
+}
+
+.statNum {
+  font-size: 28px;
+  font-weight: 700;
+  color: var(--c-text-dark);
+}
+
+.statNumGreen {
+  color: #2e7d32;
+}
+
+.statNumRed {
+  color: #c62828;
+}
+
+.statLbl {
+  font-size: 12px;
+  color: var(--c-text-light);
+  margin-top: 3px;
+}
+
+/* Cumulative scoreboard */
+.cumulativeBoard {
+  background: var(--c-bg-panel);
+  border-radius: var(--radius-md);
+  padding: 12px 14px;
+  margin-bottom: 16px;
+}
+
+.cumulativeBoardLabel {
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  color: var(--c-text-xlight);
+  margin-bottom: 8px;
+}
+
+.cumulativeRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 14px;
+  color: var(--c-text-mid);
+  padding: 4px 0;
+}
+
+.cumulativeRowActive {
+  font-weight: 700;
+  color: #c05a8a;
+}
+
+.cumulativeScore {
+  font-weight: 600;
+}
+
+.nextTeamBtn {
+  width: 100%;
+  padding: 14px;
+  background: #3a3a3a;
+  border: none;
+  border-radius: var(--radius-md);
+  color: #fff;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.nextTeamBtn:hover {
+  background: #2a2a2a;
+}
+
+.endGameBtn {
+  width: 100%;
+  padding: 12px;
+  background: none;
+  border: 1px solid var(--c-border);
+  border-radius: var(--radius-md);
+  font-size: 14px;
+  color: var(--c-text-mid);
+  cursor: pointer;
+  margin-top: 8px;
+}
+
+/* Game over screen */
+.gameOver {
+  text-align: center;
+  padding: 32px 0;
+}
+
+.gameOverTitle {
+  font-size: 26px;
+  font-weight: 700;
+  color: var(--c-text-dark);
+  font-family: Georgia, serif;
+  margin-bottom: 8px;
+}
+
+.gameOverSub {
+  font-size: 14px;
+  color: var(--c-text-light);
+  margin-bottom: 24px;
+}
+
+.winnerBadge {
+  display: inline-block;
+  background: #f4c0d1;
+  border: 1.5px solid #c05a8a;
+  color: #4b1528;
+  border-radius: var(--radius-lg);
+  padding: 12px 24px;
+  font-size: 18px;
+  font-weight: 700;
+  margin-bottom: 24px;
+  font-family: Georgia, serif;
+}
+
+.finalScoreBoard {
+  background: var(--c-bg-card);
+  border: 1px solid var(--c-border-soft);
+  border-radius: var(--radius-lg);
+  padding: 16px;
+  margin-bottom: 20px;
+  text-align: left;
+}
+
+.playAgainBtn {
+  width: 100%;
+  padding: 14px;
+  background: #c05a8a;
+  border: none;
+  border-radius: var(--radius-md);
+  color: #fff;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  margin-bottom: 8px;
+  transition: background 0.15s;
+}
+
+.playAgainBtn:hover {
+  background: #a84878;
+}
+
+.backBtn {
+  width: 100%;
+  padding: 12px;
+  background: none;
+  border: 1px solid var(--c-border);
+  border-radius: var(--radius-md);
+  font-size: 14px;
+  color: var(--c-text-mid);
+  cursor: pointer;
+}
