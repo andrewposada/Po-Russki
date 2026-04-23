@@ -110,7 +110,7 @@ export async function deleteWord(userId, word) {
  * If a session has fewer than 4 unique due words, pads with mastered words
  * so the Matching card always has a full set of 4.
  */
-export async function getDueWords(userId, limit = 20) {
+export async function getDueWords(userId, limit = 10000) {
   // Primary: non-mastered words with null next_review_at (never reviewed)
   // + any word (mastered or not) whose next_review_at is genuinely past due.
   // Mastered words with null next_review_at are excluded from the primary

@@ -196,7 +196,7 @@ export default function Session() {
     setDistractors([]);
     setClozeData(null);
     prepareCard(currentWord, exerciseType);
-  }, [currentIdx, currentWord?.id, phase]);
+  }, [currentIdx, phase]);
 
   const prepareCard = useCallback(async (word, exType) => {
     if (exType === "mc") {
