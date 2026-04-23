@@ -27,10 +27,13 @@ export default function TabuPlay({
   const [timeLeft,      setTimeLeft]      = useState(totalSeconds);
   const [currentCard,   setCurrentCard]   = useState(null);  // { word, hints }
   const [cardLoading,   setCardLoading]   = useState(true);
-  const [showTranslate, setShowTranslate] = useState(false);
+  const [showTranslate,   setShowTranslate]   = useState(false);
+  const [hintTranslations, setHintTranslations] = useState([]);
+  const [translating,      setTranslating]      = useState(false);
   const [nextIsLoading, setNextIsLoading] = useState(false);
   const [correct,       setCorrect]       = useState(0);
   const [incorrect,     setIncorrect]     = useState(0);
+  const [roundCorrect,  setRoundCorrect]  = useState(0);
 
   // ── Pick next unplayed word ──────────────────────────────────────────
   const pickWord = useCallback(() => {
@@ -93,6 +96,12 @@ export default function TabuPlay({
     setNextIsLoading(false);
   }, [pickWord, fetchHints]);
 
+  // ── Clear translations when card changes ─────────────────────────────
+  useEffect(() => {
+    setHintTranslations([]);
+    setShowTranslate(false);
+  }, [currentCard]);
+
   // ── Advance to next card ─────────────────────────────────────────────
   const advanceCard = useCallback(() => {
     if (!roundActiveRef.current) return;
@@ -149,10 +158,48 @@ export default function TabuPlay({
     loadCard(word);
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
+  // ── Translate toggle ─────────────────────────────────────────────────
+  async function handleTranslateToggle() {
+    if (showTranslate) {
+      setShowTranslate(false);
+      return;
+    }
+    setShowTranslate(true);
+    if (!currentCard) return;
+    // Already have translations for this card
+    if (hintTranslations.length > 0) return;
+
+    setTranslating(true);
+    try {
+      // Batch all hint words into one call: "1. слово 2. слово 3. слово ..."
+      const batch = currentCard.hints
+        .map((h, i) => `${i + 1}. ${h}`)
+        .join(" ");
+      const res  = await fetch("/api/translate", {
+        method:  "POST",
+        headers: { "Content-Type": "application/json" },
+        body:    JSON.stringify({ text: batch, isPhrase: true }),
+      });
+      const data = await res.json();
+      // Split result back by number markers
+      const raw = data.translation ?? "";
+      const parts = raw
+        .split(/\d+\.\s+/)
+        .map(s => s.trim())
+        .filter(Boolean);
+      setHintTranslations(parts);
+    } catch {
+      setHintTranslations([]);
+    } finally {
+      setTranslating(false);
+    }
+  }
+
   // ── Answer handlers ──────────────────────────────────────────────────
   function handleCorrect() {
     correctRef.current += 1;
     setCorrect(correctRef.current);
+    setRoundCorrect(correctRef.current);
     advanceCard();
   }
 
@@ -207,7 +254,11 @@ export default function TabuPlay({
             className={`${styles.scoreChip} ${i === currentTeam ? styles.scoreChipActive : ""}`}
           >
             <div className={styles.scoreChipName}>{name}</div>
-            <div className={styles.scoreChipVal}>{scores[i] ?? 0}</div>
+            <div className={styles.scoreChipVal}>
+              {i === currentTeam
+                ? (scores[i] ?? 0) + roundCorrect
+                : (scores[i] ?? 0)}
+            </div>
           </div>
         ))}
       </div>
@@ -233,6 +284,9 @@ export default function TabuPlay({
             {currentCard.hints.map((hint, i) => (
               <div key={i} className={styles.tabuHintRow}>
                 <span className={styles.tabuHintWord}>{hint.toUpperCase()}</span>
+                {showTranslate && hintTranslations[i] && (
+                  <span className={styles.tabuHintEn}>{hintTranslations[i]}</span>
+                )}
               </div>
             ))}
           </div>
@@ -246,9 +300,10 @@ export default function TabuPlay({
       {/* Translate toggle */}
       <button
         className={`${styles.translateToggle} ${showTranslate ? styles.translateToggleActive : ""}`}
-        onClick={() => setShowTranslate(v => !v)}
+        onClick={handleTranslateToggle}
+        disabled={translating}
       >
-        {showTranslate ? "Скрыть перевод" : "Показать перевод"}
+        {translating ? "Перевод…" : showTranslate ? "Скрыть перевод" : "Показать перевод"}
       </button>
 
       {/* Action buttons */}
