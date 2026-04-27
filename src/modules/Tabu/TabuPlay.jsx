@@ -1,5 +1,7 @@
 // src/modules/Tabu/TabuPlay.jsx
 import { useState, useEffect, useRef, useCallback } from "react";
+import { useAuth } from "../../AuthContext";
+import { useWordBank } from "../../context/WordBankContext";
 import styles from "./Tabu.module.css";
 
 export default function TabuPlay({
@@ -10,7 +12,10 @@ export default function TabuPlay({
   playedWordIds,
   onRoundComplete,
 }) {
-  const { roundMinutes, teamNames, filteredWords } = config;
+  const { roundMinutes, teamNames, filteredWords, easyMode } = config;
+  const { user }   = useAuth();
+  const { enrich, words: bankWords } = useWordBank();
+  const [addedToBank, setAddedToBank] = useState(false);
   const totalSeconds = roundMinutes * 60;
 
   // ── Refs (stale-closure safe) ────────────────────────────────────────
@@ -96,10 +101,11 @@ export default function TabuPlay({
     setNextIsLoading(false);
   }, [pickWord, fetchHints]);
 
-  // ── Clear translations when card changes ─────────────────────────────
+  // ── Clear translations + bank state when card changes ────────────────
   useEffect(() => {
     setHintTranslations([]);
     setShowTranslate(false);
+    setAddedToBank(false);
   }, [currentCard]);
 
   // ── Advance to next card ─────────────────────────────────────────────
@@ -319,6 +325,28 @@ export default function TabuPlay({
       <button className={styles.btnSkip} onClick={handleSkip}>
         Пропустить (−1 очко) →
       </button>
+
+      {easyMode && currentCard && (
+        <button
+          className={`${styles.addToBankBtn} ${addedToBank ? styles.addToBankDone : ""}`}
+          disabled={addedToBank || !user}
+          onClick={() => {
+            if (addedToBank || !user) return;
+            const alreadyInBank = (bankWords ?? []).some(
+              w => w.word === currentCard.word.word
+            );
+            if (!alreadyInBank) {
+              enrich(user.uid, {
+                word:        currentCard.word.word,
+                translation: currentCard.word.translation ?? "",
+              });
+            }
+            setAddedToBank(true);
+          }}
+        >
+          {addedToBank ? "✓ Добавлено" : "+ В словарь"}
+        </button>
+      )}
 
       {nextIsLoading && (
         <p className={styles.nextLoading}>Подготовка следующей карточки…</p>

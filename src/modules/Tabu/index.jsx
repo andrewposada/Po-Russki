@@ -99,7 +99,8 @@ export default function Tabu() {
   if (phase === "setup") {
     return (
       <TabuSetup
-        words={words ?? []}
+        words={words}
+        cefrLevel={cefrLevel}
         onStart={handleSetupComplete}
         onBack={() => navigate("/")}
       />

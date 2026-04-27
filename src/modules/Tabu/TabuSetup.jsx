@@ -1,19 +1,22 @@
 // src/modules/Tabu/TabuSetup.jsx
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import styles from "./Tabu.module.css";
 
 const CEFR_LEVELS = ["A1", "A2", "B1", "B2", "C1"];
 
-export default function TabuSetup({ words, onStart, onBack }) {
+export default function TabuSetup({ words, cefrLevel, onStart, onBack }) {
   const wordsLoading = words === null;
   // ── Config state ─────────────────────────────────────────────────────
   const [roundMinutes, setRoundMinutes] = useState(3);
   const [teamCount,    setTeamCount]    = useState(2);
+  const [easyMode,     setEasyMode]     = useState(false);
+  const [easyWords,    setEasyWords]    = useState(null);   // null | "loading" | WordObj[]
+  const [easyError,    setEasyError]    = useState(false);
 
   // Word filters — defaults: all status, all POS, all CEFR
-  const [statusFilter, setStatusFilter] = useState("all");    // "all" | "due" | "mastered"
-  const [posFilter,    setPosFilter]    = useState("all");    // "all" | "noun" | "verb" | "adjective"
-  const [cefrFilter,   setCefrFilter]   = useState("all");    // "all" | "A1" | "A2" ...
+  const [statusFilter, setStatusFilter] = useState("all");
+  const [posFilter,    setPosFilter]    = useState("all");
+  const [cefrFilter,   setCefrFilter]   = useState("all");
 
   // ── Filtered words ───────────────────────────────────────────────────
   const filteredWords = useMemo(() => {
@@ -35,7 +38,43 @@ export default function TabuSetup({ words, onStart, onBack }) {
     });
   }, [words, statusFilter, posFilter, cefrFilter]);
 
-  const canStart = filteredWords.length >= 2;
+  const canStart = easyMode
+    ? Array.isArray(easyWords) && easyWords.length >= 2
+    : filteredWords.length >= 2;
+
+  // ── Easy mode: generate words when toggled on or filters change ──────
+  useEffect(() => {
+    if (!easyMode) return;
+    let cancelled = false;
+    setEasyWords("loading");
+    setEasyError(false);
+
+    const pos_types = posFilter === "all" ? "any" : posFilter;
+    const level     = cefrFilter === "all" ? (cefrLevel ?? "B1") : cefrFilter;
+
+    fetch("/api/vocab-generate", {
+      method:  "POST",
+      headers: { "Content-Type": "application/json" },
+      body:    JSON.stringify({ mode: "easy_words", level, pos_types }),
+    })
+      .then(r => r.json())
+      .then(data => {
+        if (cancelled) return;
+        const words = (data.words ?? []).map((w, i) => ({
+          id:          `easy-${i}-${Date.now()}`,
+          word:        w.word_ru,
+          translation: w.word_en,
+          is_easy:     true,   // flag so play screen knows to show "add" button
+        }));
+        setEasyWords(words.length > 0 ? words : []);
+        if (words.length === 0) setEasyError(true);
+      })
+      .catch(() => {
+        if (!cancelled) { setEasyWords([]); setEasyError(true); }
+      });
+
+    return () => { cancelled = true; };
+  }, [easyMode, posFilter, cefrFilter, cefrLevel]);
 
   // ── Helpers ──────────────────────────────────────────────────────────
   function buildTeamNames(count) {
@@ -46,8 +85,9 @@ export default function TabuSetup({ words, onStart, onBack }) {
     onStart({
       roundMinutes,
       teamCount,
-      teamNames: buildTeamNames(teamCount),
-      filteredWords,
+      teamNames:     buildTeamNames(teamCount),
+      filteredWords: easyMode ? easyWords : filteredWords,
+      easyMode,
     });
   }
 
@@ -160,20 +200,43 @@ export default function TabuSetup({ words, onStart, onBack }) {
         </div>
       </div>
 
+      {/* Easy mode toggle */}
+      <div className={styles.setupSection}>
+        <div className={styles.sectionLabel}>Режим игры</div>
+        <div className={styles.easyModeRow}>
+          <div className={styles.easyModeText}>
+            <div className={styles.easyModeTitle}>Лёгкий режим</div>
+            <div className={styles.easyModeSub}>Слова генерируются по уровню, не из словаря</div>
+          </div>
+          <button
+            className={`${styles.toggle} ${easyMode ? "" : styles.toggleOff}`}
+            onClick={() => { setEasyMode(v => !v); setEasyWords(null); setEasyError(false); }}
+          />
+        </div>
+      </div>
+
       <p className={styles.wordCount}>
-        {wordsLoading
-          ? "Загрузка слов…"
-          : filteredWords.length === 0
-            ? "Нет слов для выбранных фильтров"
-            : `${filteredWords.length} слов доступно`}
+        {easyMode
+          ? easyWords === "loading"
+            ? "Генерация слов…"
+            : easyError
+              ? "Ошибка генерации — попробуйте снова"
+              : Array.isArray(easyWords)
+                ? `${easyWords.length} слов сгенерировано`
+                : ""
+          : wordsLoading
+            ? "Загрузка слов…"
+            : filteredWords.length === 0
+              ? "Нет слов для выбранных фильтров"
+              : `${filteredWords.length} слов доступно`}
       </p>
 
       <button
         className={styles.startBtn}
         onClick={handleStart}
-        disabled={!canStart || wordsLoading}
+        disabled={!canStart || wordsLoading || easyWords === "loading"}
       >
-        {wordsLoading ? "Загрузка…" : "Начать игру"}
+        {wordsLoading || easyWords === "loading" ? "Загрузка…" : "Начать игру"}
       </button>
 
       <button className={styles.backBtn} onClick={onBack} style={{ marginTop: 8 }}>

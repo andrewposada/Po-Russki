@@ -535,6 +535,92 @@
   margin-top: 8px;
 }
 
+/* Easy mode toggle row */
+.easyModeRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  background: var(--c-bg-card);
+  border: 1px solid var(--c-border-soft);
+  border-radius: var(--radius-lg);
+  padding: 12px 16px;
+}
+
+.easyModeText {
+  flex: 1;
+}
+
+.easyModeTitle {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--c-text-dark);
+}
+
+.easyModeSub {
+  font-size: 12px;
+  color: var(--c-text-light);
+  margin-top: 2px;
+}
+
+.toggle {
+  width: 40px;
+  height: 22px;
+  border-radius: 11px;
+  background: #c05a8a;
+  position: relative;
+  cursor: pointer;
+  flex-shrink: 0;
+  border: none;
+  transition: background 0.15s;
+}
+
+.toggleOff {
+  background: var(--c-border);
+}
+
+.toggle::after {
+  content: '';
+  position: absolute;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: #fff;
+  top: 3px;
+  right: 3px;
+  transition: right 0.15s;
+}
+
+.toggleOff::after {
+  right: 21px;
+}
+
+/* Add to word bank button */
+.addToBankBtn {
+  width: 100%;
+  padding: 9px;
+  background: none;
+  border: 1px solid var(--c-border);
+  border-radius: var(--radius-md);
+  font-size: 13px;
+  color: var(--c-text-mid);
+  cursor: pointer;
+  margin-top: 6px;
+  transition: background 0.1s, color 0.1s, border-color 0.1s;
+}
+
+.addToBankBtn:hover:not(:disabled) {
+  background: var(--c-bg-panel);
+  color: var(--c-text-dark);
+}
+
+.addToBankDone {
+  border-color: #4caf50;
+  color: #2e7d32;
+  background: #e8f5ec;
+  cursor: default;
+}
+
 /* Game over screen */
 .gameOver {
   text-align: center;

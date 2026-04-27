@@ -24,6 +24,9 @@ const PROMPTS = {
   explore_cloze: ({ level, topics, pos_types, recent_words }) =>
     `New cloze exercise. Level:${level}. Topics:${topics}. Avoid reusing:${recent_words}.\nReturn: {"word_ru":"<ru>","word_en":"<en>","part_of_speech":"<pos>","sentence_before":"<ru>","sentence_after":"<ru>","answer":"<correct form>","grammar_hint":"<form name>"}`,
 
+  easy_words: ({ level, pos_types }) =>
+    `Generate exactly 50 common Russian words suitable for a Taboo card game at ${level} CEFR level. Part of speech filter: ${pos_types ?? "any"}. Return a diverse mix of concrete, everyday words that are easy to describe but interesting to guess. All words in nominative/infinitive dictionary form, Cyrillic only.\nReturn: {"words":[{"word_ru":"<ru>","word_en":"<en>"},...]}`,
+
   tabu_hints: ({ word, word_en, level }) => {
     const stepDown = { A1:"A1", A2:"A1", B1:"A2", B2:"B1", C1:"B2", C2:"C1" };
     const hintLevel = stepDown[level] ?? "A2";
@@ -74,7 +77,7 @@ export default async function handler(req, res) {
       },
       body: JSON.stringify({
         model:      MODEL_HAIKU,
-        max_tokens: 200,
+        max_tokens: mode === "easy_words" ? 2000 : 200,
         system:     "You are a Russian vocabulary teacher. Respond with JSON only — no markdown, no explanation.",
         messages:   [{ role: "user", content: userPrompt }],
       }),
