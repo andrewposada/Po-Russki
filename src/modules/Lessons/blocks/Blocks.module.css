@@ -295,8 +295,8 @@
 
 /* Assignment block */
 .assignment {
-  background: #fff8f0;
-  border: 1px solid var(--c-mushroom-lt, #e8d5b0);
+  background: color-mix(in srgb, var(--c-orange) 6%, var(--c-bg-card));
+  border: 1px solid color-mix(in srgb, var(--c-orange) 20%, var(--c-bg-card));
   border-radius: var(--radius-lg);
   padding: 16px 18px;
   margin-bottom: 8px;
@@ -427,7 +427,7 @@
   display: flex;
   align-items: flex-start;
   gap: 8px;
-  background: var(--c-bg-deep);
+  background: color-mix(in srgb, var(--c-text-dark) 8%, var(--c-bg-card));
   border-radius: var(--radius-md);
   padding: 10px 13px;
   font-size: 13px;
@@ -444,7 +444,7 @@
 /* ── Discovery ────────────────────────────────────────────────────────────── */
 
 .discovery {
-  background: var(--c-bg-deep);
+  background: color-mix(in srgb, var(--c-text-dark) 8%, var(--c-bg-card));
   border-radius: var(--radius-lg);
   padding: 16px 18px;
   margin-bottom: 8px;
@@ -762,5 +762,5 @@
 .kbToggleActive {
   border-color: var(--c-sage);
   color: var(--c-sage);
-  background: #eaf3ea;
+  background: color-mix(in srgb, var(--c-sage) 15%, var(--c-bg-card));
 }
