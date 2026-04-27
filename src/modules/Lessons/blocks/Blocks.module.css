@@ -393,12 +393,45 @@
 .miniStory {
   margin-bottom: 8px;
 }
+.miniStoryHeader {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  margin-bottom: 12px;
+}
 .miniStoryRu {
   font-family: var(--font-ru);
   font-size: 16px;
   color: var(--c-text-dark);
   line-height: 1.8;
-  margin-bottom: 12px;
+  margin-bottom: 0;
+  flex: 1;
+}
+.miniStoryPlayBtn {
+  flex-shrink: 0;
+  margin-top: 3px;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  border: none;
+  background: var(--c-sage);
+  color: #fff;
+  font-size: 14px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.15s, opacity 0.15s;
+}
+.miniStoryPlayBtn:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+.miniStoryPlayBtnActive {
+  background: var(--c-sky);
+}
+.miniStoryPlayBtnError {
+  background: var(--c-wrong);
 }
 .miniStoryToggle {
   font-size: 13px;
