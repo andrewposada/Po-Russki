@@ -2,14 +2,21 @@
 import { useState } from "react";
 import styles from "./Blocks.module.css";
 
-export default function QuizBlock({ block, onAnswer }) {
-  const [selected, setSelected] = useState(null); // index of chosen option
+export default function QuizBlock({ block, onAnswer, previousAnswer }) {
+  const [selected, setSelected] = useState(() => {
+    if (!previousAnswer) return null;
+    // answer stores "true"/"false" — we can't recover which option was picked,
+    // so show the correct answer highlighted as a review state
+    return previousAnswer.grade?.correct === true
+      ? block.correct_index
+      : block.correct_index; // either way, highlight the correct answer on review
+  });
 
   function handleSelect(idx) {
     if (selected !== null) return; // locked after first selection
     setSelected(idx);
     const correct = idx === block.correct_index;
-    onAnswer(correct);
+    onAnswer(correct, idx);
   }
 
   function optionClass(idx) {

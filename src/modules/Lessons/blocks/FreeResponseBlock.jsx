@@ -3,11 +3,11 @@ import { useState, useRef } from "react";
 import { useRussianKeyboard } from "../../../hooks/useRussianKeyboard";
 import styles from "./Blocks.module.css";
 
-export default function FreeResponseBlock({ block, onSubmit }) {
-  const [answer, setAnswer]   = useState("");
-  const [submitted, setSubmitted] = useState(false);
+export default function FreeResponseBlock({ block, onSubmit, previousAnswer }) {
+  const [answer, setAnswer]   = useState(previousAnswer?.answer ?? "");
+  const [submitted, setSubmitted] = useState(!!previousAnswer);
   const [loading, setLoading] = useState(false);
-  const [grade, setGrade]     = useState(null);
+  const [grade, setGrade]     = useState(previousAnswer?.grade ?? null);
   const [ruMode, setRuMode]   = useState(true);
 
   const textareaRef = useRef(null);

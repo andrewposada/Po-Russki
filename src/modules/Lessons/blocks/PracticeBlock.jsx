@@ -3,11 +3,17 @@ import { useState, useRef } from "react";
 import { useRussianKeyboard } from "../../../hooks/useRussianKeyboard";
 import styles from "./Blocks.module.css";
 
-export default function PracticeBlock({ block, onSubmit }) {
-  const [answer, setAnswer]       = useState("");
-  const [submitted, setSubmitted] = useState(false);
-  const [correct, setCorrect]     = useState(null);
-  const [feedback, setFeedback]   = useState("");
+export default function PracticeBlock({ block, onSubmit, previousAnswer }) {
+  const [answer, setAnswer]       = useState(previousAnswer?.answer ?? "");
+  const [submitted, setSubmitted] = useState(!!previousAnswer);
+  const [correct, setCorrect]     = useState(previousAnswer ? (previousAnswer.grade?.correct ?? null) : null);
+  const [feedback, setFeedback]   = useState(() => {
+    if (!previousAnswer) return "";
+    const isCorrect = previousAnswer.grade?.correct;
+    return isCorrect
+      ? `✓ Correct! "${block.target_word}" is right.`
+      : `✗ The correct answer is "${block.target_word}".`;
+  });
   const [loading, setLoading]     = useState(false);
   const [hintVisible, setHintVisible] = useState(false);
   const [ruMode, setRuMode]       = useState(true);

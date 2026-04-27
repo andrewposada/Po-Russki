@@ -3,10 +3,12 @@ import { useState, useRef } from "react";
 import { useRussianKeyboard } from "../../../hooks/useRussianKeyboard";
 import styles        from "./Blocks.module.css";
 
-export default function ErrorCorrectionBlock({ block, onSubmit }) {
-  const [answer,    setAnswer]    = useState("");
-  const [submitted, setSubmitted] = useState(false);
-  const [correct,   setCorrect]   = useState(null);
+export default function ErrorCorrectionBlock({ block, onSubmit, previousAnswer }) {
+  const [answer,    setAnswer]    = useState(previousAnswer?.answer ?? "");
+  const [submitted, setSubmitted] = useState(!!previousAnswer);
+  const [correct,   setCorrect]   = useState(
+    previousAnswer ? (previousAnswer.answer?.trim().toLowerCase() === block.corrected_word.toLowerCase()) : null
+  );
   const [ruMode,    setRuMode]    = useState(true);
 
   const inputRef = useRef(null);

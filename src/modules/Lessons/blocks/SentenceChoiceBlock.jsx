@@ -2,8 +2,12 @@
 import { useState } from "react";
 import styles        from "./Blocks.module.css";
 
-export default function SentenceChoiceBlock({ block, onAnswer }) {
-  const [selected, setSelected] = useState(null);
+export default function SentenceChoiceBlock({ block, onAnswer, previousAnswer }) {
+  const [selected, setSelected] = useState(() => {
+    if (!previousAnswer?.answer) return null;
+    const idx = parseInt(previousAnswer.answer, 10);
+    return isNaN(idx) ? null : idx;
+  });
 
   function handleSelect(idx) {
     if (selected !== null) return;

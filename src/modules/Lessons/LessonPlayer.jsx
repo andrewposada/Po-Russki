@@ -7,6 +7,7 @@ import {
   getLessonCompletion,
   upsertLessonCompletion,
   saveLessonAnswer,
+  getLessonAnswers,
   addXP,
   getUserProgress,
   getPendingAssignments,
@@ -139,6 +140,7 @@ export default function LessonPlayer() {
   const [currentGroupIndex, setCurrentGroupIndex] = useState(0);
   const [revealedCount,     setRevealedCount]      = useState(1); // how many groups are in the DOM
   const [answered,  setAnswered]  = useState({}); // { groupIndex: true } — groups that have been answered
+  const [previousAnswers, setPreviousAnswers] = useState({}); // { groupName: answerRow }
   const [loading,   setLoading]   = useState(true);
   const [completed, setCompleted] = useState(false);
   const [baselineScore, setBaselineScore] = useState(0);
@@ -158,9 +160,10 @@ export default function LessonPlayer() {
   useEffect(() => {
     if (!user || !lessonId) return;
     async function load() {
-      const [lessonData, completion] = await Promise.all([
+      const [lessonData, completion, priorAnswers] = await Promise.all([
         getLessonById(lessonId),
         getLessonCompletion(user.uid, lessonId),
+        getLessonAnswers(user.uid, lessonId),
       ]);
       if (!lessonData) {
         console.error("Lesson not found or access denied:", lessonId);
@@ -184,16 +187,46 @@ export default function LessonPlayer() {
       }
 
       // Mark if already completed (for XP idempotency check)
-      if (completion && completion.state >= LESSON_STATE.COMPLETED) {
+      const alreadyCompleted = completion && completion.state >= LESSON_STATE.COMPLETED;
+      if (alreadyCompleted) {
         wasAlreadyCompletedRef.current = true;
       }
 
-      // Upsert in_progress
-      await upsertLessonCompletion(user.uid, lessonId, {
-        state:               LESSON_STATE.IN_PROGRESS,
-        current_block_index: savedIndex,
-        current_group:       grouped[savedIndex]?.name ?? null,
+      // Build previous answers map: { [groupName]: answerRow }
+      // Take the most recent answer per group (last write wins)
+      const prevMap = {};
+      (priorAnswers ?? []).forEach(row => {
+        prevMap[row.group_name] = row;
       });
+      setPreviousAnswers(prevMap);
+
+      // Pre-seed answered state for any group that has a prior answer row
+      // so Continue is enabled without re-submitting on review
+      const preSeedAnswered = {};
+      grouped.forEach((group, i) => {
+        if (prevMap[group.name]) {
+          preSeedAnswered[i] = true;
+        }
+      });
+      answeredRef.current = preSeedAnswered;
+      setAnswered(preSeedAnswered);
+
+      // For completed lessons, reveal all groups so the full lesson is visible
+      if (alreadyCompleted) {
+        setRevealedCount(grouped.length);
+        setCurrentGroupIndex(grouped.length - 1);
+        currentGroupIndexRef.current = grouped.length - 1;
+      }
+
+      // Only write IN_PROGRESS if not already completed — reviewing a lesson
+      // must not downgrade its state back to in_progress.
+      if (!alreadyCompleted) {
+        await upsertLessonCompletion(user.uid, lessonId, {
+          state:               LESSON_STATE.IN_PROGRESS,
+          current_block_index: savedIndex,
+          current_group:       grouped[savedIndex]?.name ?? null,
+        });
+      }
 
       setLoading(false);
     }
@@ -209,7 +242,8 @@ export default function LessonPlayer() {
     if (!group) return;
     saveLessonAnswer(
       user.uid, lessonId, group.name, "quiz", null,
-      String(isCorrect), { correct: isCorrect }
+      String(selectedIdx ?? isCorrect),  // store index when available
+      { correct: isCorrect }
     );
   }, [user, lessonId, groups]);
 
@@ -315,6 +349,7 @@ const quizGroups = quizGroupsWithIndex.map(({ group }) => group); // for the len
   // ── Block renderer (inline JSX variable — do not extract) ─────────────────────
 
   function renderBlocks(group, groupIndex) {
+    const prevAnswer = previousAnswers[group.name] ?? null;
     const blocks = group.blocks.map((block, i) => {
       switch (block.type) {
         case "narrative":
@@ -331,6 +366,7 @@ const quizGroups = quizGroupsWithIndex.map(({ group }) => group); // for the len
               key={i}
               block={block}
               onAnswer={(correct) => handleAnswer(groupIndex, correct)}
+              previousAnswer={prevAnswer}
             />
           );
         case "practice":
@@ -339,6 +375,7 @@ const quizGroups = quizGroupsWithIndex.map(({ group }) => group); // for the len
               key={i}
               block={block}
               onSubmit={(answer, correct, grade) => handleSubmit(groupIndex, answer, correct, grade)}
+              previousAnswer={prevAnswer}
             />
           );
         case "assignment":
@@ -350,6 +387,7 @@ const quizGroups = quizGroupsWithIndex.map(({ group }) => group); // for the len
               key={i}
               block={block}
               onSubmit={(answer, correct, grade) => handleSubmit(groupIndex, answer, correct, grade)}
+              previousAnswer={prevAnswer}
             />
           );
         case "summary":
@@ -366,6 +404,7 @@ const quizGroups = quizGroupsWithIndex.map(({ group }) => group); // for the len
               key={i}
               block={block}
               onAnswer={(correct) => handleAnswer(groupIndex, correct)}
+              previousAnswer={prevAnswer}
             />
           );
         case "error_correction":
@@ -374,6 +413,7 @@ const quizGroups = quizGroupsWithIndex.map(({ group }) => group); // for the len
               key={i}
               block={block}
               onSubmit={(answer, correct) => handleSubmit(groupIndex, answer, correct, null)}
+              previousAnswer={prevAnswer}
             />
           );
         default:
