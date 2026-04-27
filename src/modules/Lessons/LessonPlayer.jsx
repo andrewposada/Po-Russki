@@ -282,9 +282,14 @@ export default function LessonPlayer() {
       current_group:       groups[next]?.name ?? null,
     });
 
-    // Scroll to new group
+    // Scroll to new group — offset by top bar height so the section header
+    // lands just below the progress bar, not hidden behind it
     setTimeout(() => {
-      groupRefs.current[next]?.scrollIntoView({ behavior: "smooth", block: "start" });
+      const el = groupRefs.current[next];
+      if (!el) return;
+      const TOP_BAR_HEIGHT = 72; // px — matches .topBar height in LessonPlayer.module.css
+      const y = el.getBoundingClientRect().top + window.scrollY - TOP_BAR_HEIGHT - 16;
+      window.scrollTo({ top: y, behavior: "smooth" });
     }, 60);
   }
 
