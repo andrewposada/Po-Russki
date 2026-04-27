@@ -112,7 +112,7 @@ export default function AssignmentsQueue() {
           prompt_ru:       ex.prompt_ru,
           target_word:     ex.target_word,
           grammar_context: ex.grammar_context,
-          user_answer:     trimmed,
+          answer:          trimmed,
         }),
       });
       const data = await res.json();
