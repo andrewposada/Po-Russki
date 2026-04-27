@@ -22,7 +22,7 @@ Return JSON with exactly these fields:
   "prompt_en": "English translation of the full correct sentence — in English",
   "target_word": "the correct Russian word or ending that fills the blank",
   "grammar_context": "brief English description e.g. 'accusative singular masculine'",
-  "hint": "optional short hint in English, or empty string"
+  "hint": ""
 }`,
 
     mc: `Generate a multiple-choice grammar question about ${topicTitle}.
