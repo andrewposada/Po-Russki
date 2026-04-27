@@ -1,16 +1,17 @@
 // api/grammar-freeplay-generate.js
-import Anthropic from "@anthropic-ai/sdk";
+const MODEL_HAIKU = "claude-haiku-4-5-20251001";
 
 export default async function handler(req, res) {
   if (req.method !== "POST") return res.status(405).json({ error: "Method not allowed" });
 
-  const { topicId, topicTitle, exerciseType, cefrLevel } = req.body;
+  const { topicId, topicTitle, exerciseType, cefrLevel } = req.body ?? {};
 
   if (!topicId || !topicTitle || !exerciseType) {
     return res.status(400).json({ error: "Missing required fields" });
   }
 
-  const client = new Anthropic();
+  const apiKey = process.env.ANTHROPIC_API_KEY;
+  if (!apiKey) return res.status(500).json({ error: "Anthropic API key not configured" });
 
   const exerciseInstructions = {
     fillin: `Generate a fill-in-the-blank exercise about ${topicTitle}.
@@ -37,7 +38,7 @@ Return JSON with exactly these fields:
 Alternate randomly between Russian→English and English→Russian.
 Return JSON with exactly these fields:
 {
-  "direction": "ru_to_en" or "en_to_ru",
+  "direction": "ru_to_en or en_to_ru",
   "source": "The sentence to translate",
   "target": "The correct translation",
   "grammar_focus": "What grammar point this tests e.g. 'dative plural'",
@@ -81,19 +82,29 @@ Generate ONE exercise. Respond with ONLY valid JSON. No markdown fences. No expl
 The exercise must directly test ${topicTitle} grammar — not vocabulary or translation skill in general.`;
 
   try {
-    const { MODEL_HAIKU } = await import("../src/constants/index.js").catch(() => ({
-      MODEL_HAIKU: "claude-haiku-4-5-20251001"
-    }));
-
-    const message = await client.messages.create({
-      model: MODEL_HAIKU,
-      max_tokens: 600,
-      system: systemPrompt,
-      messages: [{ role: "user", content: instructions }],
+    const response = await fetch("https://api.anthropic.com/v1/messages", {
+      method: "POST",
+      headers: {
+        "Content-Type":      "application/json",
+        "x-api-key":         apiKey,
+        "anthropic-version": "2023-06-01",
+      },
+      body: JSON.stringify({
+        model:      MODEL_HAIKU,
+        max_tokens: 600,
+        system:     systemPrompt,
+        messages:   [{ role: "user", content: instructions }],
+      }),
     });
 
-    const raw = message.content[0]?.text?.trim() ?? "";
-    // Strip markdown fences if model adds them despite instructions
+    if (!response.ok) {
+      const err = await response.text();
+      console.error("Anthropic error:", err);
+      return res.status(502).json({ error: "Anthropic request failed" });
+    }
+
+    const data = await response.json();
+    const raw  = data.content?.[0]?.text?.trim() ?? "";
     const cleaned = raw.replace(/^```json?\s*/i, "").replace(/```\s*$/i, "").trim();
 
     let exercise;
