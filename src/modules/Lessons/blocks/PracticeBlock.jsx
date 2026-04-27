@@ -6,10 +6,20 @@ import styles from "./Blocks.module.css";
 export default function PracticeBlock({ block, onSubmit, previousAnswer }) {
   const [answer, setAnswer]       = useState(previousAnswer?.answer ?? "");
   const [submitted, setSubmitted] = useState(!!previousAnswer);
-  const [correct, setCorrect]     = useState(previousAnswer ? (previousAnswer.grade?.correct ?? null) : null);
+  const [correct, setCorrect]     = useState(() => {
+    if (!previousAnswer) return null;
+    // grade may be a { correct: bool } object (new format) or a plain string (legacy)
+    if (typeof previousAnswer.grade === "object" && previousAnswer.grade !== null) {
+      return previousAnswer.grade.correct ?? null;
+    }
+    // Legacy fallback: compare stored answer directly against target_word
+    return previousAnswer.answer?.trim().toLowerCase() === block.target_word?.toLowerCase();
+  });
   const [feedback, setFeedback]   = useState(() => {
     if (!previousAnswer) return "";
-    const isCorrect = previousAnswer.grade?.correct;
+    const isCorrect = typeof previousAnswer.grade === "object" && previousAnswer.grade !== null
+      ? previousAnswer.grade.correct
+      : previousAnswer.answer?.trim().toLowerCase() === block.target_word?.toLowerCase();
     return isCorrect
       ? `✓ Correct! "${block.target_word}" is right.`
       : `✗ The correct answer is "${block.target_word}".`;
@@ -37,14 +47,13 @@ export default function PracticeBlock({ block, onSubmit, previousAnswer }) {
       });
       const data = await res.json();
       const isCorrect = data.correct === true;
+      const feedbackText = isCorrect
+        ? `✓ Correct! "${block.target_word}" is right.`
+        : `✗ The correct answer is "${block.target_word}".`;
       setCorrect(isCorrect);
-      setFeedback(
-        isCorrect
-          ? `✓ Correct! "${block.target_word}" is right.`
-          : `✗ The correct answer is "${block.target_word}".`
-      );
+      setFeedback(feedbackText);
       setSubmitted(true);
-      onSubmit(answer.trim(), isCorrect, feedback);
+      onSubmit(answer.trim(), isCorrect, { correct: isCorrect });
     } catch {
       setFeedback("Could not check answer — please try again.");
     } finally {
