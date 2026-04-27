@@ -24,7 +24,7 @@
   letter-spacing: 0.03em;
 }
 .ruleTable th {
-  background: var(--c-bg-deep);
+  background: color-mix(in srgb, var(--c-text-dark) 8%, var(--c-bg-card));
   color: var(--c-text-mid);
   font-size: 11px;
   font-weight: 600;
@@ -158,8 +158,8 @@
   outline: none;
 }
 .practiceInput:focus { border-color: var(--c-sky); }
-.practiceInputCorrect { border-color: var(--c-correct); background: #eaf3ea; }
-.practiceInputWrong   { border-color: var(--c-wrong);   background: #fbeaea; }
+.practiceInputCorrect { border-color: var(--c-correct); background: color-mix(in srgb, var(--c-sage)  12%, var(--c-bg-card)); }
+.practiceInputWrong   { border-color: var(--c-wrong);   background: color-mix(in srgb, var(--c-wrong) 12%, var(--c-bg-card)); }
 .practiceCheckBtn {
   font-size: 13px;
   font-weight: 600;
