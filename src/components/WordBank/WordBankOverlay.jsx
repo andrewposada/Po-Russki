@@ -1,7 +1,9 @@
 // src/components/WordBank/WordBankOverlay.jsx
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { useAuth } from "../../AuthContext";
 import { useWordBank } from "../../context/WordBankContext";
+import { useSettings } from "../../context/SettingsContext";
+import { useRussianKeyboard } from "../../hooks/useRussianKeyboard";
 import { deleteWord, upsertWord } from "../../storage";
 import Skeleton from "../Skeleton/Skeleton";
 import styles from "./WordBankOverlay.module.css";
@@ -13,13 +15,71 @@ const SORT_OPTIONS = [
 
 export default function WordBankOverlay() {
   const { user }               = useAuth();
-  const { isOpen, words, close, setWords } = useWordBank();
-  const [tab,    setTab]       = useState("active");   // "active" | "mastered"
+  const { isOpen, words, close, setWords, enrich } = useWordBank();
+  const { translitOn }         = useSettings();
+  const [tab,    setTab]       = useState("active");
   const [search, setSearch]    = useState("");
   const [sort,   setSort]      = useState("date");
   const [searchFocused, setSearchFocused] = useState(false);
 
+  // Manual add state
+  const [addInput,  setAddInput]  = useState("");
+  const [addState,  setAddState]  = useState("idle"); // "idle" | "loading" | "result" | "saving" | "duplicate"
+  const [addResult, setAddResult] = useState(null);   // enriched word object from API
+  const addInputRef = useRef(null);
+  useRussianKeyboard(addInputRef, translitOn);
+
   if (!isOpen) return null;
+const existingWords = (words ?? []).map(w => w.word);
+
+  const handleLookup = async () => {
+    const raw = addInput.trim();
+    if (!raw) return;
+
+    // Check duplicate before API call
+    if (existingWords.includes(raw)) {
+      setAddState("duplicate");
+      return;
+    }
+
+    setAddState("loading");
+    setAddResult(null);
+
+    try {
+      const res  = await fetch("/api/enrich-word", {
+        method:  "POST",
+        headers: { "Content-Type": "application/json" },
+        body:    JSON.stringify({ word: raw, translation: "" }),
+      });
+      const data = await res.json();
+      setAddResult(data);
+      setAddState("result");
+    } catch {
+      setAddState("idle");
+    }
+  };
+
+  const handleAddConfirm = async (isMastered = false) => {
+    if (!user || !addResult) return;
+    setAddState("saving");
+    await enrich(user.uid, {
+      word:        addResult.word ?? addInput.trim(),
+      translation: addResult.translation ?? "",
+      isMastered,
+    });
+    setAddInput("");
+    setAddResult(null);
+    setAddState("idle");
+  };
+
+  const handleAddKeyDown = (e) => {
+    if (e.key === "Enter") handleLookup();
+    if (e.key === "Escape") {
+      setAddInput("");
+      setAddResult(null);
+      setAddState("idle");
+    }
+  };
 
   const loading = words === null;
   const active   = (words ?? []).filter(w => !w.is_mastered);
@@ -81,6 +141,77 @@ export default function WordBankOverlay() {
           >
             Mastered {!loading && `(${mastered.length})`}
           </button>
+        </div>
+
+        {/* Manual add */}
+        <div className={styles.addSection}>
+          <div className={styles.addRow}>
+            <input
+              ref={addInputRef}
+              className={styles.addInput}
+              type="text"
+              placeholder="Add a word…"
+              value={addInput}
+              onChange={e => { setAddInput(e.target.value); setAddState("idle"); setAddResult(null); }}
+              onKeyDown={handleAddKeyDown}
+              disabled={addState === "loading" || addState === "saving"}
+            />
+            <button
+              className={styles.addLookupBtn}
+              onClick={handleLookup}
+              disabled={!addInput.trim() || addState === "loading" || addState === "saving"}
+            >
+              {addState === "loading" ? "…" : "Look up"}
+            </button>
+          </div>
+
+          {/* Duplicate notice */}
+          {addState === "duplicate" && (
+            <p className={styles.addDuplicate}>Already in your word bank.</p>
+          )}
+
+          {/* Preview card */}
+          {addState === "result" && addResult && (
+            <div className={styles.addPreview}>
+              <div className={styles.addPreviewTop}>
+                <span className={`${styles.addPreviewWord} ru`}>{addResult.word}</span>
+                <span className={styles.addPreviewTranslation}>{addResult.translation}</span>
+                {addResult.partOfSpeech && (
+                  <span className={styles.addPreviewPos}>{addResult.partOfSpeech}</span>
+                )}
+              </div>
+              {addResult.pronunciation && (
+                <p className={styles.addPreviewPron}>{addResult.pronunciation}</p>
+              )}
+              <div className={styles.addPreviewActions}>
+                <button
+                  className={styles.addConfirmBtn}
+                  onClick={() => handleAddConfirm(false)}
+                  disabled={addState === "saving"}
+                >
+                  + Word Bank
+                </button>
+                <button
+                  className={`${styles.addConfirmBtn} ${styles.addConfirmMastered}`}
+                  onClick={() => handleAddConfirm(true)}
+                  disabled={addState === "saving"}
+                >
+                  + Mastered
+                </button>
+                <button
+                  className={styles.addCancelBtn}
+                  onClick={() => { setAddInput(""); setAddResult(null); setAddState("idle"); }}
+                >
+                  Cancel
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* Saving state */}
+          {addState === "saving" && (
+            <p className={styles.addSaving}>Saving…</p>
+          )}
         </div>
 
         {/* Search + Sort */}
