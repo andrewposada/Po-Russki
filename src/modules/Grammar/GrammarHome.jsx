@@ -28,7 +28,7 @@ export default function GrammarHome() {
 
   const [completions, setCompletions]   = useState({});
   const [loading, setLoading]           = useState(true);
-  const [cheatSheetOpen, setCheatSheetOpen] = useState(false);
+  
 
   // Build a node-id → nodeConfig lookup for prerequisitesMet()
   const nodeMap = GRAMMAR_ROADMAP.reduce((acc, n) => { acc[n.id] = n; return acc; }, {});
@@ -100,12 +100,7 @@ export default function GrammarHome() {
           >
             ✏️ Start Freeplay
           </button>
-          <button
-            className={styles.btnSecondary}
-            onClick={() => setCheatSheetOpen(true)}
-          >
-            📖 Reference
-          </button>
+          
         </div>
       </div>
 
@@ -170,13 +165,7 @@ export default function GrammarHome() {
           })}
         </div>
       </div>
-    {cheatSheetOpen && (
-        <CheatSheet
-          onClose={() => setCheatSheetOpen(false)}
-          completions={completions}
-          initialTopicId={null}
-        />
-      )}
+    
     </div>
   );
 }

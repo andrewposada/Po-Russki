@@ -4,7 +4,7 @@ import { useLocation, useNavigate } from "react-router-dom";
 import { useWordBank } from "../../context/WordBankContext";
 import Settings from "../Settings/Settings";
 import ProgressOverlay from "../ProgressOverlay/ProgressOverlay";
-import ReferenceSheet from "../ReferenceSheet/ReferenceSheet";
+import CheatSheet from "../../modules/Grammar/CheatSheet";
 import styles from "./GlobalHeader.module.css";
 
 const ROUTE_LABELS = {
@@ -166,7 +166,11 @@ export default function GlobalHeader() {
 
       {/* Overlays */}
       {activeOverlay === "reference" && (
-        <ReferenceSheet onClose={() => setActiveOverlay(null)} />
+        <CheatSheet
+          onClose={() => setActiveOverlay(null)}
+          completions={{}}
+          initialTopicId={null}
+        />
       )}
       {activeOverlay === "progress" && (
         <ProgressOverlay onClose={() => setActiveOverlay(null)} />
