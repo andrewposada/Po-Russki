@@ -141,10 +141,10 @@ export default function GrammarFreeplay() {
   const translateRef = useRef(null);
   const errorRef     = useRef(null);
   const transformRef = useRef(null);
-  useRussianKeyboard(fillinRef,    translitOn);
-  useRussianKeyboard(translateRef, translitOn);
-  useRussianKeyboard(errorRef,     translitOn);
-  useRussianKeyboard(transformRef, translitOn);
+  useRussianKeyboard(fillinRef,    translitOn, exercise);
+  useRussianKeyboard(translateRef, translitOn, exercise);
+  useRussianKeyboard(errorRef,     translitOn, exercise);
+  useRussianKeyboard(transformRef, translitOn, exercise);
 
   // ── URL param initialisation ──────────────────────────────────────────────
   // Runs after completions load — pre-selects topics/types from URL

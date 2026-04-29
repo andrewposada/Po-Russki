@@ -14,7 +14,7 @@ import { QWERTY_TO_CYR } from "../constants";
  * @param {React.RefObject} ref   - ref attached to the input or textarea
  * @param {boolean}         enabled - whether keyboard intercept is active
  */
-export function useRussianKeyboard(ref, enabled) {
+export function useRussianKeyboard(ref, enabled, dep) {
   useEffect(() => {
     const el = ref?.current;
     if (!el || !enabled) return;
@@ -60,5 +60,5 @@ export function useRussianKeyboard(ref, enabled) {
 
     el.addEventListener("keydown", handler);
     return () => el.removeEventListener("keydown", handler);
-  }, [ref, enabled]);
+  }, [ref, enabled, dep]);
 }
