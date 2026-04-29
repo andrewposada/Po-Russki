@@ -1,55 +1,243 @@
-/* src/modules/Home/Home.module.css */
+/* ─────────────────────────────────────────────────────
+   Home.module.css — По-русски home screen (v2 redesign)
+   ───────────────────────────────────────────────────── */
 
 .page {
-  padding: 24px 0;
+  max-width: 1040px;
+  margin: 0 auto;
+  padding: 36px 28px 56px;
 }
 
-.heading {
-  font-size: 28px;
-  font-weight: 700;
-  color: var(--c-text-dark);
-  font-family: Georgia, serif;
-  margin-bottom: 4px;
+/* ── Hero ── */
+.hero {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  margin-bottom: 36px;
+  gap: 24px;
 }
 
-.sub {
-  font-size: 13px;
+.heroLeft {}
+
+.heroEyebrow {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
   color: var(--c-text-light);
-  margin-bottom: 28px;
+  margin-bottom: 8px;
+  font-family: var(--font-ui);
 }
 
-.grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-  gap: 12px;
+.heroTitle {
+  font-family: "DM Serif Display", Georgia, serif;
+  font-size: clamp(44px, 6vw, 68px);
+  line-height: 1;
+  letter-spacing: -1.5px;
+  color: var(--c-text-dark);
+  margin-bottom: 8px;
 }
 
-.card {
+.heroTitle em {
+  font-style: italic;
+  color: var(--c-text-mid);
+}
+
+.heroSub {
+  font-size: 14px;
+  color: var(--c-text-mid);
+  font-weight: 400;
+  line-height: 1.5;
+  max-width: 340px;
+  font-family: var(--font-ui);
+}
+
+/* ── Streak bar ── */
+.streakBar {
+  display: flex;
+  gap: 16px;
+  align-items: center;
+  flex-shrink: 0;
+}
+
+.streakItem {
+  text-align: center;
+  padding: 14px 20px;
   background: var(--c-bg-card);
   border: 1px solid var(--c-border);
-  border-top: 4px solid var(--accent);
   border-radius: var(--radius-md);
-  padding: 20px 16px;
+}
+
+.streakNum {
+  display: block;
+  font-family: "DM Serif Display", Georgia, serif;
+  font-size: 30px;
+  line-height: 1;
+  color: var(--c-text-dark);
+  letter-spacing: -1px;
+}
+
+.streakLabel {
+  display: block;
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--c-text-light);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  margin-top: 4px;
+  font-family: var(--font-ui);
+}
+
+/* ── Card grid ── */
+.grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  grid-template-rows: 220px 180px 150px;
+  gap: 14px;
+}
+
+/* ── Base card ── */
+.card {
+  position: relative;
+  border-radius: 32px;
+  overflow: clip;
+  cursor: pointer;
+  border: none;
   text-align: left;
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-  transition: background 0.15s, box-shadow 0.15s;
+  padding: 0;
+  display: block;
+  transition: transform 0.22s ease, box-shadow 0.22s ease;
 }
 
 .card:hover {
-  background: var(--c-bg-panel);
-  box-shadow: 0 2px 12px rgba(58, 48, 32, 0.08);
+  transform: translateY(-4px) scale(1.005);
+  box-shadow: 0 16px 48px rgba(26, 23, 20, 0.18);
 }
 
-.cardTitle {
-  font-size: 22px;
-  color: var(--c-text-dark);
-  font-family: Georgia, serif;
-  line-height: 1.2;
+/* SVG scene fills the card */
+.cardScene {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
 }
 
-.cardSub {
+/* Dark gradient overlay for text legibility */
+.cardOverlay {
+  position: absolute;
+  inset: 0;
+}
+
+/* Arrow circle — top right, appears on hover */
+.cardArrow {
+  position: absolute;
+  top: 20px;
+  right: 20px;
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.15);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-size: 15px;
+  opacity: 0;
+  transform: scale(0.8);
+  transition: opacity 0.2s, transform 0.2s;
+}
+
+.card:hover .cardArrow {
+  opacity: 1;
+  transform: scale(1);
+}
+
+/* Text block pinned bottom-left */
+.cardBody {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  padding: 20px 22px 22px;
+}
+
+.cardEn {
+  display: block;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.55);
+  margin-bottom: 4px;
+  font-family: var(--font-ui);
+}
+
+.cardRu {
+  display: block;
+  font-family: var(--font-ru);
+  font-size: 34px;
+  font-weight: 700;
+  color: #ffffff;
+  line-height: 1;
+  letter-spacing: -0.5px;
+}
+
+.cardHint {
+  display: block;
   font-size: 12px;
-  color: var(--c-text-light);
+  color: rgba(255, 255, 255, 0.6);
+  margin-top: 6px;
+  font-weight: 400;
+  line-height: 1.35;
+  font-family: var(--font-ui);
+}
+
+/* ── Grid areas ── */
+.cardLib   { grid-area: 1 / 1 / 3 / 2; } /* tall — rows 1-2, col 1 */
+.cardGram  { grid-area: 1 / 2 / 2 / 3; } /* top middle */
+.cardLess  { grid-area: 1 / 3 / 2 / 4; } /* top right */
+.cardVocab { grid-area: 2 / 2 / 3 / 4; } /* wide middle-right */
+.cardTabu  { grid-area: 3 / 1 / 4 / 2; } /* bottom left */
+.cardMuz   { grid-area: 3 / 2 / 4 / 4; } /* bottom right — wide */
+
+/* ── Responsive ── */
+@media (max-width: 700px) {
+  .page {
+    padding: 24px 16px 48px;
+  }
+
+  .hero {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 20px;
+  }
+
+  .streakBar {
+    gap: 10px;
+  }
+
+  .streakItem {
+    padding: 12px 16px;
+  }
+
+  .grid {
+    grid-template-columns: 1fr 1fr;
+    grid-template-rows: 200px 160px 160px 140px;
+  }
+
+  .cardLib   { grid-area: 1 / 1 / 2 / 3; } /* full width on mobile */
+  .cardGram  { grid-area: 2 / 1 / 3 / 2; }
+  .cardLess  { grid-area: 2 / 2 / 3 / 3; }
+  .cardVocab { grid-area: 3 / 1 / 4 / 3; }
+  .cardTabu  { grid-area: 4 / 1 / 5 / 2; }
+  .cardMuz   { grid-area: 4 / 2 / 5 / 3; }
+
+  .cardRu {
+    font-size: 28px;
+  }
+
+  .heroTitle {
+    font-size: 40px;
+  }
 }
