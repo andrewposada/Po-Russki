@@ -13,7 +13,7 @@ import {
 import styles from "./GrammarFreeplay.module.css";
 import { VOCAB_CATEGORIES, SITUATIONS, pickRandom } from "../../data/exerciseVariety";
 import { useRussianKeyboard } from "../../hooks/useRussianKeyboard";
-import { useSettings } from "../../SettingsContext";
+import { useSettings } from "../../context/SettingsContext";
 
 // ── Helpers ─────────────────────────────────────────────────────────────────
 
