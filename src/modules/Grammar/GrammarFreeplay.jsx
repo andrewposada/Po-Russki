@@ -12,6 +12,8 @@ import {
 } from "../../constants";
 import styles from "./GrammarFreeplay.module.css";
 import { VOCAB_CATEGORIES, SITUATIONS, pickRandom } from "../../data/exerciseVariety";
+import { useRussianKeyboard } from "../../hooks/useRussianKeyboard";
+import { useSettings } from "../../SettingsContext";
 
 // ── Helpers ─────────────────────────────────────────────────────────────────
 
@@ -132,6 +134,17 @@ export default function GrammarFreeplay() {
   // Ref mirrors for stale closure safety
   const sessionAnswersRef = useRef([]);
   const scoreRef          = useRef({ correct: 0, total: 0 });
+
+  // Russian keyboard
+  const { translitOn } = useSettings();
+  const fillinRef    = useRef(null);
+  const translateRef = useRef(null);
+  const errorRef     = useRef(null);
+  const transformRef = useRef(null);
+  useRussianKeyboard(fillinRef,    translitOn);
+  useRussianKeyboard(translateRef, translitOn);
+  useRussianKeyboard(errorRef,     translitOn);
+  useRussianKeyboard(transformRef, translitOn);
 
   // ── URL param initialisation ──────────────────────────────────────────────
   // Runs after completions load — pre-selects topics/types from URL
@@ -376,6 +389,7 @@ export default function GrammarFreeplay() {
           <div className={styles.promptRu}>
             {parts[0]}
             <input
+              ref={fillinRef}
               className={`${styles.inlineInput} ${submitted ? (isCorrect ? styles.inputCorrect : styles.inputWrong) : ""}`}
               value={answer}
               onChange={e => setAnswer(e.target.value)}
@@ -457,6 +471,7 @@ export default function GrammarFreeplay() {
           <div className={styles.exerciseTypeTag}>{dirLabel}</div>
           <div className={styles.promptRu}>{exercise.source}</div>
           <input
+            ref={translateRef}
             className={`${styles.textInput} ${submitted ? (isCorrect ? styles.inputCorrect : styles.inputWrong) : ""}`}
             value={answer}
             onChange={e => setAnswer(e.target.value)}
@@ -493,6 +508,7 @@ export default function GrammarFreeplay() {
           <div className={styles.promptRu}>{exercise.sentence_ru}</div>
           <div className={styles.hint}>Find the error and type the correct form of the word.</div>
           <input
+            ref={errorRef}
             className={`${styles.textInput} ${submitted ? (isCorrect ? styles.inputCorrect : styles.inputWrong) : ""}`}
             value={answer}
             onChange={e => setAnswer(e.target.value)}
@@ -535,6 +551,7 @@ export default function GrammarFreeplay() {
             )}
           </div>
           <input
+            ref={transformRef}
             className={`${styles.textInput} ${submitted ? (isCorrect ? styles.inputCorrect : styles.inputWrong) : ""}`}
             value={answer}
             onChange={e => setAnswer(e.target.value)}
