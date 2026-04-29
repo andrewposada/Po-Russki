@@ -779,3 +779,67 @@ export async function addXP(userId, amount) {
   // Returns { user_id, xp_total, level } — caller can detect level-up by comparing old vs new level
   return data;
 }
+
+// ─────────────────────────────────────────────────────────────────────────────
+// SONGS (Музыка module)
+// ─────────────────────────────────────────────────────────────────────────────
+
+export async function getSongs(userId) {
+  const { data, error } = await supabase
+    .from("songs")
+    .select("id, title, artist, lines, lines_learned, mastered, created_at, updated_at")
+    .eq("user_id", userId)
+    .order("artist", { ascending: true, nullsLast: true })
+    .order("title", { ascending: true });
+  if (error) { console.error("getSongs:", error); return []; }
+  return data ?? [];
+}
+
+export async function insertSong(userId, { title, artist, lines }) {
+  const { data, error } = await supabase
+    .from("songs")
+    .insert({
+      user_id:       userId,
+      title:         title.trim(),
+      artist:        artist?.trim() || null,
+      lines:         lines,
+      lines_learned: [],
+      mastered:      false,
+      updated_at:    new Date(),
+    })
+    .select()
+    .single();
+  if (error) { console.error("insertSong:", error); throw error; }
+  return data;
+}
+
+export async function updateSongLearned(userId, songId, linesLearned, mastered) {
+  const { error } = await supabase
+    .from("songs")
+    .update({
+      lines_learned: linesLearned,
+      mastered:      mastered,
+      updated_at:    new Date(),
+    })
+    .eq("id", songId)
+    .eq("user_id", userId);
+  if (error) { console.error("updateSongLearned:", error); throw error; }
+}
+
+export async function updateSongMastered(userId, songId, mastered) {
+  const { error } = await supabase
+    .from("songs")
+    .update({ mastered, updated_at: new Date() })
+    .eq("id", songId)
+    .eq("user_id", userId);
+  if (error) { console.error("updateSongMastered:", error); throw error; }
+}
+
+export async function deleteSong(userId, songId) {
+  const { error } = await supabase
+    .from("songs")
+    .delete()
+    .eq("id", songId)
+    .eq("user_id", userId);
+  if (error) { console.error("deleteSong:", error); throw error; }
+}

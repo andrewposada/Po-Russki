@@ -1,0 +1,274 @@
+.page {
+  min-height: 100vh;
+  background: var(--c-bg);
+}
+
+.header {
+  background: var(--c-bg-card);
+  border-bottom: 1px solid var(--c-border);
+  padding: 14px 20px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.headerLeft {
+  width: 80px;
+}
+
+.headerTitle {
+  font-size: 18px;
+  font-weight: 500;
+  margin: 0;
+  color: var(--c-text-dark);
+}
+
+.addBtn {
+  background: var(--c-sage);
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  padding: 8px 16px;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.addBtn:hover {
+  background: var(--c-sage-dark);
+}
+
+.body {
+  padding: 20px;
+  max-width: 640px;
+  margin: 0 auto;
+}
+
+.search {
+  width: 100%;
+  background: var(--c-bg-card);
+  border: 1px solid var(--c-border);
+  border-radius: 8px;
+  padding: 9px 14px;
+  font-size: 14px;
+  color: var(--c-text-dark);
+  margin-bottom: 20px;
+  box-sizing: border-box;
+}
+
+.artistGroup {
+  margin-bottom: 24px;
+}
+
+.artistHeader {
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--c-text-light);
+  border-bottom: 1px solid var(--c-border-soft);
+  padding-bottom: 6px;
+  margin-bottom: 8px;
+}
+
+.songRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  padding: 10px 14px;
+  background: var(--c-bg-card);
+  border: 1px solid var(--c-border);
+  border-radius: 10px;
+  margin-bottom: 6px;
+  cursor: pointer;
+  text-align: left;
+}
+
+.songRow:hover {
+  border-color: var(--c-sage);
+}
+
+.songInfo {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.songTitle {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--c-text-dark);
+}
+
+.songMeta {
+  font-size: 12px;
+  color: var(--c-text-light);
+}
+
+.songRight {
+  flex-shrink: 0;
+  margin-left: 12px;
+}
+
+.masteredPill {
+  background: var(--c-sage-light);
+  color: var(--c-sage-dark);
+  font-size: 11px;
+  font-weight: 500;
+  padding: 3px 10px;
+  border-radius: 20px;
+}
+
+.empty {
+  color: var(--c-text-light);
+  font-size: 14px;
+  text-align: center;
+  padding: 40px 0;
+}
+
+.emptyState {
+  text-align: center;
+  padding: 48px 20px;
+}
+
+.emptyTitle {
+  font-size: 16px;
+  font-weight: 500;
+  color: var(--c-text-mid);
+  margin: 0 0 6px;
+}
+
+.emptySub {
+  font-size: 14px;
+  color: var(--c-text-light);
+  margin: 0;
+}
+
+/* ── Import overlay ── */
+.overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.4);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 900;
+}
+
+.modal {
+  background: var(--c-bg-card);
+  border-radius: 14px;
+  padding: 24px;
+  width: 100%;
+  max-width: 480px;
+  max-height: 90vh;
+  overflow-y: auto;
+  box-sizing: border-box;
+}
+
+.modalHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 20px;
+}
+
+.modalTitle {
+  font-size: 17px;
+  font-weight: 500;
+  margin: 0;
+  color: var(--c-text-dark);
+}
+
+.closeBtn {
+  background: none;
+  border: none;
+  font-size: 18px;
+  color: var(--c-text-light);
+  cursor: pointer;
+  padding: 0;
+  line-height: 1;
+}
+
+.formRow {
+  margin-bottom: 16px;
+}
+
+.label {
+  display: block;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--c-text-mid);
+  margin-bottom: 6px;
+}
+
+.optional {
+  font-weight: 400;
+  color: var(--c-text-light);
+}
+
+.input {
+  width: 100%;
+  background: var(--c-bg);
+  border: 1px solid var(--c-border);
+  border-radius: 8px;
+  padding: 9px 12px;
+  font-size: 14px;
+  color: var(--c-text-dark);
+  box-sizing: border-box;
+}
+
+.textarea {
+  width: 100%;
+  background: var(--c-bg);
+  border: 1px solid var(--c-border);
+  border-radius: 8px;
+  padding: 9px 12px;
+  font-size: 14px;
+  color: var(--c-text-dark);
+  box-sizing: border-box;
+  resize: vertical;
+  line-height: 1.6;
+}
+
+.error {
+  font-size: 13px;
+  color: var(--c-wrong);
+  margin: 0 0 12px;
+}
+
+.importBtn {
+  width: 100%;
+  background: var(--c-sage);
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  padding: 11px;
+  font-size: 15px;
+  font-weight: 500;
+  cursor: pointer;
+  margin-top: 4px;
+}
+
+.importBtn:hover:not(:disabled) {
+  background: var(--c-sage-dark);
+}
+
+.importBtn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.doneState {
+  text-align: center;
+  padding: 32px 0;
+  color: var(--c-text-mid);
+  font-size: 16px;
+}
+
+.doneCheck {
+  font-size: 36px;
+  color: var(--c-sage);
+  margin-bottom: 10px;
+}

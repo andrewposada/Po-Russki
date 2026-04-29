@@ -10,6 +10,7 @@ const MODULES = [
   { path: "/grammar",    label: "Грамматика", sub: "Cases & grammar",    color: "#7a9e7e" },
   { path: "/lessons",    label: "Уроки",      sub: "Structured lessons", color: "#b07c5a" },
   { path: "/vocabulary", label: "Словарь",    sub: "Vocabulary",         color: "#9a7ec8" },
+  { path: "/muzyka",     label: "Музыка",     sub: "Song lyrics",        color: "#c87a7a" },
   { path: "/tabu",       label: "Табу",       sub: "Игра со словарём",   color: "#c05a8a" },
 ];
 
