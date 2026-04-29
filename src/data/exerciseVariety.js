@@ -96,3 +96,14 @@ export const SITUATIONS = [
 export function pickRandom(arr) {
   return arr[Math.floor(Math.random() * arr.length)];
 }
+
+/**
+ * Returns n unique random elements from an array.
+ * @param {Array} arr
+ * @param {number} n
+ * @returns {Array}
+ */
+export function pickMultiple(arr, n) {
+  const shuffled = [...arr].sort(() => Math.random() - 0.5);
+  return shuffled.slice(0, Math.min(n, arr.length));
+}

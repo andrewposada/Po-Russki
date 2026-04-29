@@ -1,6 +1,7 @@
 // src/modules/Tabu/TabuSetup.jsx
 import { useState, useMemo, useEffect } from "react";
 import styles from "./Tabu.module.css";
+import { VOCAB_CATEGORIES, pickMultiple } from "../../data/exerciseVariety";
 
 const CEFR_LEVELS = ["A1", "A2", "B1", "B2", "C1"];
 
@@ -55,7 +56,7 @@ export default function TabuSetup({ words, cefrLevel, onStart, onBack }) {
     fetch("/api/vocab-generate", {
       method:  "POST",
       headers: { "Content-Type": "application/json" },
-      body:    JSON.stringify({ mode: "easy_words", level, pos_types }),
+      body:    JSON.stringify({ mode: "easy_words", level, pos_types, categories: pickMultiple(VOCAB_CATEGORIES, 5) }),
     })
       .then(r => r.json())
       .then(data => {

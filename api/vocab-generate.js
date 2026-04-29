@@ -24,8 +24,8 @@ const PROMPTS = {
   explore_cloze: ({ level, topics, pos_types, recent_words }) =>
     `New cloze exercise. Level:${level}. Topics:${topics}. Avoid reusing:${recent_words}.\nReturn: {"word_ru":"<ru>","word_en":"<en>","part_of_speech":"<pos>","sentence_before":"<ru>","sentence_after":"<ru>","answer":"<correct form>","grammar_hint":"<form name>"}`,
 
-  easy_words: ({ level, pos_types }) =>
-    `Generate exactly 50 common Russian words suitable for a Taboo card game at ${level} CEFR level. Part of speech filter: ${pos_types ?? "any"}. Return a diverse mix of concrete, everyday words that are easy to describe but interesting to guess. All words in nominative/infinitive dictionary form, Cyrillic only.\nReturn: {"words":[{"word_ru":"<ru>","word_en":"<en>"},...]}`,
+  easy_words: ({ level, pos_types, categories }) =>
+    `Generate exactly 50 common Russian words suitable for a Taboo card game at ${level} CEFR level. Part of speech filter: ${pos_types ?? "any"}. Draw vocabulary from these categories: ${categories}. Distribute words roughly evenly across the categories. Return a diverse mix of concrete, everyday words that are easy to describe but interesting to guess. All words in nominative/infinitive dictionary form, Cyrillic only.\nReturn: {"words":[{"word_ru":"<ru>","word_en":"<en>"},...]}`,
 
   tabu_hints: ({ word, word_en, level }) => {
     const stepDown = { A1:"A1", A2:"A1", B1:"A2", B2:"B1", C1:"B2", C2:"C1" };
@@ -55,6 +55,8 @@ export default async function handler(req, res) {
 
   const { definitions } = req.body ?? {};
 
+  const { categories } = req.body ?? {};
+
   const userPrompt = PROMPTS[mode]({
     word, word_en,
     definitions: Array.isArray(definitions) && definitions.length
@@ -65,6 +67,9 @@ export default async function handler(req, res) {
     topics: topics ?? "any",
     pos_types: pos_types ?? "any",
     recent_words: recent_words ?? "none",
+    categories: Array.isArray(categories) && categories.length
+      ? categories.join(", ")
+      : "any",
   });
 
   try {
