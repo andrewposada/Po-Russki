@@ -11,6 +11,7 @@ import {
   prerequisitesMet,
 } from "../../constants";
 import styles from "./GrammarFreeplay.module.css";
+import { VOCAB_CATEGORIES, SITUATIONS, pickRandom } from "../../data/exerciseVariety";
 
 // ── Helpers ─────────────────────────────────────────────────────────────────
 
@@ -251,6 +252,9 @@ export default function GrammarFreeplay() {
     setExerciseType(type);
 
     try {
+      const vocabCategory = pickRandom(VOCAB_CATEGORIES);
+      const situation     = pickRandom(SITUATIONS);
+
       const res = await fetch("/api/grammar-freeplay-generate", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -259,6 +263,8 @@ export default function GrammarFreeplay() {
           topicTitle:   topic.title,
           exerciseType: type,
           cefrLevel,
+          vocabCategory,
+          situation,
         }),
       });
       const data = await res.json();

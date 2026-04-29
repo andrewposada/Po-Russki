@@ -1,0 +1,98 @@
+// src/data/exerciseVariety.js
+// Used by GrammarFreeplay.jsx to inject variety into exercise generation.
+// Pick one from each list randomly before each API call and pass in the request body.
+
+export const VOCAB_CATEGORIES = [
+  "food and cooking",
+  "family members and relationships",
+  "animals and pets",
+  "clothing and fashion",
+  "home and furniture",
+  "work and professions",
+  "transport and travel",
+  "weather and seasons",
+  "hobbies and free time",
+  "health and the body",
+  "school and education",
+  "technology and devices",
+  "nature and the outdoors",
+  "sports and fitness",
+  "shopping and money",
+  "music and arts",
+  "books and media",
+  "city and urban life",
+  "emotions and personality",
+  "time and daily routines",
+  "numbers and quantities",
+  "colors and descriptions",
+  "plants and gardens",
+  "food markets and vendors",
+  "children and childhood",
+  "holidays and celebrations",
+  "history and landmarks",
+  "science and space",
+  "films and theatre",
+  "languages and communication",
+  "furniture and interior design",
+  "tools and repairs",
+  "news and current events",
+  "law and government",
+  "environment and ecology",
+  "religion and traditions",
+  "dreams and ambitions",
+  "travel and tourism",
+  "banking and finances",
+  "social media and the internet",
+];
+
+export const SITUATIONS = [
+  "at a restaurant ordering food",
+  "at a pharmacy asking about medicine",
+  "on a train talking to a stranger",
+  "buying groceries at a market",
+  "at a birthday party with friends",
+  "calling a friend to make plans",
+  "at a doctor's appointment",
+  "checking into a hotel",
+  "lost in an unfamiliar city",
+  "at a bookstore looking for a gift",
+  "cooking dinner at home",
+  "at a café working on a laptop",
+  "watching a film with family",
+  "at the gym or sports club",
+  "walking a dog in the park",
+  "at a job interview",
+  "on a video call with a colleague",
+  "at the airport before a flight",
+  "shopping for clothes",
+  "at a museum or gallery",
+  "taking a taxi across town",
+  "having breakfast before work",
+  "at a university lecture",
+  "fixing something broken at home",
+  "at a concert or theatre",
+  "planning a holiday with a friend",
+  "at a post office sending a package",
+  "at a school parent-teacher meeting",
+  "in a waiting room at an office",
+  "at a family dinner on a holiday",
+  "arguing playfully about a film",
+  "helping a friend move apartments",
+  "at a children's playground",
+  "on a first date at a café",
+  "stuck in traffic in a car",
+  "at a library returning books",
+  "at a sports match in a stadium",
+  "picking up a child from school",
+  "at a garage sale or flea market",
+  "on a hiking trail in the mountains",
+];
+
+/**
+ * Returns a random element from an array.
+ * @param {Array} arr
+ * @returns {*}
+ */
+export function pickRandom(arr) {
+  return arr[Math.floor(Math.random() * arr.length)];
+}
