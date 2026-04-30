@@ -1,5 +1,8 @@
 .page {
-  min-height: 100vh;
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  overflow: clip;
   background: var(--c-bg);
 }
 
@@ -460,7 +463,8 @@
 .studyWrap {
   display: flex;
   flex-direction: column;
-  height: calc(100vh - 160px);
+  flex: 1;
+  min-height: 0;
   background: var(--c-bg);
 }
 
