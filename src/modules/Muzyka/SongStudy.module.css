@@ -126,38 +126,6 @@
   line-height: 1.4;
 }
 
-.explainRow {
-  display: flex;
-  justify-content: flex-end;
-  margin-top: 6px;
-}
-
-.explainBtn {
-  font-size: 12px;
-  font-weight: 500;
-  color: var(--c-sage-dark);
-  background: var(--c-sage-light);
-  border: none;
-  border-radius: 8px;
-  padding: 4px 12px;
-  cursor: pointer;
-}
-
-.explainBtn:disabled {
-  opacity: 0.6;
-  cursor: not-allowed;
-}
-
-.explainCard {
-  margin-top: 8px;
-  background: var(--c-bg-panel);
-  border-radius: 8px;
-  border-left: 3px solid var(--c-sage);
-  padding: 10px 14px;
-  font-size: 13px;
-  color: var(--c-text-mid);
-  line-height: 1.7;
-}
 
 /* ── Drill tab ── */
 .drillBody {

@@ -33,3 +33,8 @@
 [data-night="true"] .btn:hover:not(:disabled) {
   background: var(--c-sage-dark);
 }
+
+.btnExplain {
+  border-left: 1px solid var(--c-border);
+  color: var(--c-sage-dark);
+}

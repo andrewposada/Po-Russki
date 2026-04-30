@@ -122,11 +122,13 @@ export default function TranslationTooltip() {
           )}
         </div>
 
-        {/* Translation */}
-        <p className={styles.translation}>{translation}</p>
+        {/* Translation or explanation */}
+        <p className={styles.translation}>
+          {tooltip.explanation ?? translation}
+        </p>
 
-        {/* Context note */}
-        {contextNote && (
+        {/* Context note — hidden in explanation mode */}
+        {contextNote && !tooltip.explanation && (
           <p className={styles.contextNote}>{contextNote}</p>
         )}
 

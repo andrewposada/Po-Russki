@@ -3,6 +3,7 @@ import { useEffect, useState, useCallback } from "react";
 import { useAuth } from "../../AuthContext";
 import { useTooltip } from "../../context/TooltipContext";
 import { getWords } from "../../storage";
+import { songExplainContext } from "./songExplainContext";
 import styles from "./SelectionPill.module.css";
 
 // Snap a partial selection to the full word token
@@ -31,7 +32,8 @@ export default function SelectionPill() {
   const { openTooltip } = useTooltip();
   const [pill, setPill] = useState(null);
   // pill: { x, y, selectedText, isPhrase, anchorNode, anchorOffset, focusOffset }
-  const [loading, setLoading] = useState(false);
+  const [loading,        setLoading]        = useState(false);
+  const [explainLoading, setExplainLoading] = useState(false);
 
   const handleSelectionChange = useCallback(() => {
     const sel = window.getSelection();
@@ -119,6 +121,57 @@ export default function SelectionPill() {
     setLoading(false);
   };
 
+  const handleExplain = async () => {
+    if (!user || explainLoading) return;
+    const lines = songExplainContext.lines;
+    if (!lines) return;
+
+    setExplainLoading(true);
+
+    // Find the line whose ru text best matches the selected text
+    const selected = pill.text.trim();
+    let matchIdx   = lines.findIndex(l => l.ru.includes(selected));
+    if (matchIdx === -1) {
+      // fallback: find line with most overlapping words
+      const selWords = new Set(selected.toLowerCase().split(/\s+/));
+      let best = -1, bestScore = 0;
+      lines.forEach((l, i) => {
+        const score = l.ru.toLowerCase().split(/\s+/).filter(w => selWords.has(w)).length;
+        if (score > bestScore) { bestScore = score; best = i; }
+      });
+      matchIdx = best === -1 ? 0 : best;
+    }
+
+    // Gather 2 lines before + selected line(s) + 2 lines after
+    const start    = Math.max(0, matchIdx - 2);
+    const end      = Math.min(lines.length - 1, matchIdx + 2);
+    const context  = lines.slice(start, end + 1).map(l => l.ru).join("\n");
+
+    try {
+      const res  = await fetch("/api/vocab-grade", {
+        method:  "POST",
+        headers: { "Content-Type": "application/json" },
+        body:    JSON.stringify({ mode: "explain_stanza", stanza_text: context }),
+      });
+      const data = await res.json();
+
+      openTooltip({
+        x:           pill.x,
+        y:           pill.y,
+        word:        selected,
+        displayWord: selected,
+        translation: null,
+        explanation: data.explanation ?? "No explanation available.",
+        isPhrase:    true,
+        wordBankStatus: "none",
+      });
+      setPill(null);
+    } catch (err) {
+      console.error("Explain error:", err);
+    }
+    setExplainLoading(false);
+  };
+
   return (
     <div
       data-selection-pill
@@ -127,12 +180,22 @@ export default function SelectionPill() {
     >
       <button
         className={styles.btn}
-        onMouseDown={e => e.preventDefault()} // don't collapse selection
+        onMouseDown={e => e.preventDefault()}
         onClick={handleTranslate}
-        disabled={loading}
+        disabled={loading || explainLoading}
       >
         {loading ? "…" : "Translate"}
       </button>
+      {songExplainContext.lines && (
+        <button
+          className={`${styles.btn} ${styles.btnExplain}`}
+          onMouseDown={e => e.preventDefault()}
+          onClick={handleExplain}
+          disabled={loading || explainLoading}
+        >
+          {explainLoading ? "…" : "Explain"}
+        </button>
+      )}
     </div>
   );
 }

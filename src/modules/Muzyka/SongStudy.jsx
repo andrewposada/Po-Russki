@@ -3,6 +3,7 @@ import { useState, useEffect, useCallback, useRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useAuth } from "../../AuthContext";
 import { getSongs, updateSongLearned, updateSongMastered, deleteSong } from "../../storage";
+import { songExplainContext } from "../../components/TranslationTooltip/songExplainContext";
 import styles from "./SongStudy.module.css";
 
 // ── Drill helpers ─────────────────────────────────────────────────────────────
@@ -71,9 +72,7 @@ export default function SongStudy() {
   const [feedback,       setFeedback]       = useState(null); // null | { correct, message }
   const [revealed,       setRevealed]       = useState(false);
 
-  // Explain state — keyed by stanza_index
-  const [explaining,     setExplaining]     = useState({}); // { [si]: "loading"|"done" }
-  const [explanations,   setExplanations]   = useState({}); // { [si]: string }
+  // (explain state removed — handled by SelectionPill + TranslationTooltip)
 
   // Stale closure guard
   const linesLearnedRef = useRef(linesLearned);
@@ -86,14 +85,18 @@ export default function SongStudy() {
   useEffect(() => {
     if (!user) return;
     (async () => {
-      const all  = await getSongs(user.uid);
+      const all   = await getSongs(user.uid);
       const found = all.find(s => s.id === songId);
       if (!found) { navigate("/muzyka"); return; }
       setSong(found);
       setLinesLearned(found.lines_learned ?? []);
       setMastered(found.mastered ?? false);
       setLoading(false);
+      // Expose lines to SelectionPill for the Explain feature
+      songExplainContext.lines = found.lines ?? [];
     })();
+    // Clear on unmount so Explain button disappears outside song view
+    return () => { songExplainContext.lines = null; };
   }, [user, songId, navigate]);
 
   // ── Persist lines_learned + mastered ─────────────────────────────────────
@@ -134,29 +137,7 @@ export default function SongStudy() {
     } catch (e) {
       console.error(e);
     }
-  }
-
-  // ── Explain stanza ────────────────────────────────────────────────────────
-
-  async function handleExplain(stanzaIndex, stanzaLines) {
-    if (explanations[stanzaIndex]) return; // already loaded
-    setExplaining(prev => ({ ...prev, [stanzaIndex]: "loading" }));
-
-    const stanzaText = stanzaLines.map(l => l.ru).join("\n");
-    try {
-      const res  = await fetch("/api/vocab-grade", {
-        method:  "POST",
-        headers: { "Content-Type": "application/json" },
-        body:    JSON.stringify({ mode: "explain_stanza", stanza_text: stanzaText }),
-      });
-      const data = await res.json();
-      setExplanations(prev => ({ ...prev, [stanzaIndex]: data.explanation ?? "No explanation available." }));
-    } catch {
-      setExplanations(prev => ({ ...prev, [stanzaIndex]: "Could not load explanation." }));
-    } finally {
-      setExplaining(prev => ({ ...prev, [stanzaIndex]: "done" }));
-    }
-  }
+  }  
 
   // ── Drill actions ─────────────────────────────────────────────────────────
 
@@ -247,18 +228,6 @@ export default function SongStudy() {
                   {line.en && <div className={styles.lyricEn}>{line.en}</div>}
                 </div>
               ))}
-              <div className={styles.explainRow}>
-                <button
-                  className={styles.explainBtn}
-                  onClick={() => handleExplain(si, lines)}
-                  disabled={explaining[si] === "loading"}
-                >
-                  {explaining[si] === "loading" ? "Loading..." : "Explain this stanza"}
-                </button>
-              </div>
-              {explanations[si] && (
-                <div className={styles.explainCard}>{explanations[si]}</div>
-              )}
             </div>
           ))}
         </div>
