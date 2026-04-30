@@ -460,7 +460,7 @@
 .studyWrap {
   display: flex;
   flex-direction: column;
-  height: calc(100vh - 120px); /* header + tabs */
+  height: calc(100vh - 160px);
   background: var(--c-bg);
 }
 
@@ -542,6 +542,7 @@
 .studyActivePanel {
   background: var(--c-bg-card);
   border-top: 1px solid var(--c-border);
+  border-radius: var(--radius-lg) var(--radius-lg) 0 0;
   padding: 16px 20px;
   flex-shrink: 0;
 }
@@ -564,7 +565,7 @@
   width: 100%;
   background: var(--c-bg);
   border: 1px solid var(--c-border);
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   padding: 10px 13px;
   font-size: 15px;
   color: var(--c-text-dark);
@@ -584,7 +585,7 @@
   background: var(--c-sage);
   color: #fff;
   border: none;
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   padding: 10px;
   font-size: 14px;
   font-weight: 500;
@@ -598,7 +599,7 @@
 
 /* Feedback */
 .studyFeedback {
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   padding: 10px 13px;
   margin-bottom: 10px;
   font-size: 13px;
@@ -644,7 +645,7 @@
 .studyNextBtn {
   width: 100%;
   border: none;
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   padding: 10px;
   font-size: 14px;
   font-weight: 500;
@@ -673,7 +674,7 @@
   width: 100%;
   background: var(--c-bg);
   border: 1px solid var(--c-border);
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   padding: 10px;
   font-size: 14px;
   color: var(--c-text-light);
