@@ -464,10 +464,12 @@
 
 /* Progress bar */
 .studyProgWrap {
+  position: sticky;
+  top: 0;
+  z-index: 5;
   background: var(--c-bg-card);
   border-bottom: 1px solid var(--c-border-soft);
   padding: 10px 20px;
-  flex-shrink: 0;
 }
 
 .studyProgRow {
