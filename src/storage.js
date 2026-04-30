@@ -863,3 +863,97 @@ export async function updateSongStudyProgress(userId, songId, {
     .eq("user_id", userId);
   if (error) { console.error("updateSongStudyProgress:", error); throw error; }
 }
+
+// ─────────────────────────────────────────────────────────────────────────────
+// UNIVERSAL ATTEMPTS
+// ─────────────────────────────────────────────────────────────────────────────
+
+/**
+ * Record one exercise attempt. Fire-and-forget safe — never throws.
+ * Only stores user_answer and correct_answer when is_correct is false.
+ *
+ * @param {string} userId
+ * @param {object} attempt
+ * @param {number} attempt.sourceId        - FK to attempt_sources.id
+ * @param {number|null} attempt.topicId    - FK to attempt_topics.id (null if unknown)
+ * @param {string|null} attempt.questionType - e.g. 'fill_in_blank', 'inference'
+ * @param {string|null} attempt.sourceRef  - lesson_id, book_id, etc.
+ * @param {string|null} attempt.word       - vocab word being tested
+ * @param {boolean}     attempt.isCorrect
+ * @param {string|null} attempt.userAnswer    - only when isCorrect is false
+ * @param {string|null} attempt.correctAnswer - only when isCorrect is false
+ * @param {number|null} attempt.responseMs - response time in ms
+ */
+export async function recordAttempt(userId, attempt) {
+  try {
+    const payload = {
+      user_id:       userId,
+      source_id:     attempt.sourceId,
+      topic_id:      attempt.topicId      ?? null,
+      question_type: attempt.questionType ?? null,
+      source_ref:    attempt.sourceRef    ?? null,
+      word:          attempt.word         ?? null,
+      is_correct:    attempt.isCorrect,
+      user_answer:   attempt.isCorrect ? null : (attempt.userAnswer    ?? null),
+      correct_answer: attempt.isCorrect ? null : (attempt.correctAnswer ?? null),
+      response_ms:   attempt.responseMs   ?? null,
+      attempted_at:  new Date().toISOString(),
+    };
+    const { error } = await supabase
+      .from("universal_attempts")
+      .insert(payload);
+    if (error) console.warn("recordAttempt:", error.message);
+  } catch (e) {
+    // Never throw — this is a background write
+    console.warn("recordAttempt exception:", e.message);
+  }
+}
+
+/**
+ * Fetch the last N progress reports for the user.
+ * Used by the progress aggregator and report history screen.
+ */
+export async function getProgressReports(userId, limit = 10) {
+  const { data, error } = await supabase
+    .from("progress_reports")
+    .select("*")
+    .eq("user_id", userId)
+    .order("generated_at", { ascending: false })
+    .limit(limit);
+  if (error) { console.error("getProgressReports:", error); return []; }
+  return data ?? [];
+}
+
+/**
+ * Save a completed progress report.
+ */
+export async function saveProgressReport(userId, { snapshot, report, reportVersion = "1.0" }) {
+  const { data, error } = await supabase
+    .from("progress_reports")
+    .insert({
+      user_id:        userId,
+      snapshot:       snapshot ?? null,
+      report:         report   ?? null,
+      report_version: reportVersion,
+    })
+    .select("id")
+    .single();
+  if (error) { console.error("saveProgressReport:", error); return null; }
+  return data.id;
+}
+
+/**
+ * Fetch universal_attempts for the aggregator.
+ * Returns all attempts in the last `days` days.
+ */
+export async function getRecentAttempts(userId, days = 60) {
+  const cutoff = new Date(Date.now() - days * 24 * 60 * 60 * 1000).toISOString();
+  const { data, error } = await supabase
+    .from("universal_attempts")
+    .select("*")
+    .eq("user_id", userId)
+    .gte("attempted_at", cutoff)
+    .order("attempted_at", { ascending: false });
+  if (error) { console.error("getRecentAttempts:", error); return []; }
+  return data ?? [];
+}

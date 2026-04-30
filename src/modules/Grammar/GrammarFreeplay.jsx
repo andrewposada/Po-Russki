@@ -14,6 +14,7 @@ import styles from "./GrammarFreeplay.module.css";
 import { VOCAB_CATEGORIES, SITUATIONS, pickRandom } from "../../data/exerciseVariety";
 import { useRussianKeyboard } from "../../hooks/useRussianKeyboard";
 import { useSettings } from "../../context/SettingsContext";
+import { useAttemptTracker, ATTEMPT_SOURCES, ROADMAP_TOPIC_MAP } from "../../hooks/useAttemptTracker";
 
 // ── Helpers ─────────────────────────────────────────────────────────────────
 
@@ -137,6 +138,7 @@ export default function GrammarFreeplay() {
 
   // Russian keyboard
   const { translitOn } = useSettings();
+  const { track } = useAttemptTracker();
   const fillinRef    = useRef(null);
   const translateRef = useRef(null);
   const errorRef     = useRef(null);
@@ -327,6 +329,19 @@ export default function GrammarFreeplay() {
     if (correct && user) {
       addXP(user.uid, 5); // fire and forget — cosmetic
     }
+
+    // Track attempt
+    track({
+      sourceId:      ATTEMPT_SOURCES.GRAMMAR_FREEPLAY,
+      topicId:       ROADMAP_TOPIC_MAP[exerciseTopic?.id] ?? null,
+      questionType:  exerciseType,
+      sourceRef:     exerciseTopic?.id ?? null,
+      isCorrect:     correct,
+      userAnswer:    correct ? null : answer.trim(),
+      correctAnswer: correct ? null : (
+        exercise.target_word ?? exercise.target ?? exercise.correct_word ?? null
+      ),
+    });
   }
 
   // MC is graded client-side — no async needed
@@ -349,6 +364,17 @@ export default function GrammarFreeplay() {
     setSessionAnswers(newAnswers);
 
     if (correct && user) addXP(user.uid, 5);
+
+    // Track attempt
+    track({
+      sourceId:      ATTEMPT_SOURCES.GRAMMAR_FREEPLAY,
+      topicId:       ROADMAP_TOPIC_MAP[exerciseTopic?.id] ?? null,
+      questionType:  "mc",
+      sourceRef:     exerciseTopic?.id ?? null,
+      isCorrect:     correct,
+      userAnswer:    correct ? null : (exercise.options?.[optionIndex] ?? null),
+      correctAnswer: correct ? null : (exercise.options?.[exercise.correct_index] ?? null),
+    });
   }
 
   // ── Stop session ──────────────────────────────────────────────────────────

@@ -3,6 +3,7 @@ import { useState, useEffect, useCallback, useRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useAuth } from "../../AuthContext";
 import { getSongs, updateSongLearned, updateSongMastered, updateSongStudyProgress } from "../../storage";
+import { useAttemptTracker, ATTEMPT_SOURCES, ATTEMPT_TOPICS } from "../../hooks/useAttemptTracker";
 import { songExplainContext } from "../../components/TranslationTooltip/songExplainContext";
 import styles from "./SongStudy.module.css";
 
@@ -51,6 +52,7 @@ export default function SongStudy() {
   const { songId } = useParams();
   const { user }   = useAuth();
   const navigate   = useNavigate();
+  const { track }  = useAttemptTracker();
 
   const [song,          setSong]          = useState(null);
   const [loading,       setLoading]       = useState(true);
@@ -253,6 +255,19 @@ export default function SongStudy() {
       else                  { result = "wrong";   pointsEarned = 0;   }
     }
 
+    // Track attempt for drillable lines only
+    if (currentStudyLine?.drillable && fb) {
+      track({
+        sourceId:      ATTEMPT_SOURCES.SONG_STUDY,
+        topicId:       ATTEMPT_TOPICS.SONG_TRANSLATION,
+        questionType:  "song_line_translation",
+        sourceRef:     songId,
+        isCorrect:     result === "correct" || result === "partial",
+        userAnswer:    (result === "wrong") ? studyAnswer : null,
+        correctAnswer: (result === "wrong") ? currentStudyLine.en : null,
+      });
+    }
+
     // Add to completed stack
     setCompletedLines(prev => [...prev, { line: currentStudyLine, result }]);
 
@@ -300,12 +315,30 @@ export default function SongStudy() {
     if (!currentLine || !clozeWord) return;
     const correct = normalizeAnswer(answer) === normalizeAnswer(clozeWord);
     setFeedback({ correct, message: correct ? "Correct!" : `The word was: ${clozeWord}` });
+    track({
+      sourceId:      ATTEMPT_SOURCES.SONG_DRILL,
+      topicId:       ATTEMPT_TOPICS.SONG_CLOZE,
+      questionType:  "song_cloze",
+      sourceRef:     songId,
+      isCorrect:     correct,
+      userAnswer:    correct ? null : answer,
+      correctAnswer: correct ? null : clozeWord,
+    });
   }
 
   function handleCheckRecall() {
     if (!currentLine) return;
     const correct = normalizeAnswer(answer) === normalizeAnswer(currentLine.ru);
     setFeedback({ correct, message: correct ? "Correct!" : `The line was: ${currentLine.ru}` });
+    track({
+      sourceId:      ATTEMPT_SOURCES.SONG_DRILL,
+      topicId:       ATTEMPT_TOPICS.SONG_RECALL,
+      questionType:  "song_recall",
+      sourceRef:     songId,
+      isCorrect:     correct,
+      userAnswer:    correct ? null : answer,
+      correctAnswer: correct ? null : currentLine.ru,
+    });
   }
 
   function handleRevealRate() { advanceDrill(); }

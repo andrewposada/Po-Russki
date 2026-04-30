@@ -1,6 +1,7 @@
 // src/modules/Library/ComprehensionBlock.jsx
 import { useState, useEffect, useRef } from "react";
 import { useAuth } from "../../AuthContext";
+import { useAttemptTracker, ATTEMPT_SOURCES, COMPREHENSION_TYPE_TOPIC_MAP } from "../../hooks/useAttemptTracker";
 import { getAttempt, upsertAttempt, saveQuestions } from "../../storage";
 import { QUESTION_TYPES } from "../../constants";
 import { useSettings } from "../../context/SettingsContext";
@@ -9,6 +10,7 @@ import styles from "./ComprehensionBlock.module.css";
 
 export default function ComprehensionBlock({ chapter, book, onDone }) {
   const { user } = useAuth();
+  const { track } = useAttemptTracker();
 
   const [questions, setQuestions] = useState(null);
   const [answers,   setAnswers]   = useState({});
@@ -140,6 +142,22 @@ export default function ComprehensionBlock({ chapter, book, onDone }) {
       [key]: { value, question_type_id: q.question_type_id, score, feedback, graded_at: Date.now() },
     };
     setAnswers(updatedAnswers);
+
+    // Track the attempt — score: 1 = correct, 0.5 = partial, 0 = wrong, null = not yet graded
+    const isCorrect = score === null ? false : score >= 0.5;
+    track({
+      sourceId:      ATTEMPT_SOURCES.COMPREHENSION,
+      topicId:       COMPREHENSION_TYPE_TOPIC_MAP[q.type] ?? null,
+      questionType:  q.type ?? "unknown",
+      sourceRef:     chapter?.book_id ?? null,
+      isCorrect,
+      userAnswer:    isCorrect ? null : String(value ?? ""),
+      correctAnswer: isCorrect ? null : (
+        q.correct_answer_guidance
+          ? "(see feedback)"
+          : q.options?.[q.correct_index] ?? String(q.correct) ?? null
+      ),
+    });
 
     try {
       const totalScore = Math.round(

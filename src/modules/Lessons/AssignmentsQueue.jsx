@@ -10,6 +10,7 @@ import {
   getUserLessons,
 } from "../../storage";
 import { useRussianKeyboard } from "../../hooks/useRussianKeyboard";
+import { useAttemptTracker, ATTEMPT_SOURCES, ROADMAP_TOPIC_MAP } from "../../hooks/useAttemptTracker";
 import { useSettings }        from "../../context/SettingsContext";
 import styles from "./AssignmentsQueue.module.css";
 
@@ -48,6 +49,7 @@ export default function AssignmentsQueue() {
   const inputRef = useRef(null);
   const { translitOn } = useSettings();
   useRussianKeyboard(inputRef, translitOn);
+  const { track } = useAttemptTracker();
 
   // ── Load ────────────────────────────────────────────────────────────────────
 
@@ -67,6 +69,13 @@ export default function AssignmentsQueue() {
     }
     load();
   }, [user]);
+
+  // Resolve topic ID from lesson ID prefix
+  function assignmentTopicId(lid) {
+    if (!lid) return null;
+    const prefix = lid.split("-")[0];
+    return ROADMAP_TOPIC_MAP[prefix] ?? null;
+  }
 
   // ── Start an assignment ────────────────────────────────────────────────────
 
@@ -126,13 +135,23 @@ export default function AssignmentsQueue() {
       setExDone(true);
 
       if (isCorrect) await addXP(user.uid, XP_PER_CORRECT);
+
+      track({
+        sourceId:      ATTEMPT_SOURCES.ASSIGNMENT,
+        topicId:       assignmentTopicId(activeRow?.lesson_id),
+        questionType:  "practice",
+        sourceRef:     activeRow?.lesson_id ?? null,
+        isCorrect,
+        userAnswer:    isCorrect ? null : trimmed,
+        correctAnswer: isCorrect ? null : (ex.target_word ?? null),
+      });
     } catch (err) {
       console.error("lesson-grade error:", err);
       setFeedback({ correct: false, message: "Could not grade answer — please try again." });
     } finally {
       setGrading(false);
     }
-  }, [answer, exercises, grading, exCompleted, user]);
+  }, [answer, exercises, grading, exCompleted, user, track, activeRow]);
 
   // ── Next exercise / finish assignment ─────────────────────────────────────
 

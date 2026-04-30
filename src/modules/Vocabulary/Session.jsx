@@ -19,6 +19,7 @@ import ClozeCard           from "./Cards/ClozeCard";
 import SentenceCard        from "./Cards/SentenceCard";
 import ExploreControls     from "./ExploreControls";
 import styles              from "./Session.module.css";
+import { useAttemptTracker, ATTEMPT_SOURCES } from "../../hooks/useAttemptTracker";
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -143,6 +144,8 @@ export default function Session() {
   const [exploreSettings, setExploreSettings] = useState(null);
   const [exploreWord,     setExploreWord]     = useState(null);
   const [recentWords,     setRecentWords]     = useState([]);
+
+  const { track, posToTopicId } = useAttemptTracker();
 
   // Stale closure guards
   const wordsRef = useRef(words);
@@ -309,7 +312,17 @@ export default function Session() {
     }
 
     handleSrsUpdate(currentWord, "mc", correct);
-  }, [currentWord]);
+
+    track({
+      sourceId:      isExplore ? ATTEMPT_SOURCES.VOCAB_EXPLORE : ATTEMPT_SOURCES.VOCAB_SESSION,
+      topicId:       posToTopicId(currentWord.part_of_speech),
+      questionType:  "mc",
+      word:          currentWord.word,
+      isCorrect:     correct,
+      userAnswer:    null,  // MC — no typed answer to store
+      correctAnswer: null,
+    });
+  }, [currentWord, isExplore, track, posToTopicId]);
 
   const handleTextAnswer = useCallback(async (studentAnswer) => {
     if (!currentWord) return;
@@ -350,7 +363,21 @@ export default function Session() {
     }
 
     if (!isExplore) handleSrsUpdate(currentWord, exerciseType, correct);
-  }, [currentWord, exerciseType, clozeData, isExplore]);
+
+    track({
+      sourceId:      isExplore ? ATTEMPT_SOURCES.VOCAB_EXPLORE : ATTEMPT_SOURCES.VOCAB_SESSION,
+      topicId:       posToTopicId(currentWord.part_of_speech),
+      questionType:  exerciseType,
+      word:          currentWord.word,
+      isCorrect:     correct,
+      userAnswer:    correct ? null : studentAnswer,
+      correctAnswer: correct ? null : (
+        exerciseType === "cloze"
+          ? (clozeData?.answer ?? null)
+          : (currentWord.translation ?? null)
+      ),
+    });
+  }, [currentWord, exerciseType, clozeData, isExplore, track, posToTopicId]);
 
   // Matching: accumulates one result per pair as each pair is matched.
   // Does NOT write SRS or mutate words — that happens in handleMatchNext.
@@ -371,7 +398,15 @@ export default function Session() {
         setStreak(0);
       }
     }
-  }, []);
+
+    track({
+      sourceId:     ATTEMPT_SOURCES.VOCAB_SESSION,
+      topicId:      posToTopicId(word.part_of_speech),
+      questionType: "matching",
+      word:         word.word,
+      isCorrect:    correct,
+    });
+  }, [track, posToTopicId]);
 
   // Called when user taps "Next →" on the matching success banner.
   // Flushes all 4 pending SRS writes (with skipWordsMutation=true so the

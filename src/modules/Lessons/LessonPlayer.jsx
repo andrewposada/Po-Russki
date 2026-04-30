@@ -13,6 +13,7 @@ import {
   getPendingAssignments,
 } from "../../storage";
 import { LESSON_STATE, getLevelFromXP, XP_LEVELS } from "../../constants";
+import { useAttemptTracker, ATTEMPT_SOURCES, ROADMAP_TOPIC_MAP } from "../../hooks/useAttemptTracker";
 
 import NarrativeBlock       from "./blocks/NarrativeBlock";
 import RuleTableBlock       from "./blocks/RuleTableBlock";
@@ -149,6 +150,8 @@ export default function LessonPlayer() {
   const [showResume, setShowResume] = useState(false);
   const [leveledUp, setLeveledUp] = useState(null); // { level: number, name: string } | null
 
+  const { track } = useAttemptTracker();
+
   // Stale closure guard
   const currentGroupIndexRef    = useRef(0);
   const answeredRef             = useRef({});
@@ -235,6 +238,13 @@ export default function LessonPlayer() {
 
   // ── Answer handlers ───────────────────────────────────────────────────────────
 
+  // Resolve topic ID from lesson ID (e.g. "nom-1" → 1, "gen-2" → 4)
+  function lessonTopicId(lid) {
+    if (!lid) return null;
+    const prefix = lid.split("-")[0]; // "nom-1" → "nom"
+    return ROADMAP_TOPIC_MAP[prefix] ?? null;
+  }
+
   const handleAnswer = useCallback((groupIndex, isCorrect) => {
     answeredRef.current = { ...answeredRef.current, [groupIndex]: true };
     setAnswered({ ...answeredRef.current });
@@ -242,23 +252,49 @@ export default function LessonPlayer() {
     if (!group) return;
     saveLessonAnswer(
       user.uid, lessonId, group.name, "quiz", null,
-      String(selectedIdx ?? isCorrect),  // store index when available
+      String(selectedIdx ?? isCorrect),
       { correct: isCorrect }
     );
-  }, [user, lessonId, groups]);
+    track({
+      sourceId:     ATTEMPT_SOURCES.LESSON,
+      topicId:      lessonTopicId(lessonId),
+      questionType: "quiz",
+      sourceRef:    lessonId,
+      isCorrect,
+    });
+  }, [user, lessonId, groups, track]);
 
   const handleSubmit = useCallback((groupIndex, answer, isCorrect, grade) => {
     answeredRef.current = { ...answeredRef.current, [groupIndex]: true };
     setAnswered({ ...answeredRef.current });
     const group = groups[groupIndex];
     if (!group) return;
-    const blockType = group.blocks.find(b => ANSWERABLE.has(b.type))?.type || "practice";
+    const block     = group.blocks.find(b => ANSWERABLE.has(b.type));
+    const blockType = block?.type || "practice";
     saveLessonAnswer(
       user.uid, lessonId, group.name, blockType,
-      group.blocks.find(b => ANSWERABLE.has(b.type))?.prompt_ru ?? null,
+      block?.prompt_ru ?? null,
       answer, grade
     );
-  }, [user, lessonId, groups]);
+
+    // Determine correctness for tracking
+    // grade may be null (free_response not yet graded), { correct: bool }, or a score object
+    const gradeCorrect = grade === null
+      ? null   // free_response — we don't know yet; skip tracking until Phase 3G.3
+      : (typeof grade === "object" ? (grade.correct ?? isCorrect) : isCorrect);
+
+    if (gradeCorrect !== null) {
+      track({
+        sourceId:      ATTEMPT_SOURCES.LESSON,
+        topicId:       lessonTopicId(lessonId),
+        questionType:  blockType,
+        sourceRef:     lessonId,
+        isCorrect:     gradeCorrect,
+        userAnswer:    gradeCorrect ? null : String(answer ?? ""),
+        correctAnswer: gradeCorrect ? null : (block?.target_word ?? block?.correct_answer ?? null),
+      });
+    }
+  }, [user, lessonId, groups, track]);
 
   // ── Continue ──────────────────────────────────────────────────────────────────
 
