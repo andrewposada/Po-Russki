@@ -787,7 +787,7 @@ export async function addXP(userId, amount) {
 export async function getSongs(userId) {
   const { data, error } = await supabase
     .from("songs")
-    .select("id, title, artist, lines, lines_learned, mastered, created_at, updated_at")
+    .select("id, title, artist, lines, lines_learned, mastered, created_at, updated_at, last_study_score, last_studied_at, study_progress_index, study_score_points")
     .eq("user_id", userId)
     .order("artist", { ascending: true, nullsLast: true })
     .order("title", { ascending: true });
