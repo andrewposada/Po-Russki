@@ -12,6 +12,9 @@ const PROMPTS = {
   explain_stanza: ({ stanza_text }) =>
     `Russian song lyrics stanza:\n"${stanza_text}"\n\nExplain in plain English what this stanza means. Cover any idioms, slang, or cultural references. Be concise — 3 to 5 sentences maximum.`,
 
+  study_line: ({ line_ru, line_en, student_answer }) =>
+    `Russian lyric line: "${line_ru}"\nCorrect meaning: "${line_en}"\nStudent's translation: "${student_answer}"\n\nGrade the student's understanding. correct=true if they captured the core meaning well. partial=true if they got the gist but missed something important (idiom, nuance, key word). correct=false,partial=false if they were substantially wrong.\nRespond ONLY with valid JSON: {"correct":bool,"partial":bool,"feedback":"1-2 sentences explaining what they got right or wrong, and noting any idioms or slang"}`,
+
   translate_ru_en: ({ word_ru, word_en, student_answer }) =>
     `Word:"${word_ru}" correct:"${word_en}" student:"${student_answer}"\nAccept synonyms and close translations. Return: {"correct":bool,"feedback":"<1 sentence max>"}`,
 
@@ -36,12 +39,12 @@ export default async function handler(req, res) {
     return res.status(400).json({ error: `Unknown mode: ${mode}` });
   }
 
-  // explain_stanza uses stanza_text instead of student_answer
-  if (mode !== "explain_stanza" && (!student_answer || typeof student_answer !== "string")) {
-    return res.status(400).json({ error: "student_answer is required" });
-  }
+  // explain_stanza uses stanza_text; study_line uses line_ru + line_en + student_answer
   if (mode === "explain_stanza" && (!stanza_text || typeof stanza_text !== "string")) {
     return res.status(400).json({ error: "stanza_text is required for explain_stanza" });
+  }
+  if (mode !== "explain_stanza" && (!student_answer || typeof student_answer !== "string")) {
+    return res.status(400).json({ error: "student_answer is required" });
   }
 
   const apiKey = process.env.ANTHROPIC_API_KEY;
@@ -49,8 +52,9 @@ export default async function handler(req, res) {
     return res.status(500).json({ error: "Anthropic API key not configured" });
   }
 
-  const isExplain  = mode === "explain_stanza";
-  const userPrompt = PROMPTS[mode]({ word_ru, word_en, correct_answer, student_answer, stanza_text });
+  const isExplain   = mode === "explain_stanza";
+    const { line_ru, line_en } = req.body ?? {};
+    const userPrompt  = PROMPTS[mode]({ word_ru, word_en, correct_answer, student_answer, stanza_text, line_ru, line_en });
 
   try {
     const response = await fetch("https://api.anthropic.com/v1/messages", {
@@ -91,6 +95,15 @@ export default async function handler(req, res) {
     } catch {
       console.error("JSON parse error:", clean);
       return res.status(500).json({ error: "Model returned invalid JSON" });
+    }
+
+    // study_line returns correct + partial + feedback
+    if (mode === "study_line") {
+      return res.status(200).json({
+        correct:  Boolean(parsed.correct),
+        partial:  Boolean(parsed.partial),
+        feedback: parsed.feedback ?? "",
+      });
     }
 
     return res.status(200).json({

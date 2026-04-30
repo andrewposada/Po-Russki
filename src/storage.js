@@ -843,3 +843,23 @@ export async function deleteSong(userId, songId) {
     .eq("user_id", userId);
   if (error) { console.error("deleteSong:", error); throw error; }
 }
+
+export async function updateSongStudyProgress(userId, songId, {
+  study_progress_index,
+  study_score_points,
+  last_study_score,
+  last_studied_at,
+}) {
+  const payload = { updated_at: new Date() };
+  if (typeof study_progress_index === "number") payload.study_progress_index = study_progress_index;
+  if (typeof study_score_points   === "number") payload.study_score_points   = study_score_points;
+  if (typeof last_study_score     === "number") payload.last_study_score     = last_study_score;
+  if (last_studied_at !== undefined)            payload.last_studied_at      = last_studied_at;
+
+  const { error } = await supabase
+    .from("songs")
+    .update(payload)
+    .eq("id", songId)
+    .eq("user_id", userId);
+  if (error) { console.error("updateSongStudyProgress:", error); throw error; }
+}
