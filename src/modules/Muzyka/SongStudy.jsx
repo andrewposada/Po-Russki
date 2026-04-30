@@ -279,8 +279,7 @@ export default function SongStudy() {
       persistStudyComplete(finalScore);
     } else {
       setStudyIdx(nextIdx);
-      // Fire-and-forget progress save every 3 lines
-      if (nextIdx % 3 === 0) persistStudyProgress(nextIdx, newPoints);
+      persistStudyProgress(nextIdx, newPoints);
     }
   }
 

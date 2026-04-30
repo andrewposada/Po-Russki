@@ -14,12 +14,16 @@
 
 /* ── Header ── */
 .header {
+  position: sticky;
+  top: 0;
+  z-index: 6;
   background: var(--c-bg-card);
   border-bottom: 1px solid var(--c-border);
   padding: 12px 20px;
   display: flex;
   align-items: center;
   justify-content: space-between;
+  flex-shrink: 0;
 }
 
 .backBtn {
@@ -79,9 +83,13 @@
 
 /* ── Tabs ── */
 .tabs {
+  position: sticky;
+  top: 57px;
+  z-index: 6;
   display: flex;
   background: var(--c-bg-card);
   border-bottom: 1px solid var(--c-border);
+  flex-shrink: 0;
 }
 
 .tab {
