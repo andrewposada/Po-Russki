@@ -2,7 +2,6 @@
 import { useState, useRef } from "react";
 import { useRussianKeyboard } from "../../../hooks/useRussianKeyboard";
 import { useAttemptTracker, ATTEMPT_SOURCES, ATTEMPT_EXERCISE_TYPES } from "../../../hooks/useAttemptTracker";
-import { recordAttemptWithFeedback } from "../../../storage";
 import styles from "./Blocks.module.css";
 
 export default function FreeResponseBlock({ block, onSubmit, previousAnswer, lessonId, topicId }) {
