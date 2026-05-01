@@ -334,8 +334,12 @@ export default function GrammarFreeplay() {
     track({
       sourceId:      ATTEMPT_SOURCES.GRAMMAR_FREEPLAY,
       topicId:       ROADMAP_TOPIC_MAP[exerciseTopic?.id] ?? null,
-      questionType:  exerciseType,
-      sourceRef:     exerciseTopic?.id ?? null,
+      exerciseTypeId: {
+        fillin:     ATTEMPT_EXERCISE_TYPES.FILL_IN,
+        translate:  ATTEMPT_EXERCISE_TYPES.TRANSLATE,
+        transform:  ATTEMPT_EXERCISE_TYPES.TRANSFORM,
+        error:      ATTEMPT_EXERCISE_TYPES.SPOT_ERROR,
+      }[exerciseType] ?? null,
       isCorrect:     correct,
       userAnswer:    correct ? null : answer.trim(),
       correctAnswer: correct ? null : (
@@ -367,13 +371,12 @@ export default function GrammarFreeplay() {
 
     // Track attempt
     track({
-      sourceId:      ATTEMPT_SOURCES.GRAMMAR_FREEPLAY,
-      topicId:       ROADMAP_TOPIC_MAP[exerciseTopic?.id] ?? null,
-      questionType:  "mc",
-      sourceRef:     exerciseTopic?.id ?? null,
-      isCorrect:     correct,
-      userAnswer:    correct ? null : (exercise.options?.[optionIndex] ?? null),
-      correctAnswer: correct ? null : (exercise.options?.[exercise.correct_index] ?? null),
+      sourceId:       ATTEMPT_SOURCES.GRAMMAR_FREEPLAY,
+      topicId:        ROADMAP_TOPIC_MAP[exerciseTopic?.id] ?? null,
+      exerciseTypeId: ATTEMPT_EXERCISE_TYPES.MULTIPLE_CHOICE,
+      isCorrect:      correct,
+      userAnswer:     correct ? null : (exercise.options?.[optionIndex] ?? null),
+      correctAnswer:  correct ? null : (exercise.options?.[exercise.correct_index] ?? null),
     });
   }
 

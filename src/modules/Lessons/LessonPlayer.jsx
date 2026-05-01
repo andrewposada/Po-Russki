@@ -256,10 +256,10 @@ export default function LessonPlayer() {
       { correct: isCorrect }
     );
     track({
-      sourceId:     ATTEMPT_SOURCES.LESSON,
-      topicId:      lessonTopicId(lessonId),
-      questionType: "quiz",
-      sourceRef:    lessonId,
+      sourceId:       ATTEMPT_SOURCES.LESSON,
+      topicId:        lessonTopicId(lessonId),
+      exerciseTypeId: ATTEMPT_EXERCISE_TYPES.LESSON_QUIZ,
+      sourceRef:      lessonId,
       isCorrect,
     });
   }, [user, lessonId, groups, track]);
@@ -283,15 +283,22 @@ export default function LessonPlayer() {
       ? null   // free_response — we don't know yet; skip tracking until Phase 3G.3
       : (typeof grade === "object" ? (grade.correct ?? isCorrect) : isCorrect);
 
+    const lessonExTypeMap = {
+      practice:               ATTEMPT_EXERCISE_TYPES.LESSON_PRACTICE,
+      sentence_choice:        ATTEMPT_EXERCISE_TYPES.LESSON_SENTENCE_CHOICE,
+      error_correction:       ATTEMPT_EXERCISE_TYPES.LESSON_ERROR_CORRECTION,
+      free_response_sentence: ATTEMPT_EXERCISE_TYPES.LESSON_FREE_RESPONSE,
+      free_response_paragraph: ATTEMPT_EXERCISE_TYPES.LESSON_FREE_RESPONSE,
+    };
     if (gradeCorrect !== null) {
       track({
-        sourceId:      ATTEMPT_SOURCES.LESSON,
-        topicId:       lessonTopicId(lessonId),
-        questionType:  blockType,
-        sourceRef:     lessonId,
-        isCorrect:     gradeCorrect,
-        userAnswer:    gradeCorrect ? null : String(answer ?? ""),
-        correctAnswer: gradeCorrect ? null : (block?.target_word ?? block?.correct_answer ?? null),
+        sourceId:       ATTEMPT_SOURCES.LESSON,
+        topicId:        lessonTopicId(lessonId),
+        exerciseTypeId: lessonExTypeMap[blockType] ?? null,
+        sourceRef:      lessonId,
+        isCorrect:      gradeCorrect,
+        userAnswer:     gradeCorrect ? null : String(answer ?? ""),
+        correctAnswer:  gradeCorrect ? null : (block?.target_word ?? block?.correct_answer ?? null),
       });
     }
   }, [user, lessonId, groups, track]);

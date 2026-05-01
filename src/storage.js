@@ -887,17 +887,17 @@ export async function updateSongStudyProgress(userId, songId, {
 export async function recordAttempt(userId, attempt) {
   try {
     const payload = {
-      user_id:       userId,
-      source_id:     attempt.sourceId,
-      topic_id:      attempt.topicId      ?? null,
-      question_type: attempt.questionType ?? null,
-      source_ref:    attempt.sourceRef    ?? null,
-      word:          attempt.word         ?? null,
-      is_correct:    attempt.isCorrect,
-      user_answer:   attempt.isCorrect ? null : (attempt.userAnswer    ?? null),
-      correct_answer: attempt.isCorrect ? null : (attempt.correctAnswer ?? null),
-      response_ms:   attempt.responseMs   ?? null,
-      attempted_at:  new Date().toISOString(),
+      user_id:          userId,
+      source_id:        attempt.sourceId,
+      topic_id:         attempt.topicId       ?? null,
+      exercise_type_id: attempt.exerciseTypeId ?? null,
+      source_ref:       attempt.sourceRef      ?? null,
+      word:             attempt.word           ?? null,
+      is_correct:       attempt.isCorrect,
+      user_answer:      attempt.isCorrect ? null : (attempt.userAnswer    ?? null),
+      correct_answer:   attempt.isCorrect ? null : (attempt.correctAnswer ?? null),
+      response_ms:      attempt.responseMs     ?? null,
+      attempted_at:     new Date().toISOString(),
     };
     const { error } = await supabase
       .from("universal_attempts")

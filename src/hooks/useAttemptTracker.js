@@ -117,7 +117,50 @@ export const ROADMAP_TOPIC_MAP = {
   "prepositions": 25, // prepositions
 };
 
-// ── Maps comprehension question types to topic IDs ────────────────────────────
+// ── Exercise type IDs — mirrors exercise_types table ─────────────────────────
+// Grammar (domain 1)
+// Vocab (domain 3)
+// Lesson (domain 5)
+// Song (domain 6)
+// Comprehension (domain 7)
+export const ATTEMPT_EXERCISE_TYPES = {
+  // Grammar freeplay — domain 1
+  FILL_IN:           1,
+  MULTIPLE_CHOICE:   2,
+  TRANSLATE:         3,
+  TRANSFORM:         12,
+  SPOT_ERROR:        13,
+  // Vocab — domain 3
+  VOCAB_TRANSLATE:   7,
+  VOCAB_FLASHCARD:   8,
+  VOCAB_FILL_IN:     9,
+  VOCAB_MC:          10,
+  VOCAB_SENTENCE:    11,
+  VOCAB_MATCHING:    2,   // reuse mc id — closest fit
+  VOCAB_CLOZE:       9,   // reuse fill_in — closest fit
+  VOCAB_TRANSLATE_EN_RU: 7,
+  // Lesson blocks — domain 5
+  LESSON_QUIZ:            14,
+  LESSON_PRACTICE:        15,
+  LESSON_SENTENCE_CHOICE: 16,
+  LESSON_ERROR_CORRECTION: 17,
+  LESSON_FREE_RESPONSE:   18,
+  // Comprehension — domain 7
+  COMP_DETAIL_RECALL:     19,
+  COMP_INFERENCE:         20,
+  COMP_VOCAB_IN_CONTEXT:  21,
+  COMP_TRUE_FALSE:        22,
+  COMP_SEQUENCE:          23,
+  COMP_FREE_RESPONSE:     24,
+  COMP_GRAMMAR_SPOTLIGHT: 25,
+  // Song — domain 6
+  SONG_TRANSLATION: 26,
+  SONG_MEANING:     27,
+  SONG_CLOZE:       28,
+  SONG_RECALL:      29,
+};
+
+// ── Maps comprehension question type strings to topic IDs ─────────────────────
 export const COMPREHENSION_TYPE_TOPIC_MAP = {
   "detail_recall":         80,
   "inference":             81,
@@ -128,6 +171,19 @@ export const COMPREHENSION_TYPE_TOPIC_MAP = {
   "character_motivation":  85,
   "free_response":         85,
   "grammar_spotlight":     86,
+};
+
+// ── Maps comprehension question type strings to exercise type IDs ─────────────
+export const COMPREHENSION_TYPE_EXERCISE_MAP = {
+  "detail_recall":         19,
+  "inference":             20,
+  "vocabulary_in_context": 21,
+  "true_false":            22,
+  "sequence":              23,
+  "prediction_reflection": 24,
+  "character_motivation":  24,
+  "free_response":         24,
+  "grammar_spotlight":     25,
 };
 
 // ── Maps part-of-speech strings to vocab topic IDs ───────────────────────────
@@ -168,5 +224,14 @@ export function useAttemptTracker() {
     _recordAttempt(user.uid, params);
   }, [user?.uid]);
 
-  return { track, ATTEMPT_SOURCES, ATTEMPT_TOPICS, ROADMAP_TOPIC_MAP, COMPREHENSION_TYPE_TOPIC_MAP, posToTopicId };
+  return {
+    track,
+    ATTEMPT_SOURCES,
+    ATTEMPT_TOPICS,
+    ATTEMPT_EXERCISE_TYPES,
+    ROADMAP_TOPIC_MAP,
+    COMPREHENSION_TYPE_TOPIC_MAP,
+    COMPREHENSION_TYPE_EXERCISE_MAP,
+    posToTopicId,
+  };
 }

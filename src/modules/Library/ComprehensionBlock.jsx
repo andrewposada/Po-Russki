@@ -146,13 +146,13 @@ export default function ComprehensionBlock({ chapter, book, onDone }) {
     // Track the attempt — score: 1 = correct, 0.5 = partial, 0 = wrong, null = not yet graded
     const isCorrect = score === null ? false : score >= 0.5;
     track({
-      sourceId:      ATTEMPT_SOURCES.COMPREHENSION,
-      topicId:       COMPREHENSION_TYPE_TOPIC_MAP[q.type] ?? null,
-      questionType:  q.type ?? "unknown",
-      sourceRef:     chapter?.book_id ?? null,
+      sourceId:       ATTEMPT_SOURCES.COMPREHENSION,
+      topicId:        COMPREHENSION_TYPE_TOPIC_MAP[q.type] ?? null,
+      exerciseTypeId: COMPREHENSION_TYPE_EXERCISE_MAP[q.type] ?? null,
+      sourceRef:      chapter?.book_id ?? null,
       isCorrect,
-      userAnswer:    isCorrect ? null : String(value ?? ""),
-      correctAnswer: isCorrect ? null : (
+      userAnswer:     isCorrect ? null : String(value ?? ""),
+      correctAnswer:  isCorrect ? null : (
         q.correct_answer_guidance
           ? "(see feedback)"
           : q.options?.[q.correct_index] ?? String(q.correct) ?? null

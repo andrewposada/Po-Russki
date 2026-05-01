@@ -258,13 +258,13 @@ export default function SongStudy() {
     // Track attempt for drillable lines only
     if (currentStudyLine?.drillable && fb) {
       track({
-        sourceId:      ATTEMPT_SOURCES.SONG_STUDY,
-        topicId:       ATTEMPT_TOPICS.SONG_TRANSLATION,
-        questionType:  "song_line_translation",
-        sourceRef:     songId,
-        isCorrect:     result === "correct" || result === "partial",
-        userAnswer:    (result === "wrong") ? studyAnswer : null,
-        correctAnswer: (result === "wrong") ? currentStudyLine.en : null,
+        sourceId:       ATTEMPT_SOURCES.SONG_STUDY,
+        topicId:        ATTEMPT_TOPICS.SONG_TRANSLATION,
+        exerciseTypeId: ATTEMPT_EXERCISE_TYPES.SONG_TRANSLATION,
+        sourceRef:      songId,
+        isCorrect:      result === "correct" || result === "partial",
+        userAnswer:     (result === "wrong") ? studyAnswer : null,
+        correctAnswer:  (result === "wrong") ? currentStudyLine.en : null,
       });
     }
 
@@ -316,13 +316,13 @@ export default function SongStudy() {
     const correct = normalizeAnswer(answer) === normalizeAnswer(clozeWord);
     setFeedback({ correct, message: correct ? "Correct!" : `The word was: ${clozeWord}` });
     track({
-      sourceId:      ATTEMPT_SOURCES.SONG_DRILL,
-      topicId:       ATTEMPT_TOPICS.SONG_CLOZE,
-      questionType:  "song_cloze",
-      sourceRef:     songId,
-      isCorrect:     correct,
-      userAnswer:    correct ? null : answer,
-      correctAnswer: correct ? null : clozeWord,
+      sourceId:       ATTEMPT_SOURCES.SONG_DRILL,
+      topicId:        ATTEMPT_TOPICS.SONG_CLOZE,
+      exerciseTypeId: ATTEMPT_EXERCISE_TYPES.SONG_CLOZE,
+      sourceRef:      songId,
+      isCorrect:      correct,
+      userAnswer:     correct ? null : answer,
+      correctAnswer:  correct ? null : clozeWord,
     });
   }
 
@@ -331,13 +331,13 @@ export default function SongStudy() {
     const correct = normalizeAnswer(answer) === normalizeAnswer(currentLine.ru);
     setFeedback({ correct, message: correct ? "Correct!" : `The line was: ${currentLine.ru}` });
     track({
-      sourceId:      ATTEMPT_SOURCES.SONG_DRILL,
-      topicId:       ATTEMPT_TOPICS.SONG_RECALL,
-      questionType:  "song_recall",
-      sourceRef:     songId,
-      isCorrect:     correct,
-      userAnswer:    correct ? null : answer,
-      correctAnswer: correct ? null : currentLine.ru,
+      sourceId:       ATTEMPT_SOURCES.SONG_DRILL,
+      topicId:        ATTEMPT_TOPICS.SONG_RECALL,
+      exerciseTypeId: ATTEMPT_EXERCISE_TYPES.SONG_RECALL,
+      sourceRef:      songId,
+      isCorrect:      correct,
+      userAnswer:     correct ? null : answer,
+      correctAnswer:  correct ? null : currentLine.ru,
     });
   }
 

@@ -137,13 +137,13 @@ export default function AssignmentsQueue() {
       if (isCorrect) await addXP(user.uid, XP_PER_CORRECT);
 
       track({
-        sourceId:      ATTEMPT_SOURCES.ASSIGNMENT,
-        topicId:       assignmentTopicId(activeRow?.lesson_id),
-        questionType:  "practice",
-        sourceRef:     activeRow?.lesson_id ?? null,
+        sourceId:       ATTEMPT_SOURCES.ASSIGNMENT,
+        topicId:        assignmentTopicId(activeRow?.lesson_id),
+        exerciseTypeId: ATTEMPT_EXERCISE_TYPES.LESSON_PRACTICE,
+        sourceRef:      activeRow?.lesson_id ?? null,
         isCorrect,
-        userAnswer:    isCorrect ? null : trimmed,
-        correctAnswer: isCorrect ? null : (ex.target_word ?? null),
+        userAnswer:     isCorrect ? null : trimmed,
+        correctAnswer:  isCorrect ? null : (ex.target_word ?? null),
       });
     } catch (err) {
       console.error("lesson-grade error:", err);

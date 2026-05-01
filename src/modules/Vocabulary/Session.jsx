@@ -314,13 +314,11 @@ export default function Session() {
     handleSrsUpdate(currentWord, "mc", correct);
 
     track({
-      sourceId:      isExplore ? ATTEMPT_SOURCES.VOCAB_EXPLORE : ATTEMPT_SOURCES.VOCAB_SESSION,
-      topicId:       posToTopicId(currentWord.part_of_speech),
-      questionType:  "mc",
-      word:          currentWord.word,
-      isCorrect:     correct,
-      userAnswer:    null,  // MC — no typed answer to store
-      correctAnswer: null,
+      sourceId:       isExplore ? ATTEMPT_SOURCES.VOCAB_EXPLORE : ATTEMPT_SOURCES.VOCAB_SESSION,
+      topicId:        posToTopicId(currentWord.part_of_speech),
+      exerciseTypeId: ATTEMPT_EXERCISE_TYPES.VOCAB_MC,
+      word:           currentWord.word,
+      isCorrect:      correct,
     });
   }, [currentWord, isExplore, track, posToTopicId]);
 
@@ -364,14 +362,20 @@ export default function Session() {
 
     if (!isExplore) handleSrsUpdate(currentWord, exerciseType, correct);
 
+    const vocabExTypeMap = {
+      translate_ru_en: ATTEMPT_EXERCISE_TYPES.VOCAB_TRANSLATE,
+      translate_en_ru: ATTEMPT_EXERCISE_TYPES.VOCAB_TRANSLATE_EN_RU,
+      cloze:           ATTEMPT_EXERCISE_TYPES.VOCAB_CLOZE,
+      sentence:        ATTEMPT_EXERCISE_TYPES.VOCAB_SENTENCE,
+    };
     track({
-      sourceId:      isExplore ? ATTEMPT_SOURCES.VOCAB_EXPLORE : ATTEMPT_SOURCES.VOCAB_SESSION,
-      topicId:       posToTopicId(currentWord.part_of_speech),
-      questionType:  exerciseType,
-      word:          currentWord.word,
-      isCorrect:     correct,
-      userAnswer:    correct ? null : studentAnswer,
-      correctAnswer: correct ? null : (
+      sourceId:       isExplore ? ATTEMPT_SOURCES.VOCAB_EXPLORE : ATTEMPT_SOURCES.VOCAB_SESSION,
+      topicId:        posToTopicId(currentWord.part_of_speech),
+      exerciseTypeId: vocabExTypeMap[exerciseType] ?? null,
+      word:           currentWord.word,
+      isCorrect:      correct,
+      userAnswer:     correct ? null : studentAnswer,
+      correctAnswer:  correct ? null : (
         exerciseType === "cloze"
           ? (clozeData?.answer ?? null)
           : (currentWord.translation ?? null)
@@ -400,11 +404,11 @@ export default function Session() {
     }
 
     track({
-      sourceId:     ATTEMPT_SOURCES.VOCAB_SESSION,
-      topicId:      posToTopicId(word.part_of_speech),
-      questionType: "matching",
-      word:         word.word,
-      isCorrect:    correct,
+      sourceId:       ATTEMPT_SOURCES.VOCAB_SESSION,
+      topicId:        posToTopicId(word.part_of_speech),
+      exerciseTypeId: ATTEMPT_EXERCISE_TYPES.VOCAB_MATCHING,
+      word:           word.word,
+      isCorrect:      correct,
     });
   }, [track, posToTopicId]);
 
