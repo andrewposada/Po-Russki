@@ -1,9 +1,11 @@
 // src/modules/Lessons/blocks/FreeResponseBlock.jsx
 import { useState, useRef } from "react";
 import { useRussianKeyboard } from "../../../hooks/useRussianKeyboard";
+import { useAttemptTracker, ATTEMPT_SOURCES, ATTEMPT_EXERCISE_TYPES } from "../../../hooks/useAttemptTracker";
+import { recordAttemptWithFeedback } from "../../../storage";
 import styles from "./Blocks.module.css";
 
-export default function FreeResponseBlock({ block, onSubmit, previousAnswer }) {
+export default function FreeResponseBlock({ block, onSubmit, previousAnswer, lessonId, topicId }) {
   const [answer, setAnswer]   = useState(previousAnswer?.answer ?? "");
   const [submitted, setSubmitted] = useState(!!previousAnswer);
   const [loading, setLoading] = useState(false);
@@ -12,6 +14,7 @@ export default function FreeResponseBlock({ block, onSubmit, previousAnswer }) {
 
   const textareaRef = useRef(null);
   useRussianKeyboard(textareaRef, ruMode);
+  const { track } = useAttemptTracker();
 
   const isMultiLine = block.type === "free_response_paragraph";
 
@@ -19,10 +22,11 @@ export default function FreeResponseBlock({ block, onSubmit, previousAnswer }) {
     if (!answer.trim() || submitted) return;
     setLoading(true);
     try {
-      const res = await fetch("/api/lesson-grade-free", {
+      const res = await fetch("/api/lesson-grade", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
+          type:       "free_response",
           answer:     answer.trim(),
           prompt:     block.prompt,
           block_type: block.type,
@@ -33,6 +37,22 @@ export default function FreeResponseBlock({ block, onSubmit, previousAnswer }) {
       setGrade(data);
       setSubmitted(true);
       onSubmit(answer.trim(), data.score >= 70, data);
+
+      // Write universal_attempts row here (post-grading) so we have feedback_summary.
+      // LessonPlayer skips writing free_response attempts (gradeCorrect === null guard).
+      // FreeResponseBlock owns this write.
+      track({
+        sourceId:        ATTEMPT_SOURCES.LESSON,
+        topicId:         topicId ?? null,
+        exerciseTypeId:  block.type === "free_response_paragraph"
+                           ? ATTEMPT_EXERCISE_TYPES.LESSON_FREE_RESPONSE
+                           : ATTEMPT_EXERCISE_TYPES.LESSON_FREE_RESPONSE,
+        sourceRef:       lessonId ?? null,
+        isCorrect:       data.score >= 70,
+        userAnswer:      data.score >= 70 ? null : answer.trim(),
+        correctAnswer:   null,
+        feedbackSummary: data.teacher_note ?? null,
+      });
     } catch {
       setGrade({ teacher_note: "Could not grade — please try again.", score: 0, errors: [] });
       setSubmitted(true);

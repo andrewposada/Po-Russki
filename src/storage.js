@@ -889,14 +889,15 @@ export async function recordAttempt(userId, attempt) {
     const payload = {
       user_id:          userId,
       source_id:        attempt.sourceId,
-      topic_id:         attempt.topicId       ?? null,
-      exercise_type_id: attempt.exerciseTypeId ?? null,
-      source_ref:       attempt.sourceRef      ?? null,
-      word:             attempt.word           ?? null,
+      topic_id:         attempt.topicId        ?? null,
+      exercise_type_id: attempt.exerciseTypeId  ?? null,
+      source_ref:       attempt.sourceRef       ?? null,
+      word:             attempt.word            ?? null,
       is_correct:       attempt.isCorrect,
       user_answer:      attempt.isCorrect ? null : (attempt.userAnswer    ?? null),
       correct_answer:   attempt.isCorrect ? null : (attempt.correctAnswer ?? null),
-      response_ms:      attempt.responseMs     ?? null,
+      feedback_summary: attempt.feedbackSummary ?? null,
+      response_ms:      attempt.responseMs      ?? null,
       attempted_at:     new Date().toISOString(),
     };
     const { error } = await supabase
@@ -950,7 +951,7 @@ export async function getRecentAttempts(userId, days = 60) {
   const cutoff = new Date(Date.now() - days * 24 * 60 * 60 * 1000).toISOString();
   const { data, error } = await supabase
     .from("universal_attempts")
-    .select("*")
+    .select("topic_id, attempted_at")
     .eq("user_id", userId)
     .gte("attempted_at", cutoff)
     .order("attempted_at", { ascending: false });

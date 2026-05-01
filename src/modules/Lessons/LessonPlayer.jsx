@@ -436,6 +436,8 @@ const quizGroups = quizGroupsWithIndex.map(({ group }) => group); // for the len
               block={block}
               onSubmit={(answer, correct, grade) => handleSubmit(groupIndex, answer, correct, grade)}
               previousAnswer={prevAnswer}
+              lessonId={lessonId}
+              topicId={lessonTopicId(lessonId)}
             />
           );
         case "summary":

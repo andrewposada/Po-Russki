@@ -20,17 +20,13 @@ import SentenceCard        from "./Cards/SentenceCard";
 import ExploreControls     from "./ExploreControls";
 import styles              from "./Session.module.css";
 import { useAttemptTracker, ATTEMPT_SOURCES } from "../../hooks/useAttemptTracker";
+import { calculateSrs }   from "../../utils/srsCalculator";
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
-async function callSrsUpdate({ quality, interval_days, ease_factor, review_count }) {
-  const res = await fetch("/api/srs-update", {
-    method:  "POST",
-    headers: { "Content-Type": "application/json" },
-    body:    JSON.stringify({ quality, interval_days, ease_factor, review_count }),
-  });
-  if (!res.ok) throw new Error("SRS update failed");
-  return res.json();
+// SRS calculation is now client-side — no API call needed
+function callSrsUpdate({ quality, interval_days, ease_factor, review_count }) {
+  return calculateSrs({ quality, interval_days, ease_factor, review_count });
 }
 
 async function generateDistractors(word, level) {

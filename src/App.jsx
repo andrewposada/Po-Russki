@@ -13,7 +13,8 @@ import Home from "./modules/Home/Home";
 import LibraryShelf from "./modules/Library/LibraryShelf";
 import BookReader from "./modules/Library/BookReader";
 import styles from "./app.module.css";
-import { SettingsProvider } from "./context/SettingsContext";
+import { SettingsProvider }  from "./context/SettingsContext";
+import { ProgressProvider }  from "./context/ProgressContext";
 
 // Module imports — uncomment as each phase is built
 import Lessons from "./modules/Lessons";
@@ -97,11 +98,13 @@ export default function App() {
     <AuthProvider>
       <BrowserRouter>
         <SettingsProvider>
-          <TooltipProvider>
-            <WordBankProvider>
-              <AppContent />
-            </WordBankProvider>
-          </TooltipProvider>
+          <ProgressProvider>
+            <TooltipProvider>
+              <WordBankProvider>
+                <AppContent />
+              </WordBankProvider>
+            </TooltipProvider>
+          </ProgressProvider>
         </SettingsProvider>
       </BrowserRouter>
     </AuthProvider>
