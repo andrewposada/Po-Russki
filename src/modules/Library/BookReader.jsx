@@ -5,7 +5,7 @@ import { useAuth }     from "../../AuthContext";
 import { useSettings } from "../../context/SettingsContext";
 import { useWordBank } from "../../context/WordBankContext";
 import {
-  getBooks, getChapters, updateBook, incrementChapterReadingTime, getAttempt,
+  getBooks, getChapters, updateBook, incrementChapterReadingTime, markChapterCompleted, getAttempt,
 } from "../../storage";
 import { useReadingTimer } from "../../hooks/useReadingTimer";
 import styles from "./BookReader.module.css";
@@ -437,27 +437,62 @@ const totalSeconds  = priorSeconds + seconds;
         {/* End of chapter */}
         {segments.length > 0 && (
           <div className={styles.endOfChapter}>
-            {showComprehension || hasExistingQuestions ? (
-                <ComprehensionBlock
-                    chapter={activeChapter}
-                    book={book}
-                        onDone={async () => {
-                        setShowComprehension(false);
-                        setHasExistingQuestions(false);
-                        const nextNum = activeChapterNumRef.current + 1;
-                        if (nextNum <= chapters.length) {
-                            await goToChapter(nextNum);
-                            await setBookmarkAt(nextNum, 0);
-                            window.scrollTo({ top: 0, behavior: "smooth" });
-                        }
-                    }}
-                />
-            ) : (
-                <button className={styles.comprehensionBtn}
-                    onClick={() => setShowComprehension(true)}>
-                    Test My Understanding
-                </button>
+            {(showComprehension || hasExistingQuestions) && (
+              <ComprehensionBlock
+                chapter={activeChapter}
+                book={book}
+                onDone={async () => {
+                  setShowComprehension(false);
+                  setHasExistingQuestions(false);
+                  const nextNum = activeChapterNumRef.current + 1;
+                  if (nextNum <= chapters.length) {
+                    await goToChapter(nextNum);
+                    await setBookmarkAt(nextNum, 0);
+                    window.scrollTo({ top: 0, behavior: "smooth" });
+                  }
+                }}
+              />
             )}
+
+            <div className={styles.chapterNav}>
+              {activeChapterNum > 1 ? (
+                <button
+                  className={styles.chapterNavBtn}
+                  onClick={() => goToChapter(activeChapterNum - 1)}
+                >
+                  ← Previous
+                </button>
+              ) : (
+                <span className={styles.chapterNavSpacer} />
+              )}
+
+              {!showComprehension && !hasExistingQuestions && (
+                <button
+                  className={styles.comprehensionBtn}
+                  onClick={async () => {
+                    if (activeChapter) await markChapterCompleted(activeChapter.id);
+                    setShowComprehension(true);
+                  }}
+                >
+                  Test My Understanding
+                </button>
+              )}
+
+              {activeChapterNum < chapters.length ? (
+                <button
+                  className={styles.chapterNavBtn}
+                  onClick={async () => {
+                    if (activeChapter) await markChapterCompleted(activeChapter.id);
+                    await goToChapter(activeChapterNum + 1);
+                    await setBookmarkAt(activeChapterNum + 1, 0);
+                  }}
+                >
+                  Next Chapter →
+                </button>
+              ) : (
+                <span className={styles.chapterNavSpacer} />
+              )}
+            </div>
           </div>
         )}
       </div>

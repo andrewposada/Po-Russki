@@ -547,6 +547,18 @@ export async function incrementChapterReadingTime(userId, chapterId, elapsed) {
   }
 }
 
+/**
+ * Mark a chapter as completed by the user.
+ * Idempotent — safe to call multiple times.
+ */
+export async function markChapterCompleted(chapterId) {
+  const { error } = await supabase
+    .from("chapters")
+    .update({ is_completed: true })
+    .eq("id", chapterId);
+  if (error) console.warn("markChapterCompleted:", error.message);
+}
+
 // ─────────────────────────────────────────────────────────────────────────────
 // LESSONS
 // ─────────────────────────────────────────────────────────────────────────────

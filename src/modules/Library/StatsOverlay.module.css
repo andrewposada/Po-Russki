@@ -52,3 +52,82 @@
 .chWpm   { font-size: 12px; font-weight: 600; color: var(--c-text-mid); }
 .chDash  { font-size: 12px; color: var(--c-text-light); }
 .chTime  { font-size: 11px; color: var(--c-text-light); }
+
+.rubric {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  flex-wrap: wrap;
+  padding: 8px 0 4px;
+  margin-bottom: 4px;
+  font-family: var(--font-ui);
+  font-size: 12px;
+}
+
+.rubricLabel {
+  color: var(--c-text-xlight);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.rubricItem {
+  font-weight: 500;
+}
+
+.completedBadge {
+  margin-left: 4px;
+  color: var(--c-correct);
+  font-size: 11px;
+}
+
+.wpmTooltip {
+  position: fixed;
+  z-index: 9999;
+  background: var(--c-bg-card);
+  border: 1px solid var(--c-border);
+  border-radius: var(--radius-md);
+  padding: 12px 14px;
+  min-width: 220px;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.12);
+  font-family: var(--font-ui);
+  font-size: 13px;
+  color: var(--c-text-dark);
+  top: v-bind(tooltip?.y + 'px');  /* Note: see positioning note below */
+  left: v-bind(tooltip?.x + 'px');
+}
+
+.wpmTooltipTitle {
+  font-weight: 700;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--c-text-xlight);
+  margin-bottom: 8px;
+}
+
+.wpmTooltipRow {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 2px 0;
+}
+
+.wpmTooltipDivider {
+  border-top: 1px solid var(--c-border-soft);
+  margin: 6px 0;
+}
+
+.wpmTooltip {
+  position: fixed;
+  z-index: 9999;
+  background: var(--c-bg-card);
+  border: 1px solid var(--c-border);
+  border-radius: var(--radius-md);
+  padding: 12px 14px;
+  min-width: 220px;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.12);
+  font-family: var(--font-ui);
+  font-size: 13px;
+  color: var(--c-text-dark);
+}
