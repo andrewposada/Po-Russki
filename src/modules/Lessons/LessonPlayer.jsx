@@ -150,7 +150,7 @@ export default function LessonPlayer() {
   const [showResume, setShowResume] = useState(false);
   const [leveledUp, setLeveledUp] = useState(null); // { level: number, name: string } | null
 
-  const { track } = useAttemptTracker();
+  const { track, ATTEMPT_EXERCISE_TYPES } = useAttemptTracker();
 
   // Stale closure guard
   const currentGroupIndexRef    = useRef(0);

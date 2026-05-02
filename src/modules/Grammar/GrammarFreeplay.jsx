@@ -138,7 +138,7 @@ export default function GrammarFreeplay() {
 
   // Russian keyboard
   const { translitOn } = useSettings();
-  const { track } = useAttemptTracker();
+  const { track, ATTEMPT_EXERCISE_TYPES } = useAttemptTracker();
   const fillinRef    = useRef(null);
   const translateRef = useRef(null);
   const errorRef     = useRef(null);

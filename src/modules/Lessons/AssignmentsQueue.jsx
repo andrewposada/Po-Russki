@@ -49,7 +49,7 @@ export default function AssignmentsQueue() {
   const inputRef = useRef(null);
   const { translitOn } = useSettings();
   useRussianKeyboard(inputRef, translitOn);
-  const { track } = useAttemptTracker();
+  const { track, ATTEMPT_EXERCISE_TYPES } = useAttemptTracker();
 
   // ── Load ────────────────────────────────────────────────────────────────────
 

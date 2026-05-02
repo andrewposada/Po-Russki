@@ -13,7 +13,7 @@ export default function FreeResponseBlock({ block, onSubmit, previousAnswer, les
 
   const textareaRef = useRef(null);
   useRussianKeyboard(textareaRef, ruMode);
-  const { track } = useAttemptTracker();
+  const { track, ATTEMPT_EXERCISE_TYPES } = useAttemptTracker();
 
   const isMultiLine = block.type === "free_response_paragraph";
 

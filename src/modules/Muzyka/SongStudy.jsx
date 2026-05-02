@@ -52,7 +52,7 @@ export default function SongStudy() {
   const { songId } = useParams();
   const { user }   = useAuth();
   const navigate   = useNavigate();
-  const { track }  = useAttemptTracker();
+  const { track, ATTEMPT_EXERCISE_TYPES } = useAttemptTracker();
 
   const [song,          setSong]          = useState(null);
   const [loading,       setLoading]       = useState(true);

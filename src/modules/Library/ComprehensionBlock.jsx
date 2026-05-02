@@ -10,7 +10,7 @@ import styles from "./ComprehensionBlock.module.css";
 
 export default function ComprehensionBlock({ chapter, book, onDone }) {
   const { user } = useAuth();
-  const { track } = useAttemptTracker();
+  const { track, COMPREHENSION_TYPE_EXERCISE_MAP } = useAttemptTracker();
 
   const [questions, setQuestions] = useState(null);
   const [answers,   setAnswers]   = useState({});

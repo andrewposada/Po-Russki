@@ -141,8 +141,7 @@ export default function Session() {
   const [exploreWord,     setExploreWord]     = useState(null);
   const [recentWords,     setRecentWords]     = useState([]);
 
-  const { track, posToTopicId } = useAttemptTracker();
-
+  const { track, posToTopicId, ATTEMPT_EXERCISE_TYPES } = useAttemptTracker();
   // Stale closure guards
   const wordsRef = useRef(words);
   useEffect(() => { wordsRef.current = words; }, [words]);
