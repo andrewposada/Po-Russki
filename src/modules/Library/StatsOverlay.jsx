@@ -1,15 +1,14 @@
 // src/modules/Library/StatsOverlay.jsx
 import { useState, useEffect } from "react";
 import { useAuth } from "../../AuthContext";
-import { getChapters, getReadingLog } from "../../storage";
+import { getChapters } from "../../storage";
 import { C } from "../../constants";
 import styles from "./StatsOverlay.module.css";
 
 export default function StatsOverlay({ book, onClose }) {
-  const { user }   = useAuth();
-  const [chapters, setChapters] = useState([]);
-  const [log,      setLog]      = useState([]);
-  const [loading,  setLoading]  = useState(true);
+  const { user }    = useAuth();
+  const [chapters,  setChapters]  = useState([]);
+  const [loading,   setLoading]   = useState(true);
 
   useEffect(() => {
     if (!book || !user) return;
@@ -19,12 +18,8 @@ export default function StatsOverlay({ book, onClose }) {
   async function loadStats() {
     try {
       setLoading(true);
-      const [chapData, logData] = await Promise.all([
-        getChapters(user.uid, book.id),
-        getReadingLog(user.uid, book.id),
-      ]);
+      const chapData = await getChapters(user.uid, book.id);
       setChapters(chapData ?? []);
-      setLog(logData ?? []);
     } catch (err) {
       console.warn("Stats load error:", err.message);
     } finally {
@@ -32,25 +27,19 @@ export default function StatsOverlay({ book, onClose }) {
     }
   }
 
-  function timeForChapter(chapterId) {
-    return log
-      .filter(s => s.chapter_id === chapterId)
-      .reduce((sum, s) => sum + (s.time_spent ?? 0), 0);
-  }
-
   function wpmForChapter(ch) {
-    const secs = timeForChapter(ch.id);
+    const secs = ch.reading_time_seconds ?? 0;
     if (!secs || !ch.word_count) return null;
     return Math.round((ch.word_count / secs) * 60);
   }
 
-  const totalSeconds = log.reduce((s, r) => s + (r.time_spent ?? 0), 0);
-  const totalHours   = Math.floor(totalSeconds / 3600);
-  const totalMins    = Math.floor((totalSeconds % 3600) / 60);
-  const chaptersRead = chapters.filter(ch => timeForChapter(ch.id) > 0).length;
+  const totalSeconds  = chapters.reduce((s, ch) => s + (ch.reading_time_seconds ?? 0), 0);
+  const totalHours    = Math.floor(totalSeconds / 3600);
+  const totalMins     = Math.floor((totalSeconds % 3600) / 60);
+  const chaptersRead  = chapters.filter(ch => (ch.reading_time_seconds ?? 0) > 0).length;
 
-  const wpmValues   = chapters.map(wpmForChapter).filter(Boolean);
-  const levelAvgWpm = wpmValues.length >= 2
+  const wpmValues    = chapters.map(wpmForChapter).filter(Boolean);
+  const levelAvgWpm  = wpmValues.length >= 2
     ? Math.round(wpmValues.reduce((a, b) => a + b, 0) / wpmValues.length)
     : null;
   const maxWpm = levelAvgWpm ?? Math.max(...wpmValues, 1);
@@ -92,7 +81,7 @@ export default function StatsOverlay({ book, onClose }) {
         ) : (
           <div className={styles.chapterList}>
             {chapters.map(ch => {
-              const secs   = timeForChapter(ch.id);
+              const secs   = ch.reading_time_seconds ?? 0;
               const chWpm  = wpmForChapter(ch);
               const mins   = Math.floor(secs / 60);
               const secRem = secs % 60;
@@ -107,11 +96,15 @@ export default function StatsOverlay({ book, onClose }) {
                     <span className={styles.chWords}>{ch.word_count ? `${ch.word_count} w` : ""}</span>
                   </div>
                   <div className={styles.chBar}>
-                    <div className={styles.chBarFill}
-                      style={{ width: `${barPct}%`, background: isGood ? C.sage : C.orange }} />
+                    <div
+                      className={styles.chBarFill}
+                      style={{ width: `${barPct}%`, background: isGood ? C.sage : C.orange }}
+                    />
                     {levelAvgWpm && (
-                      <div className={styles.chBarRef}
-                        style={{ left: `${Math.min((levelAvgWpm / maxWpm) * 100, 100)}%` }} />
+                      <div
+                        className={styles.chBarRef}
+                        style={{ left: `${Math.min((levelAvgWpm / maxWpm) * 100, 100)}%` }}
+                      />
                     )}
                   </div>
                   <div className={styles.chStats}>
@@ -119,7 +112,7 @@ export default function StatsOverlay({ book, onClose }) {
                       ? <span className={styles.chWpm}>{chWpm} wpm</span>
                       : <span className={styles.chDash}>—</span>}
                     {secs > 0 && (
-                      <span className={styles.chTime}>{mins}m {String(secRem).padStart(2,"0")}s</span>
+                      <span className={styles.chTime}>{mins}m {String(secRem).padStart(2, "0")}s</span>
                     )}
                   </div>
                 </div>

@@ -455,13 +455,13 @@ export async function upsertChapter(userId, chapterObj) {
   const { error } = await supabase
     .from("chapters")
     .upsert({
-      book_id:         chapterObj.bookId,
-      chapter_num:     chapterObj.chapterNum,
-      title:           chapterObj.title        ?? null,
-      content:         chapterObj.content      ?? null,
-      last_sentence:   chapterObj.lastSentence ?? null,
-      word_count:      chapterObj.wordCount    ?? null,
-      questions:       null,
+      book_id:       chapterObj.bookId,
+      chapter_num:   chapterObj.chapterNum,
+      title:         chapterObj.title        ?? null,
+      content:       chapterObj.content      ?? null,
+      last_sentence: chapterObj.lastSentence ?? null,
+      word_count:    chapterObj.wordCount    ?? null,  // always client-computed now
+      questions:     null,
     }, { onConflict: "book_id,chapter_num" });
   if (error) throw error;
 }
@@ -526,46 +526,25 @@ export async function upsertAttempt(userId, attemptObj) {
   }
 }
 
-// ── READING LOG ────────────────────────────────────────────────────────────
-export async function upsertReadingSession(userId, sessionObj) {
-  console.log("upsertReadingSession called with:", { userId, sessionObj });  // ← ADD THIS
-  const { error } = await supabase
-    .from("reading_log")
-    .upsert(
-      {
-        user_id:      userId,
-        session_id:   sessionObj.sessionId,
-        chapter_id:   sessionObj.chapterId,
-        started_at:   sessionObj.startedAt ?? new Date(),
-        completed_at: sessionObj.completedAt ?? null,
-        time_spent:   sessionObj.timeSpent ?? 0,
-      },
-      { onConflict: "session_id,chapter_id" }
-    );
-  if (error) {
-    console.error("upsertReadingSession error:", error);  // ← ADD THIS
-    throw error;
+// ── READING TIME ───────────────────────────────────────────────────────────
+
+/**
+ * Increment a chapter's cumulative reading time by `elapsed` seconds.
+ * Uses a server-side increment to avoid read-modify-write race conditions.
+ * Also stamps last_read_at with the current time.
+ * Fire-and-forget safe — logs but does not throw.
+ */
+export async function incrementChapterReadingTime(userId, chapterId, elapsed) {
+  if (!elapsed || elapsed < 1) return;
+  try {
+    const { error } = await supabase.rpc("increment_reading_time", {
+      p_chapter_id: chapterId,
+      p_seconds:    elapsed,
+    });
+    if (error) throw error;
+  } catch (err) {
+    console.warn("incrementChapterReadingTime:", err.message);
   }
-}
-
-export async function getChapterPriorTime(userId, chapterId) {
-  const { data, error } = await supabase
-    .from("reading_log")
-    .select("time_spent")
-    .eq("user_id", userId)
-    .eq("chapter_id", chapterId);
-  if (error) throw error;
-  return (data ?? []).reduce((sum, row) => sum + (row.time_spent ?? 0), 0);
-}
-
-export async function getReadingLog(userId, bookId) {
-  const { data, error } = await supabase
-    .from("reading_log")
-    .select("*, chapters!inner(book_id, word_count)")
-    .eq("user_id", userId)
-    .eq("chapters.book_id", bookId);
-  if (error) throw error;
-  return data;
 }
 
 // ─────────────────────────────────────────────────────────────────────────────

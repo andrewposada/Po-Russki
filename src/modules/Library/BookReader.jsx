@@ -5,7 +5,7 @@ import { useAuth }     from "../../AuthContext";
 import { useSettings } from "../../context/SettingsContext";
 import { useWordBank } from "../../context/WordBankContext";
 import {
-  getBooks, getChapters, updateBook, upsertReadingSession, getChapterPriorTime, getAttempt,
+  getBooks, getChapters, updateBook, incrementChapterReadingTime, getAttempt,
 } from "../../storage";
 import { useReadingTimer } from "../../hooks/useReadingTimer";
 import styles from "./BookReader.module.css";
@@ -44,7 +44,7 @@ function splitIntoSegments(content) {
 }
 
 export default function BookReader() {
-  const chapterSessionIdRef = useRef(crypto.randomUUID());
+  chapterSessionIdRef.current = crypto.randomUUID();
   const { bookId }   = useParams();
   const { user }     = useAuth();
   const settings     = useSettings();
@@ -87,13 +87,7 @@ export default function BookReader() {
       if (!user || elapsed < 1) return;
       const ch = chapters.find(c => c.chapter_num === activeChapterNumRef.current);
       if (!ch) return;
-      await upsertReadingSession(user.uid, {
-        sessionId:   chapterSessionIdRef.current,
-        chapterId:   ch.id,
-        timeSpent:   elapsed,
-        startedAt:   new Date(Date.now() - elapsed * 1000).toISOString(),
-        completedAt: new Date().toISOString(),
-      });
+      await incrementChapterReadingTime(user.uid, ch.id, elapsed);
     },
   });
 
@@ -115,11 +109,11 @@ export default function BookReader() {
       setBook(thisBook);
       setChapters(chaptersData ?? []);
 
-      // Load prior reading time for the initial chapter
+      // Load prior reading time for the initial chapter (now stored on the chapter row)
       const startChapter = thisBook.bookmark_chapter ?? 1;
       const startChapData = (chaptersData ?? []).find(c => c.chapter_num === startChapter);
-      if (startChapData && user) {
-        const prior = await getChapterPriorTime(user.uid, startChapData.id);
+      if (startChapData) {
+        const prior = startChapData.reading_time_seconds ?? 0;
         setPriorSeconds(prior);
         priorSecondsRef.current = prior;
       }
@@ -173,12 +167,10 @@ export default function BookReader() {
     setHasExistingQuestions(false);
     const ch = chapters.find(c => c.chapter_num === num);
     if (ch && user) {
-      const [prior, attempt] = await Promise.all([
-        getChapterPriorTime(user.uid, ch.id),
-        getAttempt(user.uid, ch.id),
-      ]);
+      const prior = ch.reading_time_seconds ?? 0;
       setPriorSeconds(prior);
       priorSecondsRef.current = prior;
+      const attempt = await getAttempt(user.uid, ch.id);
       if (attempt?.questions?.length > 0) setHasExistingQuestions(true);
     } else {
       setPriorSeconds(0);

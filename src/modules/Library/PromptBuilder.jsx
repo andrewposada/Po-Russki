@@ -5,6 +5,12 @@ import { upsertBook, upsertChapter } from "../../storage";
 import { LIB_GENRES, LIB_LENGTHS, libCoverColor } from "../../constants";
 import styles from "./PromptBuilder.module.css";
 
+/** Count words in Russian text. Splits on whitespace, filters empties. */
+function countWords(text) {
+  if (!text) return 0;
+  return text.trim().split(/\s+/).filter(Boolean).length;
+}
+
 export default function PromptBuilder({ onClose, onImportComplete }) {
   const { user } = useAuth();
 
@@ -123,7 +129,6 @@ OUTPUT FORMAT — one single JSON object:
       "chapterNumber": 1,
       "title": "<Russian chapter title>",
       "lastSentence": "<final sentence of this chapter>",
-      "wordCount": 1050,
       "text": "<full chapter text as a single string, paragraphs separated by \\n\\n>"
     }
   ]
@@ -243,7 +248,7 @@ Generate all ${totalChapters} chapters now. If the output is long, continue unti
             title:        ch.title,
             content:      ch.text,
             lastSentence: ch.lastSentence ?? null,
-            wordCount:    ch.wordCount    ?? null,
+            wordCount:    countWords(ch.text),   // client-computed, not AI-provided
           })
         ));
       }
