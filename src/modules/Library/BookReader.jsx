@@ -108,9 +108,9 @@ export default function BookReader() {
       setBook(thisBook);
       setChapters(chaptersData ?? []);
 
-      // Load prior reading time for the initial chapter (now stored on the chapter row)
-      const startChapter = thisBook.bookmark_chapter ?? 1;
-      const startChapData = (chaptersData ?? []).find(c => c.chapter_num === startChapter);
+      // Load prior reading time — must use the same chapter num that becomes activeChapterNum
+      const startChapterNum = thisBook.bookmark_chapter_num ?? 1;
+      const startChapData = (chaptersData ?? []).find(c => c.chapter_num === startChapterNum);
       if (startChapData) {
         const prior = startChapData.reading_time_seconds ?? 0;
         setPriorSeconds(prior);
@@ -118,7 +118,6 @@ export default function BookReader() {
       }
 
       // Find which chapter has a bookmark saved
-      const startChapterNum = thisBook.bookmark_chapter_num ?? 1;
       if (thisBook.bookmark_chapter_num != null && thisBook.bookmark_segment_index != null) {
         setActiveChapterNum(thisBook.bookmark_chapter_num);
         setBookmark({
