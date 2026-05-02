@@ -1,102 +1,87 @@
-// api/grammar-freeplay-generate.js
+// api/generate-comprehension.js
+export const config = { maxDuration: 30 };
 
-const MODEL_HAIKU = "claude-haiku-4-5-20251001";
+const MODEL_SONNET = "claude-sonnet-4-20250514";
 
 export default async function handler(req, res) {
   if (req.method !== "POST") return res.status(405).json({ error: "Method not allowed" });
 
-  const { topicId, topicTitle, exerciseType, cefrLevel } = req.body ?? {};
+  const {
+    sampledParagraphs,
+    chapterSummary,
+    chapterNumber,
+    bookTitle,
+    level,
+    questionTypes,
+    weakTopics,
+  } = req.body ?? {};
 
-  if (!topicId || !topicTitle || !exerciseType) {
+  if (!sampledParagraphs?.length || !questionTypes?.length) {
     return res.status(400).json({ error: "Missing required fields" });
   }
 
-  const apiKey = process.env.ANTHROPIC_API_KEY;
-  if (!apiKey) {
-    return res.status(500).json({ error: "Anthropic API key not configured" });
-  }
+  const ANTHROPIC_KEY = process.env.ANTHROPIC_API_KEY;
+  const typeList = questionTypes.map(q => q.type).join(", ");
 
-  const exerciseInstructions = {
-    fillin: `Generate a fill-in-the-blank exercise about ${topicTitle}.
-Return JSON with exactly these fields:
-{
-  "prompt_ru": "Russian sentence with _____ where the answer goes",
-  "prompt_en": "English translation of the full sentence",
-  "target_word": "the correct Russian word or ending that fills the blank",
-  "grammar_context": "brief description e.g. 'accusative singular masculine'",
-  "hint": "optional short hint, or empty string"
-}`,
+  // Build the weak topics instruction for grammar spotlight
+  const weakTopicsStr = weakTopics?.length
+    ? weakTopics.join(", ")
+    : null;
 
-    mc: `Generate a multiple-choice grammar question about ${topicTitle}.
-Return JSON with exactly these fields:
-{
-  "question": "The question to ask the student",
-  "context_ru": "A Russian example sentence or phrase to base the question on (optional, or empty string)",
-  "options": ["option A", "option B", "option C", "option D"],
-  "correct_index": 0,
-  "explanation": "Why the correct answer is right"
-}`,
+  const grammarInstruction = weakTopicsStr
+    ? `For grammar_spotlight: The student has shown weakness in: ${weakTopicsStr}.
+       FIRST try to find a sentence in the provided text that uses one of these structures.
+       If you find one, ask a specific concrete question about it (e.g. "What case is [word] in this sentence, and why?", "Why is the imperfective verb used here instead of perfective?", "Identify the [structure] in this sentence.").
+       If you cannot find a relevant sentence, instead give the student a short transformation exercise: provide a sentence in nominative/base form and ask them to rewrite it using one of their weak structures (e.g. "Rewrite this sentence putting [word] in the genitive case: ..."). Make the correct answer clear in correct_answer_guidance.`
+    : `For grammar_spotlight: Find any grammatically interesting sentence in the text. Ask a specific, concrete question about it — e.g. what case a noun is in and why, what aspect a verb is and why, what a specific ending signals. Never ask a vague "what structure is used" question.`;
 
-    translate: `Generate a translation exercise about ${topicTitle}.
-Alternate randomly between Russian→English and English→Russian.
-Return JSON with exactly these fields:
-{
-  "direction": "ru_to_en or en_to_ru",
-  "source": "The sentence to translate",
-  "target": "The correct translation",
-  "grammar_focus": "What grammar point this tests e.g. 'dative plural'",
-  "acceptable_alternatives": ["alternative correct answer if any, otherwise empty array"]
-}`,
+  const systemPrompt = `You are a Russian language comprehension question writer for a CEFR ${level} learner.
 
-    error: `Generate a spot-the-error exercise about ${topicTitle}.
-The student must identify the incorrect word/ending and provide the correction.
-Return JSON with exactly these fields:
-{
-  "sentence_ru": "A Russian sentence containing exactly one grammatical error",
-  "sentence_en": "English translation of what the sentence should mean",
-  "error_word": "The incorrect word as it appears in the sentence",
-  "correct_word": "The corrected form",
-  "explanation": "Why this is an error"
-}`,
+You are given: sampled paragraphs from a chapter, a chapter summary for context, and the book title.
+Generate exactly 6 questions based on the sampled text and summary.
 
-    transform: `Generate a transformation exercise about ${topicTitle}.
-The student is given a word/phrase and must transform it into a specified form.
-Return JSON with exactly these fields:
-{
-  "prompt": "Instruction e.g. 'Put the word in the genitive singular'",
-  "source_word": "The word to transform",
-  "source_context": "Brief context e.g. 'дом (house, masculine)'",
-  "target_word": "The correct transformed form",
-  "grammar_context": "What case/tense/form is required"
-}`,
-  };
+Generate questions of EXACTLY these types in this order: ${typeList}
 
-  const instructions = exerciseInstructions[exerciseType];
-  if (!instructions) {
-    return res.status(400).json({ error: "Unknown exercise type" });
-  }
+For each question return a JSON object with:
+- question_type_id: the numeric id provided
+- type: the type string
+- question: question text in English
 
-  const systemPrompt = `You are a Russian language teacher generating grammar exercises.
-Topic: ${topicTitle} (${topicId})
-CEFR level: ${cefrLevel || "A2"}
-Exercise type: ${exerciseType}
+Additional fields by type:
+- detail_recall: options (array of 4 strings), correct_index (0–3)
+- inference: correct_answer_guidance (what a correct answer contains — never shown to student)
+- vocabulary_in_context: quote the exact Russian word from the text in the question, options (4 strings), correct_index (0–3)
+- true_false: correct (boolean), explanation (shown after answering, 1 sentence)
+- character_motivation: correct_answer_guidance (1–2 sentences max)
+- sequence: sequence_items (array of exactly 4 event strings from the chapter), correct_order (array of indices 0–3). Only include if the chapter has clear sequential events; otherwise fall back to a second detail_recall.
+- grammar_spotlight: correct_answer_guidance (1–2 sentences: state the correct answer and briefly why). Quote the exact Russian sentence in the question field if using a text sentence. For transformation exercises, state the base sentence clearly in the question.
 
-Generate ONE exercise. Respond with ONLY valid JSON. No markdown fences. No explanation. No preamble.
-The exercise must directly test ${topicTitle} grammar — not vocabulary or translation skill in general.`;
+${grammarInstruction}
+
+All correct_answer_guidance fields must be 1–2 sentences maximum. They are used only for grading — never shown directly to the student.
+
+Respond ONLY with valid JSON: { "questions": [ ... ] }`;
+
+  const userContent = `Book: ${bookTitle || "Russian story"}
+Chapter: ${chapterNumber}
+Chapter summary: ${chapterSummary || "Not available"}
+
+Sampled paragraphs from this chapter:
+${sampledParagraphs.join("\n\n")}`;
 
   try {
     const response = await fetch("https://api.anthropic.com/v1/messages", {
       method: "POST",
       headers: {
         "Content-Type":      "application/json",
-        "x-api-key":         apiKey,
+        "x-api-key":         ANTHROPIC_KEY,
         "anthropic-version": "2023-06-01",
       },
       body: JSON.stringify({
-        model:      MODEL_HAIKU,
-        max_tokens: 600,
+        model:      MODEL_SONNET,
+        max_tokens: 2000,
         system:     systemPrompt,
-        messages:   [{ role: "user", content: instructions }],
+        messages:   [{ role: "user", content: userContent }],
       }),
     });
 
@@ -107,19 +92,15 @@ The exercise must directly test ${topicTitle} grammar — not vocabulary or tran
     }
 
     const data = await response.json();
-    const raw  = data.content?.[0]?.text?.trim() ?? "";
-    const cleaned = raw.replace(/^```json?\s*/i, "").replace(/```\s*$/i, "").trim();
-
-    let exercise;
+    const raw  = data?.content?.[0]?.text ?? "";
     try {
-      exercise = JSON.parse(cleaned);
+      const parsed = JSON.parse(raw.replace(/```json|```/g, "").trim());
+      return res.status(200).json(parsed);
     } catch {
-      return res.status(500).json({ error: "Failed to parse exercise JSON", raw });
+      return res.status(502).json({ error: "Could not parse model response" });
     }
-
-    return res.status(200).json({ exercise, exerciseType });
   } catch (err) {
-    console.error("grammar-freeplay-generate error:", err);
-    return res.status(500).json({ error: err.message });
+    console.error("generate-comprehension error:", err);
+    return res.status(500).json({ error: "Internal server error" });
   }
 }

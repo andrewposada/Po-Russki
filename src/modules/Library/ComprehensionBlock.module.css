@@ -56,12 +56,23 @@
   font-size: 11px; font-weight: 700; display: flex; align-items: center; justify-content: center; flex-shrink: 0;
 }
 .seqText { flex: 1; font-size: 13px; color: var(--c-text-mid); }
-.seqBtns { display: flex; gap: 4px; }
-.seqBtns button {
-  width: 24px; height: 24px; border-radius: 4px; border: 1px solid var(--c-border);
-  background: var(--c-bg-card); cursor: pointer; font-size: 11px; color: var(--c-text-mid);
+.dragHandle {
+  font-size: 16px;
+  color: var(--c-text-xlight);
+  cursor: grab;
+  flex-shrink: 0;
+  padding: 0 2px;
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
 }
-.seqBtns button:disabled { opacity: 0.3; cursor: default; }
+.dragHandle:active { cursor: grabbing; }
+
+.seqItemDragging {
+  opacity: 0.5;
+  background: var(--c-bg-deep);
+  border-color: var(--c-sage);
+}
 .seqSubmit {
   padding: 7px 14px; border-radius: 8px; border: none;
   background: var(--c-sage); color: #fff; font-size: 12px; font-weight: 600; cursor: pointer; align-self: flex-start;

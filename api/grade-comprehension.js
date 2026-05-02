@@ -38,7 +38,7 @@ score must be exactly 0, 0.5, or 1 (a number, not a string).
 Score 1: answer captures the key points in the guidance.
 Score 0.5: partially correct or vague but shows understanding.
 Score 0: incorrect or shows no comprehension.
-feedback must be in English, under 40 words, specific and encouraging.`,
+feedback must be in English. Maximum 1–2 sentences. If correct, confirm briefly (e.g. "Exactly right."). If incorrect, state only the key thing they missed. Never pad with encouragement.`,
         messages: [{
           role: "user",
           content: `Question: ${question}\n\nGuidance: ${correctAnswerGuidance || "N/A"}\n\nStudent answer: ${studentAnswer}`,

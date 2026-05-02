@@ -2,15 +2,62 @@
 import { useState, useEffect, useRef } from "react";
 import { useAuth } from "../../AuthContext";
 import { useAttemptTracker, ATTEMPT_SOURCES, COMPREHENSION_TYPE_TOPIC_MAP } from "../../hooks/useAttemptTracker";
+import { useProgress } from "../../context/ProgressContext";
 import { getAttempt, upsertAttempt, saveQuestions } from "../../storage";
 import { QUESTION_TYPES } from "../../constants";
 import { useSettings } from "../../context/SettingsContext";
 import { useRussianKeyboard } from "../../hooks/useRussianKeyboard";
 import styles from "./ComprehensionBlock.module.css";
 
+// ── Utilities ─────────────────────────────────────────────────────────────────
+
+function sampleParagraphs(content, count = 5) {
+  if (!content) return [];
+  const paras = content.split(/\n\n+/).map(p => p.trim()).filter(p => p.length > 40);
+  if (paras.length <= count) return paras;
+  // Always include first and last paragraph for context; sample rest randomly
+  const middle = paras.slice(1, -1);
+  const shuffled = middle.sort(() => Math.random() - 0.5).slice(0, count - 2);
+  return [paras[0], ...shuffled, paras[paras.length - 1]];
+}
+
+function getWeakTopics(latestReport) {
+  // latestReport.report_card.challenges is an array of { topic, trend, ... }
+  // We want the topic name strings for the 3 weakest
+  try {
+    const challenges = latestReport?.report_card?.challenges;
+    if (!Array.isArray(challenges) || challenges.length === 0) return [];
+    return challenges.slice(0, 3).map(c => c.topic).filter(Boolean);
+  } catch {
+    return [];
+  }
+}
+
+function getChapterSummary(book, chapterNum) {
+  try {
+    const outlines = book?.scaffold?.chapterOutlines;
+    if (!Array.isArray(outlines)) return "";
+    const outline = outlines.find(o => o.chapterNumber === chapterNum);
+    if (!outline) return "";
+    // Combine summary + characters + subplots into a compact string
+    const parts = [];
+    if (outline.summary)            parts.push(outline.summary);
+    if (outline.charactersPresent?.length)
+      parts.push(`Characters: ${outline.charactersPresent.join(", ")}`);
+    if (outline.subplotsAdvanced?.length)
+      parts.push(`Subplots: ${outline.subplotsAdvanced.join(", ")}`);
+    return parts.join(" | ");
+  } catch {
+    return "";
+  }
+}
+
+// ── Main component ────────────────────────────────────────────────────────────
+
 export default function ComprehensionBlock({ chapter, book, onDone }) {
   const { user } = useAuth();
   const { track, COMPREHENSION_TYPE_EXERCISE_MAP } = useAttemptTracker();
+  const { latestReport } = useProgress();
 
   const [questions, setQuestions] = useState(null);
   const [answers,   setAnswers]   = useState({});
@@ -41,25 +88,30 @@ export default function ComprehensionBlock({ chapter, book, onDone }) {
         setLoading(false);
         return;
       }
-      const selectedTypes = selectQuestionTypes();
+
+      const selectedTypes   = selectQuestionTypes();
+      const sampledParas    = sampleParagraphs(chapter.content, 5);
+      const chapterSummary  = getChapterSummary(book, chapter.chapter_num);
+      const weakTopics      = getWeakTopics(latestReport);
+
       const res = await fetch("/api/generate-comprehension", {
         method:  "POST",
         headers: { "Content-Type": "application/json" },
         body:    JSON.stringify({
-          chapterText:   chapter.content,
+          sampledParagraphs: sampledParas,
+          chapterSummary,
           chapterNumber: chapter.chapter_num,
           bookTitle:     book?.title,
           level:         book?.level || "B1",
           questionTypes: selectedTypes,
+          weakTopics,
         }),
       });
       const data = await res.json();
       if (!data.questions) throw new Error("No questions returned");
       setQuestions(data.questions);
-      // Save questions to chapters table (backup / fast path)
+
       await saveQuestions(user.uid, chapter.id, data.questions);
-      // Also create an attempt row immediately so getAttempt() finds
-      // the questions on any future visit, even with zero answers
       const newId = await upsertAttempt(user.uid, {
         chapterId: chapter.id,
         questions: data.questions,
@@ -75,29 +127,36 @@ export default function ComprehensionBlock({ chapter, book, onDone }) {
   }
 
   function selectQuestionTypes() {
-    const all      = [...QUESTION_TYPES];
-    const selected = [];
+    // Fixed slots: detail_recall, vocabulary_in_context, true_false, grammar_spotlight
+    // Variable slot 5: inference OR character_motivation (random, level-gated)
+    // Variable slot 6: sequence (if available) OR second detail_recall
+    const byType = Object.fromEntries(QUESTION_TYPES.map(q => [q.type, q]));
 
-    const gs  = all.find(q => q.type === "grammar_spotlight");
-    if (gs) selected.push(gs);
+    const selected = [
+      byType["detail_recall"],
+      byType["vocabulary_in_context"],
+      byType["true_false"],
+      byType["grammar_spotlight"],
+    ];
 
-    const vic = all.find(q => q.type === "vocabulary_in_context");
-    if (vic) selected.push(vic);
+    // Slot 5: higher-order free response
+    const higherOrder = book?.level >= "B1"
+      ? (Math.random() < 0.5 ? byType["inference"] : byType["character_motivation"])
+      : byType["inference"];
+    selected.push(higherOrder ?? byType["inference"]);
 
-    const freeTypes = all.filter(q => q.freeResponse && !selected.find(s => s.id === q.id));
-    if (freeTypes.length > 0)
-      selected.push(freeTypes[Math.floor(Math.random() * freeTypes.length)]);
+    // Slot 6: sequence if chapter outline mentions sequential events, else second detail_recall
+    const outline = book?.scaffold?.chapterOutlines?.find(
+      o => o.chapterNumber === chapter.chapter_num
+    );
+    const hasSequentialEvents = outline?.summary?.toLowerCase().includes("then") ||
+      outline?.summary?.toLowerCase().includes("after") ||
+      outline?.subplotsAdvanced?.length >= 2;
+    selected.push(hasSequentialEvents ? byType["sequence"] : byType["detail_recall"]);
 
-    const remaining = all.filter(q => !selected.find(s => s.id === q.id));
-    let tfCount = 0;
-    while (selected.length < 6 && remaining.length > 0) {
-      const idx  = Math.floor(Math.random() * remaining.length);
-      const pick = remaining.splice(idx, 1)[0];
-      if (pick.type === "true_false" && tfCount >= 2) continue;
-      if (pick.type === "true_false") tfCount++;
-      selected.push(pick);
-    }
-    return selected.map(q => ({ id: q.id, type: q.type, supports_free_response: q.freeResponse }));
+    return selected
+      .filter(Boolean)
+      .map(q => ({ id: q.id, type: q.type, supports_free_response: q.freeResponse }));
   }
 
   async function handleAnswerSubmit(qIdx, value) {
@@ -143,7 +202,6 @@ export default function ComprehensionBlock({ chapter, book, onDone }) {
     };
     setAnswers(updatedAnswers);
 
-    // Track the attempt — score: 1 = correct, 0.5 = partial, 0 = wrong, null = not yet graded
     const isCorrect = score === null ? false : score >= 0.5;
     track({
       sourceId:       ATTEMPT_SOURCES.COMPREHENSION,
@@ -237,10 +295,66 @@ function QuestionCard({ q, qIdx, answer, grading, onSubmit }) {
   const [seqOrder, setSeqOrder] = useState(() =>
     q.sequence_items ? q.sequence_items.map((_, i) => i) : []
   );
+  const [dragIdx, setDragIdx] = useState(null);
+  const touchStartY = useRef(null);
+  const touchDragIdx = useRef(null);
+
   const answered = !!answer;
   const { translitOn } = useSettings();
   const freeTextareaRef = useRef(null);
   useRussianKeyboard(freeTextareaRef, translitOn);
+
+  // ── Drag handlers (mouse) ──────────────────────────────────────────────
+  function handleDragStart(idx) {
+    setDragIdx(idx);
+  }
+
+  function handleDragOver(e, overIdx) {
+    e.preventDefault();
+    if (dragIdx === null || dragIdx === overIdx) return;
+    const next = [...seqOrder];
+    const [moved] = next.splice(dragIdx, 1);
+    next.splice(overIdx, 0, moved);
+    setSeqOrder(next);
+    setDragIdx(overIdx);
+  }
+
+  function handleDragEnd() {
+    setDragIdx(null);
+  }
+
+  // ── Touch handlers (mobile) ────────────────────────────────────────────
+  function handleTouchStart(e, idx) {
+    touchStartY.current  = e.touches[0].clientY;
+    touchDragIdx.current = idx;
+  }
+
+  function handleTouchMove(e) {
+    e.preventDefault();
+    if (touchDragIdx.current === null) return;
+    const y = e.touches[0].clientY;
+    // Find the element being hovered by y-position
+    const items = e.currentTarget.closest(`.${styles.sequenceList}`)
+      ?.querySelectorAll(`.${styles.seqItem}`);
+    if (!items) return;
+    let overIdx = touchDragIdx.current;
+    items.forEach((el, i) => {
+      const rect = el.getBoundingClientRect();
+      if (y >= rect.top && y <= rect.bottom) overIdx = i;
+    });
+    if (overIdx !== touchDragIdx.current) {
+      const next = [...seqOrder];
+      const [moved] = next.splice(touchDragIdx.current, 1);
+      next.splice(overIdx, 0, moved);
+      setSeqOrder(next);
+      touchDragIdx.current = overIdx;
+    }
+  }
+
+  function handleTouchEnd() {
+    touchDragIdx.current = null;
+    touchStartY.current  = null;
+  }
 
   return (
     <div className={`${styles.card} ${answered ? styles.cardAnswered : ""}`}>
@@ -286,34 +400,33 @@ function QuestionCard({ q, qIdx, answer, grading, onSubmit }) {
         </div>
       )}
 
-      {/* Sequence */}
+      {/* Sequence — drag to reorder */}
       {q.type === "sequence" && q.sequence_items && (
-        <div className={styles.sequenceList}>
+        <div
+          className={styles.sequenceList}
+          onTouchMove={!answered ? handleTouchMove : undefined}
+          onTouchEnd={!answered ? handleTouchEnd : undefined}
+        >
           {seqOrder.map((itemIdx, pos) => (
-            <div key={pos} className={styles.seqItem}>
+            <div
+              key={pos}
+              className={`${styles.seqItem} ${dragIdx === pos ? styles.seqItemDragging : ""}`}
+              draggable={!answered}
+              onDragStart={() => !answered && handleDragStart(pos)}
+              onDragOver={e => !answered && handleDragOver(e, pos)}
+              onDragEnd={handleDragEnd}
+              onTouchStart={e => !answered && handleTouchStart(e, pos)}
+            >
+              {!answered && (
+                <span className={styles.dragHandle} aria-hidden="true">⠿</span>
+              )}
               <span className={styles.seqNum}>{pos + 1}</span>
               <span className={styles.seqText}>{q.sequence_items[itemIdx]}</span>
-              {!answered && (
-                <div className={styles.seqBtns}>
-                  <button onClick={() => {
-                    if (pos === 0) return;
-                    const next = [...seqOrder];
-                    [next[pos-1], next[pos]] = [next[pos], next[pos-1]];
-                    setSeqOrder(next);
-                  }} disabled={pos === 0}>▲</button>
-                  <button onClick={() => {
-                    if (pos === seqOrder.length - 1) return;
-                    const next = [...seqOrder];
-                    [next[pos], next[pos+1]] = [next[pos+1], next[pos]];
-                    setSeqOrder(next);
-                  }} disabled={pos === seqOrder.length - 1}>▼</button>
-                </div>
-              )}
             </div>
           ))}
           {!answered && (
             <button className={styles.seqSubmit} onClick={() => onSubmit(seqOrder)}>
-              Submit order
+              Confirm order
             </button>
           )}
         </div>
@@ -350,8 +463,8 @@ function QuestionCard({ q, qIdx, answer, grading, onSubmit }) {
 
       {answered && answer.score != null && (
         <span className={`${styles.scoreBadge} ${
-          answer.score === 1 ? styles.scoreCorrect :
-          answer.score === 0 ? styles.scoreWrong   : styles.scorePartial
+          answer.score === 1   ? styles.scoreCorrect :
+          answer.score === 0   ? styles.scoreWrong   : styles.scorePartial
         }`}>
           {answer.score === 1 ? "✓ Correct" : answer.score === 0.5 ? "Partial" : "✗ Incorrect"}
         </span>
