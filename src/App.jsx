@@ -13,6 +13,7 @@ import Home from "./modules/Home/Home";
 import LibraryShelf from "./modules/Library/LibraryShelf";
 import BookReader from "./modules/Library/BookReader";
 import styles from "./app.module.css";
+import { useProgress } from "./context/ProgressContext";
 import { SettingsProvider }  from "./context/SettingsContext";
 import { ProgressProvider }  from "./context/ProgressContext";
 
@@ -50,9 +51,47 @@ function AppShell() {
 
 // Night mode is now handled entirely via data-night on <html> in SettingsContext.
 // AppContent no longer needs to read nightMode at all.
+function ReportReadyBanner() {
+  const { reportReady, dismissBanner } = useProgress();
+  if (!reportReady) return null;
+  return (
+    <div style={{
+      background: "#7a9e7e",
+      color: "#ffffff",
+      fontSize: 13,
+      fontWeight: 500,
+      padding: "9px 16px",
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "space-between",
+      gap: 12,
+      fontFamily: "system-ui, sans-serif",
+    }}>
+      <span>📊 Your report card is ready — tap Progress to view it.</span>
+      <button
+        onClick={dismissBanner}
+        style={{
+          background: "rgba(255,255,255,0.25)",
+          border: "none",
+          borderRadius: 99,
+          color: "#ffffff",
+          fontSize: 12,
+          padding: "3px 10px",
+          cursor: "pointer",
+          fontFamily: "system-ui, sans-serif",
+          flexShrink: 0,
+        }}
+      >
+        Dismiss
+      </button>
+    </div>
+  );
+}
+
 function AppContent() {
   return (
     <div className={styles.appRoot}>
+      <ReportReadyBanner />
       <AppShell />
       <main className={styles.main}>
         <Routes>

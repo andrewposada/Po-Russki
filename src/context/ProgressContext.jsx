@@ -16,9 +16,10 @@ const PROGRESS_REPORT_VERSION = "1.0";
 export function ProgressProvider({ children }) {
   const { user } = useAuth();
 
-  const [latestReport,    setLatestReport]    = useState(null);  // the report JSON
-  const [reportReady,     setReportReady]      = useState(false); // banner trigger
+ const [latestReport,    setLatestReport]    = useState(null);
+  const [reportReady,     setReportReady]      = useState(false);
   const [checkComplete,   setCheckComplete]   = useState(false);
+  const [newAttemptCount, setNewAttemptCount] = useState(0);
   const hasCheckedRef = useRef(false);
 
   useEffect(() => {
@@ -53,6 +54,8 @@ export function ProgressProvider({ children }) {
       const since = lastReportDate ?? new Date(0).toISOString();
       const newAttempts = await getRecentAttempts(userId, 60);
       const attemptsSinceLast = newAttempts.filter(a => a.attempted_at >= since);
+
+      setNewAttemptCount(attemptsSinceLast.length);
 
       if (attemptsSinceLast.length < MIN_NEW_ATTEMPTS) {
         console.log(`Progress check: insufficient data (${attemptsSinceLast.length} new attempts, need ${MIN_NEW_ATTEMPTS})`);
@@ -107,7 +110,7 @@ export function ProgressProvider({ children }) {
   }
 
   return (
-    <ProgressContext.Provider value={{ latestReport, reportReady, dismissBanner, checkComplete }}>
+    <ProgressContext.Provider value={{ latestReport, reportReady, dismissBanner, checkComplete, newAttemptCount }}>
       {children}
     </ProgressContext.Provider>
   );
