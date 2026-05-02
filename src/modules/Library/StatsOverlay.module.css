@@ -93,8 +93,6 @@
   font-family: var(--font-ui);
   font-size: 13px;
   color: var(--c-text-dark);
-  top: v-bind(tooltip?.y + 'px');  /* Note: see positioning note below */
-  left: v-bind(tooltip?.x + 'px');
 }
 
 .wpmTooltipTitle {

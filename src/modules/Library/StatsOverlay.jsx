@@ -186,7 +186,10 @@ export default function StatsOverlay({ book, onClose }) {
                           <div
                             className={styles.wpmTooltip}
                             ref={tooltipRef}
-                            style={{ top: tooltip.y + 12, left: tooltip.x - 110 }}
+                            style={{
+                              top:  Math.min(tooltip.y + 12, window.innerHeight - 200),
+                              left: Math.min(Math.max(tooltip.x - 110, 8), window.innerWidth - 238),
+                            }}
                           >
                             <div className={styles.wpmTooltipTitle}>{book.level} Reading Speed</div>
                             <div className={styles.wpmTooltipRow}>
