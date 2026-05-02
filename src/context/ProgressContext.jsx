@@ -5,6 +5,7 @@ import { createContext, useContext, useState, useEffect, useRef } from "react";
 import { useAuth } from "../AuthContext";
 import { getProgressReports, saveProgressReport, getRecentAttempts } from "../storage";
 import { buildProgressSnapshot } from "../utils/progressAggregator";
+import { getCefrLevel, saveCefrLevel } from "../storage";
 
 const ProgressContext = createContext(null);
 
@@ -20,6 +21,7 @@ export function ProgressProvider({ children }) {
   const [reportReady,     setReportReady]      = useState(false);
   const [checkComplete,   setCheckComplete]   = useState(false);
   const [newAttemptCount, setNewAttemptCount] = useState(0);
+  const [cefrLevel,       setCefrLevel]       = useState("A1");
   const hasCheckedRef = useRef(false);
 
   useEffect(() => {
@@ -71,8 +73,11 @@ export function ProgressProvider({ children }) {
       }
 
       // 4. Build snapshot
-      const snapshot = await buildProgressSnapshot(userId, lastReportDate);
-      if (snapshot.insufficientData) {
+      // Load current CEFR level before building snapshot
+      const { cefr_level: currentCefrLevel } = await getCefrLevel(user.uid);
+      setCefrLevel(currentCefrLevel);
+
+      const snapshot = await buildProgressSnapshot(user.uid, lastReportDate, currentCefrLevel);      if (snapshot.insufficientData) {
         console.log("Progress check: aggregator returned insufficient data");
         setCheckComplete(true);
         return;
@@ -90,14 +95,20 @@ export function ProgressProvider({ children }) {
 
       // 6. Save to Supabase
       await saveProgressReport(userId, {
-        snapshot,
-        report,
-        reportVersion: PROGRESS_REPORT_VERSION,
-      });
+          snapshot,
+          report,
+          reportVersion: PROGRESS_REPORT_VERSION,
+        });
 
-      setLatestReport(report);
-      setReportReady(true);
-      console.log("Progress check: report generated successfully");
+        // Advance CEFR level if aggregator determined eligibility
+        if (snapshot.cefr_advance_to) {
+          await saveCefrLevel(user.uid, snapshot.cefr_advance_to);
+          setCefrLevel(snapshot.cefr_advance_to);
+        }
+
+        setLatestReport(report);
+        setReportReady(true);
+        console.log("Progress check: report generated successfully");
     } catch (err) {
       console.warn("Progress check failed:", err.message);
     } finally {
@@ -110,7 +121,7 @@ export function ProgressProvider({ children }) {
   }
 
   return (
-    <ProgressContext.Provider value={{ latestReport, reportReady, dismissBanner, checkComplete, newAttemptCount }}>
+    <ProgressContext.Provider value={{ latestReport, reportReady, dismissBanner, checkComplete, newAttemptCount, cefrLevel }}>
       {children}
     </ProgressContext.Provider>
   );

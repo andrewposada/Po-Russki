@@ -1,7 +1,8 @@
 // src/components/ProgressOverlay/ProgressOverlay.jsx
 import { useState, useRef, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
-import { useProgress } from "../../context/ProgressContext";
+import { useProgress }    from "../../context/ProgressContext";
+import { CEFR_THRESHOLDS, CEFR_LEVELS } from "../../constants/cefrThresholds";
 import { insertLesson } from "../../storage";
 import { useAuth } from "../../AuthContext";
 import styles from "./ProgressOverlay.module.css";
@@ -98,12 +99,96 @@ function EmptyIllustration() {
   );
 }
 
+// ── CEFR Progress Section ─────────────────────────────────────────────────────
+
+function CefrProgressSection({ cefrLevel, report, rc }) {
+  const currentIdx  = CEFR_LEVELS.indexOf(cefrLevel);
+  const nextLevel   = currentIdx < CEFR_LEVELS.length - 1 ? CEFR_LEVELS[currentIdx + 1] : null;
+  const thresholds  = nextLevel ? CEFR_THRESHOLDS[nextLevel] : null;
+  const currentDef  = CEFR_THRESHOLDS[cefrLevel] ?? CEFR_THRESHOLDS["A1"];
+
+  if (!thresholds) {
+    return (
+      <div className={styles.section}>
+        <p className={styles.sectionLabel}>CEFR level</p>
+        <div className={styles.cefrCard}>
+          <div className={styles.cefrHeaderRow}>
+            <span className={styles.cefrBadge}>{cefrLevel}</span>
+            <span className={styles.cefrDesc}>{currentDef.description}</span>
+          </div>
+          <p className={styles.cefrMaxNote}>You've reached the highest tracked level.</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Build progress bars toward next level
+  const grammarPct = thresholds.grammar_accuracy > 0
+    ? Math.min(100, Math.round(((rc.grammar_accuracy ?? 0) / thresholds.grammar_accuracy) * 100))
+    : 100;
+  const vocabPct = thresholds.vocab_tier2_plus > 0
+    ? Math.min(100, Math.round(((rc.vocab_tier2_plus_count ?? 0) / thresholds.vocab_tier2_plus) * 100))
+    : 100;
+  const readingPct = thresholds.reading_comp
+    ? Math.min(100, Math.round((((rc.reading_comprehension ?? 0)) / thresholds.reading_comp) * 100))
+    : null;
+  const consistPct = thresholds.consistency_min
+    ? Math.min(100, Math.round(((rc.consistency_score ?? 0) / thresholds.consistency_min) * 100))
+    : null;
+
+  const bars = [
+    { label: `Grammar (${rc.grammar_accuracy ?? 0}% / ${thresholds.grammar_accuracy}% needed)`, pct: grammarPct, color: "#b07c5a" },
+    { label: `Vocabulary (${rc.vocab_tier2_plus_count ?? 0} / ${thresholds.vocab_tier2_plus} words needed)`, pct: vocabPct, color: "#7a9e7e" },
+    readingPct !== null ? { label: `Reading (${rc.reading_data_sufficient ? `${rc.reading_comprehension ?? 0}%` : "no data"} / ${thresholds.reading_comp}% needed)`, pct: rc.reading_data_sufficient ? readingPct : 0, color: "#7aaec8" } : null,
+    consistPct !== null ? { label: `Consistency (${rc.consistency_score ?? 0} / ${thresholds.consistency_min} needed)`, pct: consistPct, color: "#9a7ec8" } : null,
+  ].filter(Boolean);
+
+  const advancementReady = !!report.cefr_advance_to;
+
+  return (
+    <div className={styles.section}>
+      <p className={styles.sectionLabel}>CEFR level</p>
+      <div className={styles.cefrCard}>
+        <div className={styles.cefrHeaderRow}>
+          <span className={styles.cefrBadge}>{cefrLevel}</span>
+          <span className={styles.cefrArrow}>→</span>
+          <span className={`${styles.cefrBadge} ${styles.cefrBadgeNext}`}>{nextLevel}</span>
+        </div>
+
+        {report.cefr_commentary && (
+          <p className={styles.cefrCommentary}>{report.cefr_commentary}</p>
+        )}
+
+        <div className={styles.cefrBars}>
+          {bars.map((bar, i) => (
+            <div key={i} className={styles.cefrBarRow}>
+              <span className={styles.cefrBarLabel}>{bar.label}</span>
+              <div className={styles.cefrBarTrack}>
+                <div
+                  className={styles.cefrBarFill}
+                  style={{ width: `${bar.pct}%`, background: bar.color }}
+                />
+              </div>
+            </div>
+          ))}
+        </div>
+
+        {advancementReady && (
+          <div className={styles.cefrAdvanceBanner}>
+            🎯 Your data shows you may be ready to advance to {nextLevel}. Keep it up!
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
 // ── Main component ─────────────────────────────────────────────────────────────
 
 export default function ProgressOverlay({ onClose }) {
   const navigate  = useNavigate();
   const { user }  = useAuth();
-  const { latestReport, checkComplete, newAttemptCount } = useProgress();
+  const { latestReport, checkComplete, newAttemptCount, cefrLevel } = useProgress();
 
   // Lesson brief modal state — inline to avoid focus issues
   const [briefOpen,    setBriefOpen]    = useState(false);
@@ -346,25 +431,33 @@ export default function ProgressOverlay({ onClose }) {
                   {rc.vocab_retention != null && (
                     <div className={styles.statPill}>
                       <span className={styles.statVal}>{rc.vocab_retention}%</span>
-                      <span className={styles.statLbl}>Vocabulary</span>
+                      <span className={styles.statLbl}>Vocab</span>
                       <div className={styles.statBar}>
                         <div className={styles.statBarFill} style={{ width: `${rc.vocab_retention}%` }} />
                       </div>
                     </div>
                   )}
-                  {rc.reading_comprehension != null && (
-                    <div className={styles.statPill}>
-                      <span className={styles.statVal}>{rc.reading_comprehension}%</span>
-                      <span className={styles.statLbl}>Reading</span>
-                      <div className={styles.statBar}>
-                        <div className={styles.statBarFill} style={{ width: `${rc.reading_comprehension}%`, background: "#7aaec8" }} />
-                      </div>
-                    </div>
-                  )}
+                  <div className={styles.statPill}>
+                    {rc.reading_data_sufficient && rc.reading_comprehension != null ? (
+                      <>
+                        <span className={styles.statVal}>{rc.reading_comprehension}%</span>
+                        <span className={styles.statLbl}>Reading</span>
+                        <div className={styles.statBar}>
+                          <div className={styles.statBarFill} style={{ width: `${rc.reading_comprehension}%`, background: "#7aaec8" }} />
+                        </div>
+                      </>
+                    ) : (
+                      <>
+                        <span className={styles.statVal} style={{ fontSize: 13, color: "var(--c-text-light)" }}>—</span>
+                        <span className={styles.statLbl}>Reading</span>
+                        <span className={styles.statNote}>needs 3+ sessions</span>
+                      </>
+                    )}
+                  </div>
                   {rc.consistency_score != null && (
                     <div className={styles.statPill}>
                       <span className={styles.statVal}>{rc.consistency_score}/10</span>
-                      <span className={styles.statLbl}>Consistency</span>
+                      <span className={styles.statLbl}>Streak</span>
                       <div className={styles.statBar}>
                         <div className={styles.statBarFill} style={{ width: `${rc.consistency_score * 10}%`, background: "#9a7ec8" }} />
                       </div>
@@ -463,6 +556,13 @@ export default function ProgressOverlay({ onClose }) {
                     <p className={styles.milestoneText}>"{report.next_milestone}"</p>
                   </div>
                 )}
+
+                {/* CEFR progress */}
+                <CefrProgressSection
+                  cefrLevel={cefrLevel}
+                  report={report}
+                  rc={rc}
+                />
 
                 {/* History — from prior_reports in the report JSON */}
                 {report.prior_reports?.length > 0 && (

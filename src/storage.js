@@ -949,3 +949,25 @@ export async function getRecentAttempts(userId, days = 60) {
   if (error) { console.error("getRecentAttempts:", error); return []; }
   return data ?? [];
 }
+
+// ── CEFR level ─────────────────────────────────────────────────────────────
+
+export async function getCefrLevel(userId) {
+  const { data, error } = await supabase
+    .from("user_settings")
+    .select("cefr_level, cefr_updated_at")
+    .eq("user_id", userId)
+    .maybeSingle();
+  if (error) { console.error("getCefrLevel:", error); return { cefr_level: "A1", cefr_updated_at: null }; }
+  return { cefr_level: data?.cefr_level ?? "A1", cefr_updated_at: data?.cefr_updated_at ?? null };
+}
+
+export async function saveCefrLevel(userId, level) {
+  const { error } = await supabase
+    .from("user_settings")
+    .upsert(
+      { user_id: userId, cefr_level: level, cefr_updated_at: new Date().toISOString() },
+      { onConflict: "user_id" }
+    );
+  if (error) console.error("saveCefrLevel:", error);
+}

@@ -1,12 +1,12 @@
 // api/progress-report.js
 // Progress analysis pipeline.
-// Step 1: Haiku compresses raw wrong pairs + feedback summaries into patterns.
-// Step 2: Sonnet receives the full snapshot + Haiku patterns and returns a report.
+// Step 1: Haiku compresses wrong pairs (CSV in) → error patterns (CSV out).
+// Step 2: Sonnet receives computed scores + CSV context → qualitative report only.
 //
-// POST body: { userId, snapshot }
+// POST body: { snapshot }
 //   snapshot: output of progressAggregator.buildProgressSnapshot()
 //
-// Returns: structured report JSON (see schema in response)
+// Returns: { report } — merged object of computed_scores + Sonnet commentary
 
 export const config = { maxDuration: 45 };
 
@@ -20,11 +20,32 @@ export default async function handler(req, res) {
   if (!snapshot) return res.status(400).json({ error: "Missing snapshot" });
 
   try {
-    // ── Step 1: Haiku — compress wrong pairs + feedback into patterns ────────
     const haikuPatterns = await runHaikuCompression(snapshot);
+    const sonnetReport  = await runSonnetAnalysis(snapshot, haikuPatterns);
 
-    // ── Step 2: Sonnet — full pedagogical analysis ───────────────────────────
-    const report = await runSonnetAnalysis(snapshot, haikuPatterns);
+    // Merge: computed_scores is ground truth, Sonnet fills commentary fields
+    const report = {
+      report_card: {
+        overall_grade:           snapshot.computed_scores.overall_grade,
+        grammar_accuracy:        snapshot.computed_scores.grammar_accuracy,
+        vocab_retention:         snapshot.computed_scores.vocab_retention,
+        reading_comprehension:   snapshot.computed_scores.reading_comprehension,
+        reading_data_sufficient: snapshot.computed_scores.reading_data_sufficient,
+        consistency_score:       snapshot.computed_scores.consistency_score,
+        weighted_average:        snapshot.computed_scores.weighted_average,
+        vocab_tier2_plus_count:  snapshot.computed_scores.vocab_tier2_plus,
+        trend:                   sonnetReport.trend          ?? "stable",
+        level_estimate:          sonnetReport.level_estimate ?? snapshot.current_cefr_level,
+      },
+      summary:              sonnetReport.summary              ?? "",
+      strengths:            sonnetReport.strengths            ?? [],
+      challenges:           sonnetReport.challenges           ?? [],
+      struggling_words:     sonnetReport.struggling_words     ?? [],
+      reading_note:         sonnetReport.reading_note         ?? null,
+      next_milestone:       sonnetReport.next_milestone       ?? null,
+      recommend_level_review: sonnetReport.recommend_level_review ?? false,
+      cefr_advance_to:      snapshot.cefr_advance_to,
+    };
 
     return res.json({ report });
   } catch (err) {
@@ -33,28 +54,18 @@ export default async function handler(req, res) {
   }
 }
 
-// ── Haiku compression ─────────────────────────────────────────────────────────
+// ── Haiku compression ──────────────────────────────────────────────────────────
 
 async function runHaikuCompression(snapshot) {
-  const { wrong_pairs, feedback_summaries } = snapshot;
+  const { wrong_pairs_csv, feedback_summaries } = snapshot;
 
-  // If nothing to compress, skip the call
-  if (wrong_pairs.length === 0 && feedback_summaries.length === 0) {
-    return { grammar_patterns: [], vocabulary_patterns: [], qualitative_patterns: [] };
+  if (!wrong_pairs_csv && (!feedback_summaries || feedback_summaries.length === 0)) {
+    return "";
   }
 
-  // Group wrong pairs by topic_id for readability
-  const byTopic = {};
-  for (const p of wrong_pairs) {
-    const key = String(p.topic_id ?? "unknown");
-    if (!byTopic[key]) byTopic[key] = [];
-    byTopic[key].push({ wrote: p.wrote, correct: p.correct });
-  }
-
-  const inputText = JSON.stringify({
-    wrong_pairs_by_topic: byTopic,
-    free_response_feedback: feedback_summaries,
-  });
+  const feedbackBlock = feedback_summaries?.length
+    ? "\n\nFREE RESPONSE FEEDBACK:\n" + feedback_summaries.join("\n")
+    : "";
 
   const response = await fetch("https://api.anthropic.com/v1/messages", {
     method: "POST",
@@ -65,75 +76,68 @@ async function runHaikuCompression(snapshot) {
     },
     body: JSON.stringify({
       model:      MODEL_HAIKU,
-      max_tokens: 800,
-      system: `You are a Russian language learning data analyst.
-Your ONLY job is to organize and compress student error data into a clean structured summary.
-Do NOT make teaching recommendations. Do NOT filter anything out.
-Be precise with linguistic terminology.
-Output ONLY valid JSON — no preamble, no markdown fences.`,
+      max_tokens: 600,
+      system: `You are a Russian language error analyst.
+Compress student error data into a brief CSV summary.
+Do NOT make recommendations. Do NOT filter errors out. Be precise with linguistic terms.
+Output ONLY the CSV — no preamble, no explanation, no markdown.`,
       messages: [{
         role: "user",
-        content: `Analyze these student errors and feedback. Return ONLY this JSON structure:
-{
-  "grammar_patterns": [
-    {
-      "topic_id": <number — the topic_id from the input>,
-      "pattern": "<precise linguistic description of what errors have in common>",
-      "example_errors": [{"wrote": "<string>", "correct": "<string>"}],
-      "severity": "high|medium|low — based only on frequency and consistency"
-    }
-  ],
-  "vocabulary_patterns": [
-    {
-      "topic_id": <number or null>,
-      "pattern": "<what errors reveal about lexical understanding>",
-      "example_errors": [{"wrote": "<string>", "correct": "<string>"}],
-      "severity": "high|medium|low"
-    }
-  ],
-  "qualitative_patterns": [
-    {
-      "source": "free_response",
-      "pattern": "<recurring theme from feedback summaries>",
-      "severity": "high|medium|low"
-    }
-  ]
-}
+        content: `Student wrong answers (topic,wrote,correct):
+${wrong_pairs_csv}${feedbackBlock}
 
-INPUT DATA:
-${inputText}`,
+Output a CSV summarizing error patterns. Format:
+topic,pattern,severity,example_wrote,example_correct
+One row per distinct error pattern. severity = high/medium/low based on frequency.
+Combine minor variations of the same pattern into one row.`,
       }],
     }),
   });
 
   const data = await response.json();
-  const raw  = data?.content?.[0]?.text ?? "{}";
-  try {
-    return JSON.parse(raw.replace(/```json|```/g, "").trim());
-  } catch {
-    return { grammar_patterns: [], vocabulary_patterns: [], qualitative_patterns: [] };
-  }
+  return data?.content?.[0]?.text?.trim() ?? "";
 }
 
-// ── Sonnet analysis ───────────────────────────────────────────────────────────
+// ── Sonnet analysis ────────────────────────────────────────────────────────────
 
-async function runSonnetAnalysis(snapshot, haikuPatterns) {
-  // Build a clean input — strip wrong_pairs and feedback_summaries (already processed by Haiku)
+async function runSonnetAnalysis(snapshot, haikuPatternsCsv) {
   const {
-    wrong_pairs,
-    feedback_summaries,
-    accuracy_by_topic,
-    ...cleanSnapshot
+    computed_scores,
+    current_cefr_level,
+    cefr_advance_to,
+    topic_breakdown_csv,
+    prior_reports_csv,
+    prior_summaries,
+    completed_lessons,
+    reading_sessions_in_period,
   } = snapshot;
 
-  // Include accuracy_by_topic but without wrong_pairs per topic
-  const topicsForSonnet = accuracy_by_topic.map(({ wrong_pairs: _wp, ...rest }) => rest);
+  // Build the CEFR next-level summary for Sonnet commentary
+  // We tell Sonnet what level the user is at and what they need for the next level
+  // without sending the full thresholds object (too verbose)
+  const cefrContext = buildCefrContext(current_cefr_level, computed_scores, cefr_advance_to);
 
-  const sonnetInput = JSON.stringify({
-    ...cleanSnapshot,
-    accuracy_by_topic: topicsForSonnet,
-    error_patterns:    haikuPatterns,
-  });
+  const input = `COMPUTED SCORES (ground truth — do not recalculate):
+grade:${computed_scores.overall_grade} weighted_avg:${computed_scores.weighted_average}% grammar:${computed_scores.grammar_accuracy}% vocab_retention:${computed_scores.vocab_retention}% reading:${computed_scores.reading_comprehension ?? "no_data"} consistency:${computed_scores.consistency_score}/10 streak:${computed_scores.current_streak}days
+
+READING: ${computed_scores.reading_data_sufficient ? `${computed_scores.reading_session_count} sessions, ${computed_scores.reading_comprehension}% accuracy` : `insufficient data (${computed_scores.reading_session_count} sessions, need 3)`}
+
+TOPIC BREAKDOWN (topic,accuracy,attempts,bucket):
+${topic_breakdown_csv}
+
+ERROR PATTERNS (topic,pattern,severity,example_wrote,example_correct):
+${haikuPatternsCsv || "none"}
+
+CEFR:
+${cefrContext}
+
+PRIOR REPORTS (date,grade,grammar,vocab,consistency):
+${prior_reports_csv || "none"}
+
+PRIOR SUMMARIES:
+${prior_summaries.join("\n---\n") || "none"}
+
+LESSONS COMPLETED: ${completed_lessons.length} core lessons`;
 
   const response = await fetch("https://api.anthropic.com/v1/messages", {
     method: "POST",
@@ -146,70 +150,97 @@ async function runSonnetAnalysis(snapshot, haikuPatterns) {
       model:      MODEL_SONNET,
       max_tokens: 1200,
       system: `You are an experienced Russian language teacher reviewing a student's progress data.
-Write as if speaking directly and warmly to the student.
-Be specific — reference actual topics and patterns from the data.
-Do not mention data, analytics, or AI. Sound like a teacher who has been watching their progress.
+Write warmly and directly to the student. Be specific — reference actual topics and error patterns.
+Do not mention data, AI, or analytics. Sound like a teacher who has been watching their progress.
+
+CRITICAL: The grade, all percentage scores, and consistency score are pre-calculated and given to you as ground truth.
+Do NOT recalculate, adjust, or contradict any numeric score. Your job is to explain and enrich these numbers, not produce them.
+
 Output ONLY valid JSON — no preamble, no markdown fences.
 
 ACTION ROUTE RULES — use exactly these formats:
-- Grammar freeplay targeted: /grammar/freeplay?topics=TOPIC_ID
-- Vocabulary session (SRS): /vocabulary/session
-- Library (reading): /library
+- Grammar freeplay targeted: /grammar/freeplay?topics=TOPIC_ID (use the numeric topic ID)
+- Vocabulary session: /vocabulary/session
+- Library: /library
 - Specific lesson: /lessons/play/LESSON_ID
-- Assignments queue: /lessons/assignments`,
+- Assignments: /lessons/assignments`,
       messages: [{
         role: "user",
-        content: `Review this student's progress data and return a report.
+        content: `Review this student's data and return a report.
 
-STUDENT DATA:
-${sonnetInput}
+${input}
 
-Return ONLY this JSON structure:
+Return ONLY this JSON:
 {
-  "report_card": {
-    "overall_grade": "<letter grade A through F with + or ->",
-    "trend": "improving|stable|declining",
-    "consistency_score": <1-10 integer>,
-    "grammar_accuracy": <0-100 integer — overall from accuracy_by_topic>,
-    "vocab_retention": <0-100 integer — from vocab_snapshot.srs_accuracy, or null if no data>,
-    "reading_comprehension": <0-100 integer — from comprehension_stats, or null if no data>,
-    "level_estimate": "<e.g. solid A2, approaching B1>"
-  },
-  "summary": "<3-5 sentences spoken directly to the student. Teacher voice. Cover overall trajectory, what is going well, what needs attention.>",
+  "trend": "improving|stable|declining",
+  "level_estimate": "<where they sit within their current CEFR level, e.g. 'mid A2' or 'approaching B1'>",
+  "summary": "<3-5 sentences to the student. Teacher voice. Cover trajectory, strengths, what needs work. Reference their grade naturally.>",
   "strengths": [
-    { "topic": "<string>", "comment": "<1-2 sentences, specific and genuine>" }
+    { "topic": "<string>", "comment": "<1-2 sentences, specific>" }
   ],
   "challenges": [
     {
       "topic": "<string>",
       "comment": "<2-3 sentences. What the pattern is, why it matters, what to focus on.>",
-      "action": {
-        "label": "<short button label e.g. Drill it now>",
-        "route": "<exact route from ACTION ROUTE RULES>"
-      },
+      "action": { "label": "<short label>", "route": "<exact route>" },
       "lesson_brief": {
         "title": "<string>",
         "focus": "<1 sentence>",
-        "prompt_for_opus": "<2-3 sentence brief the student pastes into Claude Opus to generate a lesson JSON>"
+        "prompt_for_opus": "<2-3 sentence brief to paste into Claude Opus to generate a lesson JSON>"
       }
     }
   ],
-  "struggling_words": ["<word>"],
-  "reading_note": "<string or null — only if reading data warrants a comment>",
-  "next_milestone": "<1 sentence about what unlocking next looks like for this student>"
+  "struggling_words": ["<Russian word>"],
+  "reading_note": "<string or null — comment on reading. If insufficient data, explain what practicing in the Library would do for their grade.>",
+  "next_milestone": "<1 sentence about what the next concrete improvement looks like>",
+  "cefr_commentary": "<2-3 sentences about where they stand in their current CEFR level and what the clearest gap is to the next level>",
+  "recommend_level_review": <true if data strongly suggests readiness to advance CEFR level, false otherwise>
 }
 
 RULES:
 - Maximum 3 challenges, ranked by impact
-- lesson_brief only if a targeted lesson would genuinely help — not required on every challenge
-- struggling_words: list specific Russian words from wrong_pairs that appear multiple times — empty array if none
-- Only comment on reading if there is reading data or a notable absence of it
-- Keep summary and comments natural — no bullet points, no technical jargon`,
+- lesson_brief only if a targeted lesson would genuinely help — omit if not
+- struggling_words: specific Russian words from error patterns that appear multiple times — empty array if none
+- trend: compare current scores to prior_reports if available; otherwise "stable"
+- If reading is insufficient, reading_note should explain the grade impact warmly
+- No bullet points in text fields`,
       }],
     }),
   });
 
   const data = await response.json();
   const raw  = data?.content?.[0]?.text ?? "{}";
-  return JSON.parse(raw.replace(/```json|```/g, "").trim());
+  try {
+    return JSON.parse(raw.replace(/```json|```/g, "").trim());
+  } catch {
+    return { trend: "stable", summary: "", strengths: [], challenges: [], struggling_words: [] };
+  }
+}
+
+// ── CEFR context builder ───────────────────────────────────────────────────────
+
+function buildCefrContext(currentLevel, computedScores, cefrAdvanceTo) {
+  const levelMap = {
+    A1: { next: "A2", grammarNeed: 65, vocabNeed: 500,  readNeed: 50,  topicsNeed: 6  },
+    A2: { next: "B1", grammarNeed: 70, vocabNeed: 1200, readNeed: 60,  topicsNeed: 10 },
+    B1: { next: "B2", grammarNeed: 78, vocabNeed: 2500, readNeed: 72,  topicsNeed: 15 },
+    B2: { next: null, grammarNeed: null, vocabNeed: null, readNeed: null, topicsNeed: null },
+  };
+  const info = levelMap[currentLevel] ?? levelMap["A1"];
+
+  let lines = [`current_level:${currentLevel}`];
+  if (info.next) {
+    lines.push(`next_level:${info.next}`);
+    lines.push(`grammar_gap:${computedScores.grammar_accuracy}%_of_${info.grammarNeed}%_needed`);
+    lines.push(`vocab_gap:${computedScores.vocab_tier2_plus}_of_${info.vocabNeed}_words_needed`);
+    if (info.readNeed) {
+      const readVal = computedScores.reading_data_sufficient ? `${computedScores.reading_comprehension}%` : "no_data";
+      lines.push(`reading_gap:${readVal}_of_${info.readNeed}%_needed`);
+    }
+    lines.push(`reliable_topics:${computedScores.reliable_topics}_of_${info.topicsNeed}_needed`);
+    if (cefrAdvanceTo) lines.push(`advancement_eligible:true`);
+  } else {
+    lines.push("at_maximum_tracked_level");
+  }
+  return lines.join(" | ");
 }

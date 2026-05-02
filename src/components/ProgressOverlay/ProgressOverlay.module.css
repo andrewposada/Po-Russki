@@ -785,3 +785,115 @@
   .statRow { grid-template-columns: repeat(2, 1fr); }
   .body { max-height: 72vh; }
 }
+
+/* ── Stat note (reading insufficient) ── */
+.statNote {
+  display: block;
+  font-size: 9px;
+  color: var(--c-text-xlight);
+  margin-top: 2px;
+  line-height: 1.2;
+}
+
+/* ── CEFR progress section ── */
+.cefrCard {
+  background: var(--c-bg-card);
+  border: 1px solid var(--c-border);
+  border-radius: var(--radius-md);
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.cefrHeaderRow {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.cefrBadge {
+  font-family: Georgia, serif;
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--c-text-dark);
+  background: var(--c-bg-panel);
+  border: 1px solid var(--c-border);
+  border-radius: var(--radius-sm);
+  padding: 2px 10px;
+  line-height: 1.5;
+}
+
+.cefrBadgeNext {
+  color: var(--c-text-light);
+  background: transparent;
+  border-style: dashed;
+}
+
+.cefrArrow {
+  color: var(--c-text-xlight);
+  font-size: 16px;
+}
+
+.cefrDesc {
+  font-size: 12px;
+  color: var(--c-text-light);
+  line-height: 1.4;
+  flex: 1;
+}
+
+.cefrCommentary {
+  font-size: 13px;
+  color: var(--c-text-mid);
+  line-height: 1.55;
+  margin: 0;
+  font-style: italic;
+}
+
+.cefrBars {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.cefrBarRow {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.cefrBarLabel {
+  font-size: 11px;
+  color: var(--c-text-light);
+  line-height: 1;
+}
+
+.cefrBarTrack {
+  height: 6px;
+  background: var(--c-bg-panel);
+  border-radius: 99px;
+  overflow: hidden;
+}
+
+.cefrBarFill {
+  height: 100%;
+  border-radius: 99px;
+  transition: width 0.4s ease;
+  background: var(--c-sage);
+}
+
+.cefrAdvanceBanner {
+  font-size: 12px;
+  color: var(--c-correct);
+  background: color-mix(in srgb, var(--c-correct) 10%, transparent);
+  border: 1px solid color-mix(in srgb, var(--c-correct) 25%, transparent);
+  border-radius: var(--radius-sm);
+  padding: 8px 12px;
+  line-height: 1.4;
+}
+
+.cefrMaxNote {
+  font-size: 13px;
+  color: var(--c-text-light);
+  margin: 0;
+}
