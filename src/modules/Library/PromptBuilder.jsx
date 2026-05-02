@@ -1,7 +1,7 @@
 // src/modules/Library/PromptBuilder.jsx
 import { useState, useRef } from "react";
 import { useAuth } from "../../AuthContext";
-import { upsertBook, upsertChapter } from "../../storage";
+import { upsertBook, upsertChapter, getProgressReports } from "../../storage";
 import { LIB_GENRES, LIB_LENGTHS, libCoverColor } from "../../constants";
 import styles from "./PromptBuilder.module.css";
 
@@ -32,8 +32,78 @@ export default function PromptBuilder({ onClose, onImportComplete }) {
   const [importError,   setImportError]   = useState(null);
   const [coverImage,    setCoverImage]    = useState(null);
   const [importing,     setImporting]     = useState(false);
+  const [progressData,  setProgressData]  = useState(null); // latest report or null
   const fileInputRef  = useRef(null);
   const coverInputRef = useRef(null);
+
+  // ── Load latest progress report for prompt enrichment ───────────────────
+  useEffect(() => {
+    if (!user) return;
+    getProgressReports(user.uid, 1)
+      .then(reports => {
+        if (reports.length > 0 && reports[0].report) {
+          setProgressData(reports[0].report);
+        }
+      })
+      .catch(() => {}); // silent fail — prompts still work without it
+  }, [user]);
+
+  // ── Progress context for prompt enrichment ──────────────────────────────
+  // Returns a formatted string block to inject into prompts, or "" if no data.
+  function buildProgressContext() {
+    if (!progressData) return "";
+
+    const rc         = progressData.report_card ?? {};
+    const challenges = (progressData.challenges ?? []).slice(0, 3);
+    const strengths  = (progressData.strengths  ?? []).slice(0, 3);
+    const struggling = progressData.struggling_words ?? [];
+
+    const lines = [];
+
+    lines.push("STUDENT PROFILE (from recent progress data):");
+
+    if (rc.level_estimate) {
+      lines.push(`- Current level estimate: ${rc.level_estimate}`);
+      lines.push(`  (Use this to calibrate difficulty — may differ slightly from the selected CEFR level above)`);
+    }
+
+    if (rc.grammar_accuracy != null) {
+      const accuracy = rc.grammar_accuracy;
+      const calibration = accuracy < 55
+        ? "Student is struggling with grammar fundamentals — favour shorter sentences, simpler structures, and high repetition of core patterns."
+        : accuracy < 75
+        ? "Student has a working grammar base but makes frequent errors under pressure — include natural repetition of tricky structures in dialogue."
+        : "Student has solid grammar — can handle more complex sentence structures and varied tenses.";
+      lines.push(`- Grammar accuracy: ${accuracy}% — ${calibration}`);
+    }
+
+    if (challenges.length > 0) {
+      lines.push("");
+      lines.push("AREAS TO REINFORCE (student's current weak points — weave these naturally into the story):");
+      challenges.forEach(c => {
+        lines.push(`- ${c.topic}${c.comment ? `: ${c.comment}` : ""}`);
+      });
+      lines.push("  → Characters in the story should naturally use these structures in dialogue and narration.");
+      lines.push("  → Do NOT make it feel like a textbook drill. The grammar should emerge from authentic situations.");
+    }
+
+    if (struggling.length > 0) {
+      lines.push("");
+      lines.push(`VOCABULARY TO REINTRODUCE (student has struggled with these specific words — use them naturally in the story):`);
+      lines.push(`  ${struggling.join(", ")}`);
+      lines.push("  → Each word should appear at least twice across the story, in clear context that reinforces meaning.");
+    }
+
+    if (strengths.length > 0) {
+      lines.push("");
+      lines.push("AREAS OF STRENGTH (student is already solid here — no need to over-index):");
+      strengths.forEach(s => {
+        lines.push(`- ${s.topic}`);
+      });
+    }
+
+    return lines.join("\n");
+  }
 
   // ── Prompt builders ──────────────────────────────────────────────────────
   function buildScaffoldPrompt() {
@@ -45,6 +115,8 @@ export default function PromptBuilder({ onClose, onImportComplete }) {
       setting     && `Setting: ${setting}`,
     ].filter(Boolean).join("\n");
 
+    const progressContext = buildProgressContext();
+
     return `You are generating a scaffold for a Russian language learning story. Respond ONLY with valid JSON — no markdown, no commentary, no code fences.
 
 PARAMETERS:
@@ -52,6 +124,7 @@ PARAMETERS:
 - Genres: ${genres.join(", ") || "any"}
 - Chapter count: ${chRange} chapters
 ${optionals}
+${progressContext ? `\n${progressContext}\n` : ""}
 
 Return exactly this JSON shape:
 {
@@ -98,10 +171,12 @@ Rules:
   function buildChapterPrompt() {
     if (!scaffoldJson) return "";
     const totalChapters = scaffoldJson.totalChapters || "?";
+    const progressContext = buildProgressContext();
+
     return `You are writing a Russian language learning story. Respond ONLY with a valid JSON file — no markdown, no commentary, no code fences.
 
 CEFR level: ${level}. All vocabulary and grammar must match this level.
-
+${progressContext ? `\n${progressContext}\n` : ""}
 SCAFFOLD (do not deviate from this):
 ${JSON.stringify(scaffoldJson, null, 2)}
 
@@ -274,7 +349,14 @@ Generate all ${totalChapters} chapters now. If the output is long, continue unti
 
           {/* Step 1 — Configure */}
           <section className={styles.section}>
-            <h3 className={styles.sectionTitle}>Step 1 — Configure your book</h3>
+            <h3 className={styles.sectionTitle}>
+              Step 1 — Configure your book
+              {progressData && (
+                <span className={styles.personalizedBadge} title="Prompt will be personalised using your latest progress report">
+                  ✦ personalised
+                </span>
+              )}
+            </h3>
 
             <div className={styles.fieldGroup}>
               <label className={styles.label}>Reading level</label>
