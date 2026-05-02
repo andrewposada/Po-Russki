@@ -44,7 +44,6 @@ function splitIntoSegments(content) {
 }
 
 export default function BookReader() {
-  chapterSessionIdRef.current = crypto.randomUUID();
   const { bookId }   = useParams();
   const { user }     = useAuth();
   const settings     = useSettings();
@@ -159,7 +158,6 @@ export default function BookReader() {
   async function goToChapter(num) {
     if (num < 1 || num > chapters.length) return;
     await flushAndReset();
-    chapterSessionIdRef.current = crypto.randomUUID();
     setActiveChapterNum(num);
     setRevealedSegs(new Set());
     setTranslationsCache({});
