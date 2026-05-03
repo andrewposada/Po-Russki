@@ -80,7 +80,16 @@ async function fetchTtsLine(text, voiceName, hash, lineIndex) {
 }
 
 async function fetchAllAudio(content, contentHash, characters) {
-  // Assign one consistent voice per speaker key for this exercise
+  const isDialogue = content.some(l => l.speaker === "B");
+
+  if (!isDialogue) {
+    // Monologue: join all lines into a single TTS call for seamless playback
+    const fullText = content.map(l => l.text).join(" ");
+    const url = await fetchTtsLine(fullText, DEFAULT_VOICE, contentHash, 0);
+    return [url]; // single-element array — one Audio object, one scrubber
+  }
+
+  // Dialogue: one TTS call per line, gender-aware voice assignment
   const speakerVoiceMap = {};
   const usedVoices = new Set();
   for (const line of content) {
@@ -180,6 +189,9 @@ export default function ListeningHome() {
   const audioQueueRef   = useRef([]);    // ordered array of object URLs for current exercise
   const currentLineRef  = useRef(0);     // mirrors currentLine state for use inside callbacks
 
+const lineDurationsRef = useRef([]); // duration in seconds per line, populated as metadata loads
+  const lineStartTimesRef = useRef([]); // cumulative start time per line
+
   // Time display state
   const [currentTime,  setCurrentTime]  = useState(0);  // seconds elapsed in current line
   const [duration,     setDuration]     = useState(0);  // seconds total in current line
@@ -258,6 +270,8 @@ export default function ListeningHome() {
       setDuration(0);
       audioQueueRef.current = [];
       currentLineRef.current = 0;
+      lineDurationsRef.current = [];
+      lineStartTimesRef.current = [];
       const prevAudio = activeAudioRef.current;
       if (prevAudio) { try { prevAudio.pause(); } catch {} prevAudio.src = ""; }
       activeAudioRef.current = null;
@@ -307,15 +321,29 @@ export default function ListeningHome() {
   // ── Audio playback ──────────────────────────────────────────────────────────
 
   // ── Core rAF tick — runs while audio is playing ──────────────────────────
+  const tickGenRef = useRef(0); // increment on each new tick session to cancel stale loops
+  const isDraggingRef = useRef(false);
+  
   const startTick = useCallback((audio) => {
     cancelAnimationFrame(rafRef.current);
+    tickGenRef.current += 1;
+    const gen = tickGenRef.current;
+
     const tick = () => {
+      if (gen !== tickGenRef.current) return; // stale loop — bail
       if (!audio || audio.paused || audio.ended) return;
-      const dur = audio.duration || 0;
-      const cur = audio.currentTime || 0;
-      setProgress(dur > 0 ? cur / dur : 0);
-      setCurrentTime(cur);
-      setDuration(dur);
+
+      const lineIdx  = currentLineRef.current;
+      const lineCur  = audio.currentTime || 0;
+      const lineDur  = audio.duration || 0;
+      const lineStart = lineStartTimesRef.current[lineIdx] ?? 0;
+      const totalDur  = lineDurationsRef.current.reduce((s, d) => s + (d ?? 0), 0);
+      const totalCur  = lineStart + lineCur;
+
+      setCurrentTime(totalCur);
+      setDuration(totalDur > 0 ? totalDur : lineDur);
+      setProgress(totalDur > 0 ? totalCur / totalDur : (lineDur > 0 ? lineCur / lineDur : 0));
+
       rafRef.current = requestAnimationFrame(tick);
     };
     rafRef.current = requestAnimationFrame(tick);
@@ -347,8 +375,20 @@ export default function ListeningHome() {
     setDuration(0);
     
 
-    // Update duration once metadata loads
-    audio.onloadedmetadata = () => setDuration(audio.duration || 0);
+    // Record line duration and recompute cumulative times
+    audio.onloadedmetadata = () => {
+      const dur = audio.duration || 0;
+      lineDurationsRef.current[lineIdx] = dur;
+      // Recompute cumulative start times
+      let cumulative = 0;
+      const starts = [];
+      for (let i = 0; i < lineDurationsRef.current.length; i++) {
+        starts[i] = cumulative;
+        cumulative += lineDurationsRef.current[i] ?? 0;
+      }
+      lineStartTimesRef.current = starts;
+      setDuration(cumulative); // total duration across all lines
+    };
 
     audio.onended = () => {
       cancelAnimationFrame(rafRef.current);
@@ -396,6 +436,7 @@ export default function ListeningHome() {
 
     // If we have an existing paused audio, resume it
     if (audio && audio.src && audio.paused && !audio.ended) {
+      isDraggingRef.current = false;
       audio.play().catch(() => setIsPlaying(false));
       setIsPlaying(true);
       startTick(audio);
@@ -420,17 +461,6 @@ export default function ListeningHome() {
     playFromLine(lineIdx);
     setIsPlaying(true);
   }, [audioUrls, playFromLine]);
-
-  // ── Monologue scrub ──────────────────────────────────────────────────────
-  const handleMonoScrub = useCallback((e) => {
-    const audio = activeAudioRef.current;
-    if (!audio || !audio.duration) return;
-    const rect  = e.currentTarget.getBoundingClientRect();
-    const ratio = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
-    audio.currentTime = ratio * audio.duration;
-    setProgress(ratio);
-    setCurrentTime(audio.currentTime);
-  }, []);
 
   // ── Questions reveal after first listen ────────────────────────────────────
 
@@ -819,17 +849,51 @@ export default function ListeningHome() {
             </div>
           );
         })() : (
-          <div
-            className={styles.monoScrubber}
-            onClick={handleMonoScrub}
-            title="Click to seek"
-          >
-            <div className={styles.monoFill} style={{ width: `${progress * 100}%` }} />
-            <div
-              className={styles.monoThumb}
-              style={{ left: `${progress * 100}%` }}
-            />
-          </div>
+          {(() => {
+            const handleScrubStart = (clientX, el) => {
+              isDraggingRef.current = true;
+              const rect  = el.getBoundingClientRect();
+              const ratio = Math.max(0, Math.min(1, (clientX - rect.left) / rect.width));
+              const audio = activeAudioRef.current;
+              if (audio && audio.duration) {
+                audio.currentTime = ratio * audio.duration;
+              }
+              setProgress(ratio);
+              setCurrentTime(ratio * (duration || 0));
+            };
+            const handleScrubMove = (clientX, el) => {
+              if (!isDraggingRef.current) return;
+              const rect  = el.getBoundingClientRect();
+              const ratio = Math.max(0, Math.min(1, (clientX - rect.left) / rect.width));
+              const audio = activeAudioRef.current;
+              if (audio && audio.duration) {
+                audio.currentTime = ratio * audio.duration;
+              }
+              setProgress(ratio);
+              setCurrentTime(ratio * (duration || 0));
+            };
+            const handleScrubEnd = () => { isDraggingRef.current = false; };
+
+            return (
+              <div
+                className={styles.monoScrubber}
+                onMouseDown={e => { e.preventDefault(); handleScrubStart(e.clientX, e.currentTarget); }}
+                onMouseMove={e => handleScrubMove(e.clientX, e.currentTarget)}
+                onMouseUp={handleScrubEnd}
+                onMouseLeave={handleScrubEnd}
+                onTouchStart={e => { e.preventDefault(); handleScrubStart(e.touches[0].clientX, e.currentTarget); }}
+                onTouchMove={e => handleScrubMove(e.touches[0].clientX, e.currentTarget)}
+                onTouchEnd={handleScrubEnd}
+                title="Drag to seek"
+              >
+                <div className={styles.monoFill} style={{ width: `${progress * 100}%` }} />
+                <div
+                  className={styles.monoThumb}
+                  style={{ left: `${progress * 100}%` }}
+                />
+              </div>
+            );
+          })()}
         )}
 
         {/* Controls */}
