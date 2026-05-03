@@ -193,7 +193,7 @@
   padding: 18px 20px;
   margin-bottom: 10px;
   position: sticky;
-  top: 56px; /* below GlobalHeader — adjust if your header height differs */
+  top: 88px; /* below GlobalHeader — adjust if your header height differs */
   z-index: 10;
 }
 
