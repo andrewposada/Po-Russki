@@ -321,8 +321,12 @@ const lineDurationsRef = useRef([]); // duration in seconds per line, populated 
   // ── Audio playback ──────────────────────────────────────────────────────────
 
   // ── Core rAF tick — runs while audio is playing ──────────────────────────
-  const tickGenRef = useRef(0);
+  const tickGenRef    = useRef(0);
   const isDraggingRef = useRef(false);
+  const playheadRef   = useRef(null); // direct DOM ref for smooth playhead animation
+  const monoFillRef   = useRef(null); // direct DOM ref for monologue fill bar
+  const monoThumbRef  = useRef(null); // direct DOM ref for monologue thumb
+  const timeDisplayRef = useRef(null); // direct DOM ref for time display text
 
   const startTick = useCallback((audio) => {
     cancelAnimationFrame(rafRef.current);
@@ -338,15 +342,26 @@ const lineDurationsRef = useRef([]); // duration in seconds per line, populated 
       const lineStart = lineStartTimesRef.current[lineIdx] ?? 0;
       const globalCur = lineStart + lineCur;
 
-      // Total duration: sum of all known line durations
-      // Falls back to current line duration until metadata loads for all lines
       const knownTotal = lineDurationsRef.current.reduce((s, d) => s + (d ?? 0), 0);
       const totalDur   = knownTotal > 0 ? knownTotal : (audio.duration || 0);
+      const ratio      = totalDur > 0 ? Math.min(1, globalCur / totalDur) : 0;
+      const pct        = `${ratio * 100}%`;
 
-      setCurrentTime(globalCur);
-      setDuration(totalDur);
-      // progress is always globalCur / totalDur — one formula, no branching
-      setProgress(totalDur > 0 ? Math.min(1, globalCur / totalDur) : 0);
+      // Write directly to DOM — bypasses React re-render cycle for smooth 60fps
+      if (playheadRef.current)    playheadRef.current.style.left    = pct;
+      if (monoFillRef.current)    monoFillRef.current.style.width   = pct;
+      if (monoThumbRef.current)   monoThumbRef.current.style.left   = pct;
+      if (timeDisplayRef.current) timeDisplayRef.current.textContent =
+        `${fmtTime(globalCur)} / ${fmtTime(totalDur)}`;
+
+      // Still update React state, but only for values other components read
+      // (progress for scrub calculations, currentTime/duration for seek logic)
+      // Use a low-frequency update to avoid excessive re-renders
+      if (gen === tickGenRef.current) {
+        setProgress(ratio);
+        setCurrentTime(globalCur);
+        setDuration(totalDur);
+      }
 
       rafRef.current = requestAnimationFrame(tick);
     };
@@ -854,13 +869,15 @@ const lineDurationsRef = useRef([]); // duration in seconds per line, populated 
                         disabled={!canPlay}
                       />
                     ))}
-                    {/* Playhead: progress is global time ratio — same formula for both players */}
-                    {(isPlaying || progress > 0) && (
-                      <div
-                        className={styles.dialoguePlayhead}
-                        style={{ left: `${progress * 100}%` }}
-                      />
-                    )}
+                    {/* Playhead: position driven by direct DOM ref for smooth 60fps */}
+                    <div
+                      ref={playheadRef}
+                      className={styles.dialoguePlayhead}
+                      style={{
+                        left: `${progress * 100}%`,
+                        display: (isPlaying || progress > 0) ? "block" : "none",
+                      }}
+                    />
                   </>
                 );
               })()}
@@ -888,8 +905,8 @@ const lineDurationsRef = useRef([]); // duration in seconds per line, populated 
             onTouchEnd={handleScrubEnd}
             title="Drag to seek"
           >
-            <div className={styles.monoFill} style={{ width: `${progress * 100}%` }} />
-            <div className={styles.monoThumb} style={{ left: `${progress * 100}%` }} />
+            <div ref={monoFillRef} className={styles.monoFill} style={{ width: `${progress * 100}%` }} />
+            <div ref={monoThumbRef} className={styles.monoThumb} style={{ left: `${progress * 100}%` }} />
           </div>
         )}
 
@@ -912,7 +929,7 @@ const lineDurationsRef = useRef([]); // duration in seconds per line, populated 
           >
             ↺ Replay
           </button>
-          <span className={styles.timeDisplay}>
+          <span ref={timeDisplayRef} className={styles.timeDisplay}>
             {fmtTime(currentTime)} / {fmtTime(duration)}
           </span>
         </div>

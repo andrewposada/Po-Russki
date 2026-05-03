@@ -301,7 +301,7 @@
   border-radius: 1px;
   transform: translateX(-50%);
   pointer-events: none;
-  transition: left 0.1s linear;
+  will-change: left;
 }
 
 /* Legend */
@@ -340,8 +340,8 @@
   height: 100%;
   background: var(--c-sage);
   border-radius: 3px;
-  transition: width 0.08s linear;
   pointer-events: none;
+  will-change: width;
 }
 .monoThumb {
   position: absolute;
@@ -352,7 +352,7 @@
   background: var(--c-text-dark);
   transform: translate(-50%, -50%);
   pointer-events: none;
-  transition: left 0.08s linear;
+  will-change: left;
 }
 
 .timeDisplay {
