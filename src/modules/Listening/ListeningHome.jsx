@@ -258,8 +258,8 @@ export default function ListeningHome() {
       setDuration(0);
       audioQueueRef.current = [];
       currentLineRef.current = 0;
-      const prev = activeAudioRef.current;
-      if (prev) { try { prev.pause(); } catch {} prev.src = ""; }
+      const prevAudio = activeAudioRef.current;
+      if (prevAudio) { try { prevAudio.pause(); } catch {} prevAudio.src = ""; }
       activeAudioRef.current = null;
       setModuleState(MS.CONTENT_READY);
 
@@ -347,8 +347,8 @@ export default function ListeningHome() {
     setDuration(0);
     audioQueueRef.current = [];
       currentLineRef.current = 0;
-      const prev = activeAudioRef.current;
-      if (prev) { try { prev.pause(); } catch {} prev.src = ""; }
+      const prevAudio = activeAudioRef.current;
+      if (prevAudio) { try { prevAudio.pause(); } catch {} prevAudio.src = ""; }
       activeAudioRef.current = null;
       setModuleState(MS.CONTENT_READY);
 
