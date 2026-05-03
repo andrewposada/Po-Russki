@@ -184,7 +184,7 @@
   margin: 0;
 }
 
-/* ── Player card ──────────────────────────────────────────────────────────── */
+/* ── Player card — sticky ─────────────────────────────────────────────────── */
 
 .playerCard {
   background: var(--c-bg-card);
@@ -192,6 +192,9 @@
   border-radius: var(--radius-lg);
   padding: 18px 20px;
   margin-bottom: 10px;
+  position: sticky;
+  top: 56px; /* below GlobalHeader — adjust if your header height differs */
+  z-index: 10;
 }
 
 .playerHeader {
@@ -199,75 +202,143 @@
   align-items: center;
   justify-content: space-between;
   margin-bottom: 14px;
+  gap: 12px;
 }
 
 .playerLabel {
   font-size: 12px;
   color: var(--c-text-light);
+  flex-shrink: 0;
 }
 
-.speedPills {
+/* Speed scrubber */
+.speedScrubWrap {
   display: flex;
-  gap: 4px;
+  align-items: center;
+  gap: 8px;
 }
 
-.speedPill {
+.speedScrubMin,
+.speedScrubMax {
   font-size: 11px;
   font-weight: 600;
-  padding: 3px 9px;
-  border-radius: 20px;
-  border: 1px solid var(--c-border);
-  background: var(--c-bg-panel);
-  color: var(--c-text-mid);
-  cursor: pointer;
-  transition: background 0.12s;
+  color: var(--c-text-light);
+  min-width: 28px;
+  text-align: center;
 }
-.speedPillActive {
-  background: var(--c-text-dark);
-  color: var(--c-bg-card);
-  border-color: var(--c-text-dark);
+.speedScrubMax {
+  color: var(--c-text-dark);
 }
 
-/* Dialogue segmented scrubber */
-.dialogueScrubber {
-  display: flex;
-  gap: 3px;
-  flex-wrap: wrap;
+.speedScrub {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 100px;
+  height: 4px;
+  border-radius: 2px;
+  background: var(--c-bg-deep);
+  outline: none;
+  cursor: pointer;
+}
+.speedScrub::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: var(--c-text-dark);
+  cursor: pointer;
+  border: none;
+}
+.speedScrub::-moz-range-thumb {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: var(--c-text-dark);
+  cursor: pointer;
+  border: none;
+}
+
+/* ── Dialogue timeline ────────────────────────────────────────────────────── */
+
+.dialogueTimeline {
   margin-bottom: 14px;
 }
 
-.dialogueSeg {
-  width: 30px;
-  height: 30px;
-  border-radius: var(--radius-sm);
-  border: 1px solid var(--c-border);
-  background: var(--c-bg-panel);
+.dialogueTrack {
+  position: relative;
+  display: flex;
+  gap: 2px;
+  width: 100%;
+  height: 6px;
+  margin-bottom: 8px;
+}
+
+.dialoguePill {
+  height: 100%;
+  border-radius: 3px;
+  border: none;
   cursor: pointer;
+  padding: 0;
+  flex-shrink: 0;
+  transition: opacity 0.15s, filter 0.15s;
+  background: #c8ddc8; /* default unplayed A color */
+}
+.dialoguePillA         { background: #b8ceb8; }
+.dialoguePillB         { background: #b8d4e4; }
+.dialoguePillPlayed    { opacity: 0.45; }
+.dialoguePillActive    { filter: brightness(1.15); opacity: 1; }
+.dialoguePill:disabled { cursor: default; }
+.dialoguePill:not(:disabled):hover { opacity: 0.85; }
+
+/* Playhead — vertical line that travels across the track */
+.dialoguePlayhead {
+  position: absolute;
+  top: -3px;
+  width: 2px;
+  height: 12px;
+  background: var(--c-text-dark);
+  border-radius: 1px;
+  transform: translateX(-50%);
+  pointer-events: none;
+  transition: left 0.1s linear;
+}
+
+/* Legend */
+.dialogueLegend {
   display: flex;
   align-items: center;
-  justify-content: center;
-  transition: background 0.12s, border-color 0.12s;
+  gap: 6px;
 }
-.dialogueSeg:disabled { cursor: default; opacity: 0.5; }
-.dialogueSeg:not(:disabled):hover { background: var(--c-bg-deep); }
-.dialogueSegActive  { border-color: var(--c-sage); background: var(--c-sage-light); }
-.dialogueSegPlayed  { background: var(--c-bg-deep); opacity: 0.55; }
 
-.segSpeaker  { font-size: 10px; font-weight: 700; color: var(--c-text-mid); }
-.segSpeakerB { color: var(--c-sky); }
+.legendDotA,
+.legendDotB {
+  width: 8px;
+  height: 8px;
+  border-radius: 2px;
+  flex-shrink: 0;
+}
+.legendDotA { background: #b8ceb8; }
+.legendDotB { background: #b8d4e4; }
+
+.legendName {
+  font-size: 11px;
+  color: var(--c-text-light);
+  margin-right: 8px;
+}
 
 /* Monologue scrubber */
 .monoScrubber {
-  height: 4px;
+  height: 6px;
   background: var(--c-bg-deep);
-  border-radius: 2px;
+  border-radius: 3px;
   margin-bottom: 14px;
   overflow: clip;
 }
 .monoFill {
   height: 100%;
   background: var(--c-sage);
-  border-radius: 2px;
+  border-radius: 3px;
   transition: width 0.1s linear;
 }
 
@@ -377,7 +448,6 @@
 .qCorrect { border-color: var(--c-correct); background: #f3fbf4; }
 .qWrong   { border-color: var(--c-wrong);   background: #fdf3f1; }
 
-.qPrompt {}
 
 .qText {
   font-size: 14px;

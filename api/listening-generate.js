@@ -41,8 +41,14 @@ export default async function handler(req, res) {
   const questionCount = isDialogue ? 4 : 3;
 
   const formatInstructions = isDialogue
-    ? `Write a natural ${contentFormat} between two people (Speaker A and Speaker B).
-Format content as a JSON array of line objects, each with:
+    ? `Write a natural ${contentFormat} between two people.
+First, define the two characters in a "characters" object:
+  "characters": {
+    "A": { "name": "<Russian first name>", "gender": "male" or "female" },
+    "B": { "name": "<Russian first name>", "gender": "male" or "female" }
+  }
+Assign realistic Russian names appropriate to the situation. Vary genders — don't always make A female and B male.
+Then format content as a JSON array of line objects, each with:
   "speaker": "A" or "B"
   "text": the Russian sentence (one natural spoken utterance per line)
 Aim for 6–10 exchanges total. Each line should be one complete spoken sentence or short phrase.`
@@ -99,6 +105,7 @@ Respond with this exact JSON structure only:
 {
   "title": "short English title for the scene (max 8 words)",
   "context": "one English sentence describing the scene for the learner before they listen",
+  "characters": { "A": { "name": "Анна", "gender": "female" }, "B": { "name": "Борис", "gender": "male" } },
   "content": [ { "speaker": "A", "text": "Russian text" }, ... ],
   "questions": [ { "type": "...", ...question fields... }, ... ]
 }`;
@@ -146,10 +153,11 @@ Respond with this exact JSON structure only:
     const contentHash = Math.abs(hash).toString(36);
 
     return res.status(200).json({
-      title:       parsed.title     ?? "Listening Exercise",
-      context:     parsed.context   ?? "",
-      content:     parsed.content   ?? [],
-      questions:   parsed.questions ?? [],
+      title:       parsed.title      ?? "Listening Exercise",
+      context:     parsed.context    ?? "",
+      characters:  parsed.characters ?? null,
+      content:     parsed.content    ?? [],
+      questions:   parsed.questions  ?? [],
       contentHash,
     });
 

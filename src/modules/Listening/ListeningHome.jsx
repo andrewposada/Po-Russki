@@ -24,8 +24,8 @@ import { useRussianKeyboard } from "../../hooks/useRussianKeyboard";
 import { pickRandom, SITUATIONS, VOCAB_CATEGORIES } from "../../data/exerciseVariety";
 import {
   CONTENT_FORMATS, FORMAT_WEIGHTS, LISTENING_EXERCISE_TYPES,
-  SPEAKER_VOICES, DEFAULT_VOICE, PLAYBACK_SPEEDS, DEFAULT_SPEED,
-  LOADING_STEPS,
+  GENDER_VOICES, DEFAULT_VOICE, PLAYBACK_SPEEDS, DEFAULT_SPEED,
+  LOADING_STEPS, pickVoiceForGender,
 } from "./listeningConstants";
 import { cacheAudio, getCachedAudio, revokeAllAudio } from "../../utils/audioCache";
 import styles from "./ListeningHome.module.css";
@@ -71,9 +71,20 @@ async function fetchTtsLine(text, voiceName, hash, lineIndex) {
   return cacheAudio(hash, audioContent, lineIndex);
 }
 
-async function fetchAllAudio(content, contentHash) {
+async function fetchAllAudio(content, contentHash, characters) {
+  // Assign one consistent voice per speaker key for this exercise
+  const speakerVoiceMap = {};
+  const usedVoices = new Set();
+  for (const line of content) {
+    if (!speakerVoiceMap[line.speaker]) {
+      const gender = characters?.[line.speaker]?.gender ?? "female";
+      const voice  = pickVoiceForGender(gender, usedVoices);
+      speakerVoiceMap[line.speaker] = voice;
+      usedVoices.add(voice);
+    }
+  }
   const promises = content.map((line, idx) => {
-    const voice = SPEAKER_VOICES[line.speaker] ?? DEFAULT_VOICE;
+    const voice = speakerVoiceMap[line.speaker] ?? DEFAULT_VOICE;
     return fetchTtsLine(line.text, voice, contentHash, idx);
   });
   return Promise.all(promises);
@@ -230,7 +241,7 @@ export default function ListeningHome() {
       setAudioLoading(true);
       setAudioError(false);
 
-      fetchAllAudio(data.content, data.contentHash)
+      fetchAllAudio(data.content, data.contentHash, data.characters)
         .then(urls => {
           setAudioUrls(urls);
           setAudioLoading(false);
@@ -259,7 +270,7 @@ export default function ListeningHome() {
 
   const preGenerateNextAudio = useCallback((contentData) => {
     if (!contentData || nextAudioRef.current) return;
-    nextAudioRef.current = fetchAllAudio(contentData.content, contentData.contentHash)
+    nextAudioRef.current = fetchAllAudio(contentData.content, contentData.contentHash, contentData.characters)
       .then(urls => {
         nextReadyRef.current = { exercise: contentData, audioUrls: urls };
       })
@@ -456,7 +467,7 @@ export default function ListeningHome() {
           setModuleState(MS.CONTENT_READY);
           setAudioLoading(true);
           setAudioError(false);
-          fetchAllAudio(data.content, data.contentHash)
+          fetchAllAudio(data.content, data.contentHash, data.characters)
             .then(urls => {
               setAudioUrls(urls);
               setAudioLoading(false);
@@ -620,60 +631,98 @@ export default function ListeningHome() {
           <span className={styles.contextBadge}>
             {isDialogue ? "🗣 Dialogue" : "🎙 Listening"}
           </span>
-          {isDialogue && (
-            <span className={styles.contextSpeakers}>Speaker A · Speaker B</span>
+          {isDialogue && exercise.characters && (
+            <span className={styles.contextSpeakers}>
+              {exercise.characters.A?.name ?? "Speaker A"} · {exercise.characters.B?.name ?? "Speaker B"}
+            </span>
           )}
         </div>
         <h2 className={styles.contextTitle}>{exercise.title}</h2>
         <p className={styles.contextSub}>{exercise.context}</p>
       </div>
 
-      {/* Player card */}
+      {/* Player card — sticky */}
       <div className={styles.playerCard}>
 
+        {/* Top row: status + speed scrubber */}
         <div className={styles.playerHeader}>
           <span className={styles.playerLabel}>
             {audioLoading ? "Recording audio…" : "Audio ready"}
           </span>
-          <div className={styles.speedPills}>
-            {PLAYBACK_SPEEDS.map(s => (
-              <button
-                key={s}
-                className={`${styles.speedPill} ${playbackSpeed === s ? styles.speedPillActive : ""}`}
-                onClick={() => setPlaybackSpeed(s)}
-              >
-                {s}×
-              </button>
-            ))}
+          <div className={styles.speedScrubWrap}>
+            <span className={styles.speedScrubMin}>0.5×</span>
+            <input
+              type="range"
+              className={styles.speedScrub}
+              min={0.5}
+              max={1.25}
+              step={0.25}
+              value={playbackSpeed}
+              onChange={e => setPlaybackSpeed(Number(e.target.value))}
+            />
+            <span className={styles.speedScrubMax}>{playbackSpeed}×</span>
           </div>
         </div>
 
-        {/* Dialogue: segmented scrubber with speaker labels */}
-        {isDialogue ? (
-          <div className={styles.dialogueScrubber}>
-            {exercise.content.map((line, idx) => (
-              <button
-                key={idx}
-                className={`${styles.dialogueSeg} ${
-                  currentLine === idx && isPlaying ? styles.dialogueSegActive : ""
-                } ${idx < currentLine ? styles.dialogueSegPlayed : ""}`}
-                onClick={() => canPlay && handleSeekToLine(idx)}
-                title={line.text}
-                disabled={!canPlay}
-              >
-                <span className={`${styles.segSpeaker} ${line.speaker === "B" ? styles.segSpeakerB : ""}`}>
-                  {line.speaker}
+        {/* Timeline */}
+        {isDialogue ? (() => {
+          // Compute segment widths proportional to text length (proxy for duration)
+          const lengths = exercise.content.map(l => Math.max(l.text.length, 8));
+          const total   = lengths.reduce((s, n) => s + n, 0);
+          // Find playhead position: sum of completed segments + progress through current
+          const playedWidth = lengths.slice(0, currentLine).reduce((s, n) => s + n, 0) / total;
+          const currentSegWidth = lengths[currentLine] / total;
+          const playheadPct = (playedWidth + currentSegWidth * progress) * 100;
+
+          return (
+            <div className={styles.dialogueTimeline}>
+              <div className={styles.dialogueTrack}>
+                {exercise.content.map((line, idx) => {
+                  const widthPct = (lengths[idx] / total) * 100;
+                  const isA = line.speaker === "A";
+                  return (
+                    <button
+                      key={idx}
+                      className={`${styles.dialoguePill} ${
+                        isA ? styles.dialoguePillA : styles.dialoguePillB
+                      } ${idx < currentLine ? styles.dialoguePillPlayed : ""} ${
+                        idx === currentLine ? styles.dialoguePillActive : ""
+                      }`}
+                      style={{ width: `${widthPct}%` }}
+                      onClick={() => canPlay && handleSeekToLine(idx)}
+                      title={`${exercise.characters?.[line.speaker]?.name ?? line.speaker}: ${line.text}`}
+                      disabled={!canPlay}
+                    />
+                  );
+                })}
+                {/* Playhead indicator */}
+                {(isPlaying || currentLine > 0) && (
+                  <div
+                    className={styles.dialoguePlayhead}
+                    style={{ left: `${playheadPct}%` }}
+                  />
+                )}
+              </div>
+              {/* Legend */}
+              <div className={styles.dialogueLegend}>
+                <span className={styles.legendDotA} />
+                <span className={styles.legendName}>
+                  {exercise.characters?.A?.name ?? "Speaker A"}
                 </span>
-              </button>
-            ))}
-          </div>
-        ) : (
-          /* Monologue: simple progress bar */
+                <span className={styles.legendDotB} />
+                <span className={styles.legendName}>
+                  {exercise.characters?.B?.name ?? "Speaker B"}
+                </span>
+              </div>
+            </div>
+          );
+        })() : (
           <div className={styles.monoScrubber}>
             <div className={styles.monoFill} style={{ width: `${progress * 100}%` }} />
           </div>
         )}
 
+        {/* Controls */}
         <div className={styles.playerControls}>
           <button
             className={styles.playBtn}
@@ -716,9 +765,9 @@ export default function ListeningHome() {
           {exercise.questions.map((q, qIdx) => {
             const ans     = answers[qIdx];
             const isMc    = ["gist_question","specific_detail","inference",
-                              "true_false_not_mentioned","respond_next",
+                              "true_false_not_mentioned","respond_next"].includes(q.type);
+            const isTyped = ["dictation_fill","word_reconstruction","phrase_translation",
                               "mishear_correction"].includes(q.type);
-            const isTyped = ["dictation_fill","word_reconstruction","phrase_translation"].includes(q.type);
 
             return (
               <div
@@ -829,7 +878,7 @@ export default function ListeningHome() {
                 <div key={idx} className={styles.transcriptLine}>
                   {isDialogue && (
                     <span className={`${styles.tSpeaker} ${line.speaker === "B" ? styles.tSpeakerB : ""}`}>
-                      {line.speaker}:
+                      {exercise.characters?.[line.speaker]?.name ?? line.speaker}:
                     </span>
                   )}
                   <span className={`ru ${styles.tText}`}>{line.text}</span>

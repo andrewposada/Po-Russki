@@ -34,15 +34,28 @@ export const LISTENING_EXERCISE_TYPES = [
   { id: "phrase_translation",       label: "Phrase Meaning",  topicId: 105, exerciseTypeId: 35, grading: "typed" },
   { id: "true_false_not_mentioned", label: "True / False",    topicId: 106, exerciseTypeId: 36, grading: "mc"    },
   { id: "respond_next",             label: "Next Response",   topicId: 107, exerciseTypeId: 37, grading: "mc"    },
-  { id: "mishear_correction",       label: "Spot the Word",   topicId: 108, exerciseTypeId: 38, grading: "mc"    },
+  { id: "mishear_correction",       label: "Spot the Word",   topicId: 108, exerciseTypeId: 38, grading: "typed" },
 ];
 
 // ── Voice assignments ─────────────────────────────────────────────────────────
-export const SPEAKER_VOICES = {
-  A: "ru-RU-Standard-A",  // female
-  B: "ru-RU-Standard-B",  // male
+// Gender → voice mapping
+export const GENDER_VOICES = {
+  female: ["ru-RU-Standard-A", "ru-RU-Standard-C", "ru-RU-Standard-E"],
+  male:   ["ru-RU-Standard-B", "ru-RU-Standard-D"],
 };
 export const DEFAULT_VOICE = "ru-RU-Standard-A";
+
+/**
+ * Pick a random voice for a gender, ensuring speakers A and B
+ * get different voices even if the same gender.
+ * Pass usedVoices set to avoid repeating within a dialogue.
+ */
+export function pickVoiceForGender(gender, usedVoices = new Set()) {
+  const pool = GENDER_VOICES[gender] ?? GENDER_VOICES.female;
+  const available = pool.filter(v => !usedVoices.has(v));
+  const finalPool = available.length > 0 ? available : pool;
+  return finalPool[Math.floor(Math.random() * finalPool.length)];
+}
 
 // ── Playback ──────────────────────────────────────────────────────────────────
 export const PLAYBACK_SPEEDS = [0.75, 1.0, 1.25];
