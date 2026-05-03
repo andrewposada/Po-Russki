@@ -58,8 +58,9 @@ export function pickVoiceForGender(gender, usedVoices = new Set()) {
 }
 
 // ── Playback ──────────────────────────────────────────────────────────────────
-export const PLAYBACK_SPEEDS = [0.75, 1.0, 1.25];
-export const DEFAULT_SPEED   = 1.0;
+export const PLAYBACK_SPEEDS  = [0.5, 0.75, 1.0, 1.25, 1.5];
+export const DEFAULT_SPEED    = 1.0;
+
 
 // ── Loading steps ─────────────────────────────────────────────────────────────
 export const LOADING_STEPS = [

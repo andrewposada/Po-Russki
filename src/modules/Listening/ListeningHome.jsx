@@ -321,28 +321,32 @@ const lineDurationsRef = useRef([]); // duration in seconds per line, populated 
   // ── Audio playback ──────────────────────────────────────────────────────────
 
   // ── Core rAF tick — runs while audio is playing ──────────────────────────
-  const tickGenRef = useRef(0); // increment on each new tick session to cancel stale loops
+  const tickGenRef = useRef(0);
   const isDraggingRef = useRef(false);
-  
+
   const startTick = useCallback((audio) => {
     cancelAnimationFrame(rafRef.current);
     tickGenRef.current += 1;
     const gen = tickGenRef.current;
 
     const tick = () => {
-      if (gen !== tickGenRef.current) return; // stale loop — bail
+      if (gen !== tickGenRef.current) return; // stale — bail
       if (!audio || audio.paused || audio.ended) return;
 
-      const lineIdx  = currentLineRef.current;
-      const lineCur  = audio.currentTime || 0;
-      const lineDur  = audio.duration || 0;
+      const lineIdx   = currentLineRef.current;
+      const lineCur   = audio.currentTime || 0;
       const lineStart = lineStartTimesRef.current[lineIdx] ?? 0;
-      const totalDur  = lineDurationsRef.current.reduce((s, d) => s + (d ?? 0), 0);
-      const totalCur  = lineStart + lineCur;
+      const globalCur = lineStart + lineCur;
 
-      setCurrentTime(totalCur);
-      setDuration(totalDur > 0 ? totalDur : lineDur);
-      setProgress(totalDur > 0 ? totalCur / totalDur : (lineDur > 0 ? lineCur / lineDur : 0));
+      // Total duration: sum of all known line durations
+      // Falls back to current line duration until metadata loads for all lines
+      const knownTotal = lineDurationsRef.current.reduce((s, d) => s + (d ?? 0), 0);
+      const totalDur   = knownTotal > 0 ? knownTotal : (audio.duration || 0);
+
+      setCurrentTime(globalCur);
+      setDuration(totalDur);
+      // progress is always globalCur / totalDur — one formula, no branching
+      setProgress(totalDur > 0 ? Math.min(1, globalCur / totalDur) : 0);
 
       rafRef.current = requestAnimationFrame(tick);
     };
@@ -812,7 +816,7 @@ const lineDurationsRef = useRef([]); // duration in seconds per line, populated 
               type="range"
               className={styles.speedScrub}
               min={0.5}
-              max={1.25}
+              max={1.5}
               step={0.25}
               value={playbackSpeed}
               onChange={e => setPlaybackSpeed(Number(e.target.value))}
@@ -826,35 +830,35 @@ const lineDurationsRef = useRef([]); // duration in seconds per line, populated 
           <div className={styles.dialogueTimeline}>
             <div className={styles.dialogueTrack}>
               {(() => {
-                const lengths     = exercise.content.map(l => Math.max(l.text.length, 8));
-                const total       = lengths.reduce((s, n) => s + n, 0);
-                const playedWidth = lengths.slice(0, currentLine).reduce((s, n) => s + n, 0) / total;
-                const currentSegWidth = (lengths[currentLine] ?? 0) / total;
-                const playheadPct = (playedWidth + currentSegWidth * progress) * 100;
+                // Pill widths: use actual line durations if available, else text length proxy
+                const hasDurations = lineDurationsRef.current.length === exercise.content.length
+                  && lineDurationsRef.current.every(d => d > 0);
+                const weights = hasDurations
+                  ? lineDurationsRef.current
+                  : exercise.content.map(l => Math.max(l.text.length, 8));
+                const total = weights.reduce((s, n) => s + n, 0);
+
                 return (
                   <>
-                    {exercise.content.map((line, idx) => {
-                      const lengths2 = exercise.content.map(l => Math.max(l.text.length, 8));
-                      const total2   = lengths2.reduce((s, n) => s + n, 0);
-                      return (
-                        <button
-                          key={idx}
-                          className={`${styles.dialoguePill} ${
-                            line.speaker === "A" ? styles.dialoguePillA : styles.dialoguePillB
-                          } ${idx < currentLine ? styles.dialoguePillPlayed : ""} ${
-                            idx === currentLine ? styles.dialoguePillActive : ""
-                          }`}
-                          style={{ width: `${(lengths2[idx] / total2) * 100}%` }}
-                          onClick={() => canPlay && handleSeekToLine(idx)}
-                          title={`${exercise.characters?.[line.speaker]?.name ?? line.speaker}: ${line.text}`}
-                          disabled={!canPlay}
-                        />
-                      );
-                    })}
-                    {(isPlaying || currentLine > 0) && (
+                    {exercise.content.map((line, idx) => (
+                      <button
+                        key={idx}
+                        className={`${styles.dialoguePill} ${
+                          line.speaker === "A" ? styles.dialoguePillA : styles.dialoguePillB
+                        } ${idx < currentLine ? styles.dialoguePillPlayed : ""} ${
+                          idx === currentLine ? styles.dialoguePillActive : ""
+                        }`}
+                        style={{ width: `${(weights[idx] / total) * 100}%` }}
+                        onClick={() => canPlay && handleSeekToLine(idx)}
+                        title={`${exercise.characters?.[line.speaker]?.name ?? line.speaker}: ${line.text}`}
+                        disabled={!canPlay}
+                      />
+                    ))}
+                    {/* Playhead: progress is global time ratio — same formula for both players */}
+                    {(isPlaying || progress > 0) && (
                       <div
                         className={styles.dialoguePlayhead}
-                        style={{ left: `${playheadPct}%` }}
+                        style={{ left: `${progress * 100}%` }}
                       />
                     )}
                   </>
