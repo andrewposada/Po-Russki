@@ -462,6 +462,31 @@ const lineDurationsRef = useRef([]); // duration in seconds per line, populated 
     setIsPlaying(true);
   }, [audioUrls, playFromLine]);
 
+  // ── Monologue scrub handlers ──────────────────────────────────────────────
+  const handleScrubStart = useCallback((clientX, el) => {
+    isDraggingRef.current = true;
+    const rect  = el.getBoundingClientRect();
+    const ratio = Math.max(0, Math.min(1, (clientX - rect.left) / rect.width));
+    const audio = activeAudioRef.current;
+    if (audio && audio.duration) audio.currentTime = ratio * audio.duration;
+    setProgress(ratio);
+    setCurrentTime(ratio * (duration || 0));
+  }, [duration]);
+
+  const handleScrubMove = useCallback((clientX, el) => {
+    if (!isDraggingRef.current) return;
+    const rect  = el.getBoundingClientRect();
+    const ratio = Math.max(0, Math.min(1, (clientX - rect.left) / rect.width));
+    const audio = activeAudioRef.current;
+    if (audio && audio.duration) audio.currentTime = ratio * audio.duration;
+    setProgress(ratio);
+    setCurrentTime(ratio * (duration || 0));
+  }, [duration]);
+
+  const handleScrubEnd = useCallback(() => {
+    isDraggingRef.current = false;
+  }, []);
+
   // ── Questions reveal after first listen ────────────────────────────────────
 
   useEffect(() => {
@@ -797,103 +822,71 @@ const lineDurationsRef = useRef([]); // duration in seconds per line, populated 
         </div>
 
         {/* Timeline */}
-        {isDialogue ? (() => {
-          // Compute segment widths proportional to text length (proxy for duration)
-          const lengths = exercise.content.map(l => Math.max(l.text.length, 8));
-          const total   = lengths.reduce((s, n) => s + n, 0);
-          // Find playhead position: sum of completed segments + progress through current
-          const playedWidth = lengths.slice(0, currentLine).reduce((s, n) => s + n, 0) / total;
-          const currentSegWidth = lengths[currentLine] / total;
-          const playheadPct = (playedWidth + currentSegWidth * progress) * 100;
-
-          return (
-            <div className={styles.dialogueTimeline}>
-              <div className={styles.dialogueTrack}>
-                {exercise.content.map((line, idx) => {
-                  const widthPct = (lengths[idx] / total) * 100;
-                  const isA = line.speaker === "A";
-                  return (
-                    <button
-                      key={idx}
-                      className={`${styles.dialoguePill} ${
-                        isA ? styles.dialoguePillA : styles.dialoguePillB
-                      } ${idx < currentLine ? styles.dialoguePillPlayed : ""} ${
-                        idx === currentLine ? styles.dialoguePillActive : ""
-                      }`}
-                      style={{ width: `${widthPct}%` }}
-                      onClick={() => canPlay && handleSeekToLine(idx)}
-                      title={`${exercise.characters?.[line.speaker]?.name ?? line.speaker}: ${line.text}`}
-                      disabled={!canPlay}
-                    />
-                  );
-                })}
-                {/* Playhead indicator */}
-                {(isPlaying || currentLine > 0) && (
-                  <div
-                    className={styles.dialoguePlayhead}
-                    style={{ left: `${playheadPct}%` }}
-                  />
-                )}
-              </div>
-              {/* Legend */}
-              <div className={styles.dialogueLegend}>
-                <span className={styles.legendDotA} />
-                <span className={styles.legendName}>
-                  {exercise.characters?.A?.name ?? "Speaker A"}
-                </span>
-                <span className={styles.legendDotB} />
-                <span className={styles.legendName}>
-                  {exercise.characters?.B?.name ?? "Speaker B"}
-                </span>
-              </div>
+        {isDialogue ? (
+          <div className={styles.dialogueTimeline}>
+            <div className={styles.dialogueTrack}>
+              {(() => {
+                const lengths     = exercise.content.map(l => Math.max(l.text.length, 8));
+                const total       = lengths.reduce((s, n) => s + n, 0);
+                const playedWidth = lengths.slice(0, currentLine).reduce((s, n) => s + n, 0) / total;
+                const currentSegWidth = (lengths[currentLine] ?? 0) / total;
+                const playheadPct = (playedWidth + currentSegWidth * progress) * 100;
+                return (
+                  <>
+                    {exercise.content.map((line, idx) => {
+                      const lengths2 = exercise.content.map(l => Math.max(l.text.length, 8));
+                      const total2   = lengths2.reduce((s, n) => s + n, 0);
+                      return (
+                        <button
+                          key={idx}
+                          className={`${styles.dialoguePill} ${
+                            line.speaker === "A" ? styles.dialoguePillA : styles.dialoguePillB
+                          } ${idx < currentLine ? styles.dialoguePillPlayed : ""} ${
+                            idx === currentLine ? styles.dialoguePillActive : ""
+                          }`}
+                          style={{ width: `${(lengths2[idx] / total2) * 100}%` }}
+                          onClick={() => canPlay && handleSeekToLine(idx)}
+                          title={`${exercise.characters?.[line.speaker]?.name ?? line.speaker}: ${line.text}`}
+                          disabled={!canPlay}
+                        />
+                      );
+                    })}
+                    {(isPlaying || currentLine > 0) && (
+                      <div
+                        className={styles.dialoguePlayhead}
+                        style={{ left: `${playheadPct}%` }}
+                      />
+                    )}
+                  </>
+                );
+              })()}
             </div>
-          );
-        })() : (
-          {(() => {
-            const handleScrubStart = (clientX, el) => {
-              isDraggingRef.current = true;
-              const rect  = el.getBoundingClientRect();
-              const ratio = Math.max(0, Math.min(1, (clientX - rect.left) / rect.width));
-              const audio = activeAudioRef.current;
-              if (audio && audio.duration) {
-                audio.currentTime = ratio * audio.duration;
-              }
-              setProgress(ratio);
-              setCurrentTime(ratio * (duration || 0));
-            };
-            const handleScrubMove = (clientX, el) => {
-              if (!isDraggingRef.current) return;
-              const rect  = el.getBoundingClientRect();
-              const ratio = Math.max(0, Math.min(1, (clientX - rect.left) / rect.width));
-              const audio = activeAudioRef.current;
-              if (audio && audio.duration) {
-                audio.currentTime = ratio * audio.duration;
-              }
-              setProgress(ratio);
-              setCurrentTime(ratio * (duration || 0));
-            };
-            const handleScrubEnd = () => { isDraggingRef.current = false; };
-
-            return (
-              <div
-                className={styles.monoScrubber}
-                onMouseDown={e => { e.preventDefault(); handleScrubStart(e.clientX, e.currentTarget); }}
-                onMouseMove={e => handleScrubMove(e.clientX, e.currentTarget)}
-                onMouseUp={handleScrubEnd}
-                onMouseLeave={handleScrubEnd}
-                onTouchStart={e => { e.preventDefault(); handleScrubStart(e.touches[0].clientX, e.currentTarget); }}
-                onTouchMove={e => handleScrubMove(e.touches[0].clientX, e.currentTarget)}
-                onTouchEnd={handleScrubEnd}
-                title="Drag to seek"
-              >
-                <div className={styles.monoFill} style={{ width: `${progress * 100}%` }} />
-                <div
-                  className={styles.monoThumb}
-                  style={{ left: `${progress * 100}%` }}
-                />
-              </div>
-            );
-          })()}
+            <div className={styles.dialogueLegend}>
+              <span className={styles.legendDotA} />
+              <span className={styles.legendName}>
+                {exercise.characters?.A?.name ?? "Speaker A"}
+              </span>
+              <span className={styles.legendDotB} />
+              <span className={styles.legendName}>
+                {exercise.characters?.B?.name ?? "Speaker B"}
+              </span>
+            </div>
+          </div>
+        ) : (
+          <div
+            className={styles.monoScrubber}
+            onMouseDown={e => { e.preventDefault(); handleScrubStart(e.clientX, e.currentTarget); }}
+            onMouseMove={e => handleScrubMove(e.clientX, e.currentTarget)}
+            onMouseUp={handleScrubEnd}
+            onMouseLeave={handleScrubEnd}
+            onTouchStart={e => { e.preventDefault(); handleScrubStart(e.touches[0].clientX, e.currentTarget); }}
+            onTouchMove={e => handleScrubMove(e.touches[0].clientX, e.currentTarget)}
+            onTouchEnd={handleScrubEnd}
+            title="Drag to seek"
+          >
+            <div className={styles.monoFill} style={{ width: `${progress * 100}%` }} />
+            <div className={styles.monoThumb} style={{ left: `${progress * 100}%` }} />
+          </div>
         )}
 
         {/* Controls */}
