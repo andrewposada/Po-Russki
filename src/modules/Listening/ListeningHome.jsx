@@ -32,6 +32,14 @@ import styles from "./ListeningHome.module.css";
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
+// Returns total duration in seconds for an audio element once metadata is loaded
+function fmtTime(secs) {
+  if (!isFinite(secs) || secs < 0) return "0:00";
+  const m = Math.floor(secs / 60);
+  const s = Math.floor(secs % 60);
+  return `${m}:${s.toString().padStart(2, "0")}`;
+}
+
 function weightedPickFormat() {
   const entries = CONTENT_FORMATS.filter(f => FORMAT_WEIGHTS[f.id]);
   const total   = entries.reduce((s, f) => s + (FORMAT_WEIGHTS[f.id] ?? 0), 0);
@@ -166,9 +174,15 @@ export default function ListeningHome() {
   const nextAudioRef    = useRef(null); // Promise<audioUrls>
   const nextReadyRef    = useRef(null); // { exercise, audioUrls } when both resolved
 
-  // Audio refs
-  const activeAudioRef = useRef(null);
-  const rafRef         = useRef(null);
+  // Audio management
+  const activeAudioRef  = useRef(null);  // current Audio object (reused across play/pause)
+  const rafRef          = useRef(null);  // rAF handle
+  const audioQueueRef   = useRef([]);    // ordered array of object URLs for current exercise
+  const currentLineRef  = useRef(0);     // mirrors currentLine state for use inside callbacks
+
+  // Time display state
+  const [currentTime,  setCurrentTime]  = useState(0);  // seconds elapsed in current line
+  const [duration,     setDuration]     = useState(0);  // seconds total in current line
 
   // Typed input refs for Russian keyboard
   const typedRefs = useRef({});
@@ -193,7 +207,13 @@ export default function ListeningHome() {
   useEffect(() => {
     return () => {
       cancelAnimationFrame(rafRef.current);
-      try { activeAudioRef.current?.pause(); } catch {}
+      const audio = activeAudioRef.current;
+      if (audio) {
+        audio.onended = null;
+        audio.onerror = null;
+        try { audio.pause(); } catch {}
+        audio.src = "";
+      }
       revokeAllAudio();
     };
   }, []);
@@ -234,6 +254,13 @@ export default function ListeningHome() {
       setShowTranscript(false);
       setCurrentLine(0);
       setProgress(0);
+      setCurrentTime(0);
+      setDuration(0);
+      audioQueueRef.current = [];
+      currentLineRef.current = 0;
+      const prev = activeAudioRef.current;
+      if (prev) { try { prev.pause(); } catch {} prev.src = ""; }
+      activeAudioRef.current = null;
       setModuleState(MS.CONTENT_READY);
 
       // Track 2: audio in background
@@ -279,61 +306,136 @@ export default function ListeningHome() {
 
   // ── Audio playback ──────────────────────────────────────────────────────────
 
-  const playLine = useCallback((lineIdx, urls) => {
-    const urlList = urls ?? audioUrls;
-    if (!urlList.length || lineIdx >= urlList.length) {
-      setIsPlaying(false);
-      setHasListened(true);
-      return;
-    }
-
-    try { activeAudioRef.current?.pause(); } catch {}
+  // ── Core rAF tick — runs while audio is playing ──────────────────────────
+  const startTick = useCallback((audio) => {
     cancelAnimationFrame(rafRef.current);
+    const tick = () => {
+      if (!audio || audio.paused || audio.ended) return;
+      const dur = audio.duration || 0;
+      const cur = audio.currentTime || 0;
+      setProgress(dur > 0 ? cur / dur : 0);
+      setCurrentTime(cur);
+      setDuration(dur);
+      rafRef.current = requestAnimationFrame(tick);
+    };
+    rafRef.current = requestAnimationFrame(tick);
+  }, []);
 
-    setCurrentLine(lineIdx);
-    setIsPlaying(true);
-    setProgress(0);
+  // ── Load a new Audio object for a line (does not auto-play) ─────────────
+  const loadLine = useCallback((lineIdx, urls) => {
+    const urlList = urls ?? audioQueueRef.current;
+    if (!urlList.length || lineIdx >= urlList.length) return null;
+
+    // Tear down previous audio completely
+    const prev = activeAudioRef.current;
+    if (prev) {
+      prev.onended  = null;
+      prev.onerror  = null;
+      prev.oncanplay = null;
+      try { prev.pause(); } catch {}
+      prev.src = "";
+    }
+    cancelAnimationFrame(rafRef.current);
 
     const audio = new Audio(urlList[lineIdx]);
     audio.playbackRate = playbackSpeed;
     activeAudioRef.current = audio;
+    currentLineRef.current = lineIdx;
+    setCurrentLine(lineIdx);
+    setProgress(0);
+    setCurrentTime(0);
+    setDuration(0);
+    audioQueueRef.current = [];
+      currentLineRef.current = 0;
+      const prev = activeAudioRef.current;
+      if (prev) { try { prev.pause(); } catch {} prev.src = ""; }
+      activeAudioRef.current = null;
+      setModuleState(MS.CONTENT_READY);
 
-    const tick = () => {
-      if (audio.duration > 0) setProgress(audio.currentTime / audio.duration);
-      if (!audio.paused && !audio.ended) rafRef.current = requestAnimationFrame(tick);
-    };
-    rafRef.current = requestAnimationFrame(tick);
+    // Update duration once metadata loads
+    audio.onloadedmetadata = () => setDuration(audio.duration || 0);
 
     audio.onended = () => {
       cancelAnimationFrame(rafRef.current);
-      setProgress(0);
-      playLine(lineIdx + 1, urlList);
+      setProgress(1);
+      const nextIdx = currentLineRef.current + 1;
+      const queue   = audioQueueRef.current;
+      if (nextIdx < queue.length) {
+        const next = loadLine(nextIdx, queue);
+        if (next) {
+          next.play().catch(() => setIsPlaying(false));
+          startTick(next);
+        }
+      } else {
+        // Finished all lines
+        setIsPlaying(false);
+        setHasListened(true);
+        setProgress(0);
+        setCurrentTime(0);
+      }
     };
+
     audio.onerror = () => {
       cancelAnimationFrame(rafRef.current);
       setIsPlaying(false);
     };
 
-    audio.play().catch(() => setIsPlaying(false));
-  }, [audioUrls, playbackSpeed]);
+    return audio;
+  }, [playbackSpeed, startTick]);
 
+  // ── Play from a specific line ────────────────────────────────────────────
+  const playFromLine = useCallback((lineIdx) => {
+    const urls = audioQueueRef.current;
+    if (!urls.length) return;
+    const audio = loadLine(lineIdx, urls);
+    if (!audio) return;
+    setIsPlaying(true);
+    audio.play().catch(() => setIsPlaying(false));
+    startTick(audio);
+  }, [loadLine, startTick]);
+
+  // ── Play / Pause toggle ──────────────────────────────────────────────────
   const handlePlay = useCallback(() => {
     if (audioLoading || !audioUrls.length) return;
-    playLine(0);
-  }, [audioLoading, audioUrls, playLine]);
+    const audio = activeAudioRef.current;
+
+    // If we have an existing paused audio, resume it
+    if (audio && audio.src && audio.paused && !audio.ended) {
+      audio.play().catch(() => setIsPlaying(false));
+      setIsPlaying(true);
+      startTick(audio);
+      return;
+    }
+
+    // Otherwise start from beginning
+    audioQueueRef.current = audioUrls;
+    playFromLine(0);
+  }, [audioLoading, audioUrls, playFromLine, startTick]);
 
   const handlePause = useCallback(() => {
-    try { activeAudioRef.current?.pause(); } catch {}
     cancelAnimationFrame(rafRef.current);
+    try { activeAudioRef.current?.pause(); } catch {}
     setIsPlaying(false);
   }, []);
 
+  // ── Seek to a dialogue line ──────────────────────────────────────────────
   const handleSeekToLine = useCallback((lineIdx) => {
     if (!audioUrls.length) return;
-    try { activeAudioRef.current?.pause(); } catch {}
-    cancelAnimationFrame(rafRef.current);
-    playLine(lineIdx);
-  }, [audioUrls, playLine]);
+    audioQueueRef.current = audioUrls;
+    playFromLine(lineIdx);
+    setIsPlaying(true);
+  }, [audioUrls, playFromLine]);
+
+  // ── Monologue scrub ──────────────────────────────────────────────────────
+  const handleMonoScrub = useCallback((e) => {
+    const audio = activeAudioRef.current;
+    if (!audio || !audio.duration) return;
+    const rect  = e.currentTarget.getBoundingClientRect();
+    const ratio = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
+    audio.currentTime = ratio * audio.duration;
+    setProgress(ratio);
+    setCurrentTime(audio.currentTime);
+  }, []);
 
   // ── Questions reveal after first listen ────────────────────────────────────
 
@@ -423,6 +525,11 @@ export default function ListeningHome() {
       }
     }
   }, [answers, exercise, moduleState, preGenerateNextAudio]);
+
+// Keep audioQueueRef in sync with audioUrls state
+  useEffect(() => {
+    audioQueueRef.current = audioUrls;
+  }, [audioUrls]);
 
   // ── Next exercise ──────────────────────────────────────────────────────────
 
@@ -717,8 +824,16 @@ export default function ListeningHome() {
             </div>
           );
         })() : (
-          <div className={styles.monoScrubber}>
+          <div
+            className={styles.monoScrubber}
+            onClick={handleMonoScrub}
+            title="Click to seek"
+          >
             <div className={styles.monoFill} style={{ width: `${progress * 100}%` }} />
+            <div
+              className={styles.monoThumb}
+              style={{ left: `${progress * 100}%` }}
+            />
           </div>
         )}
 
@@ -736,11 +851,14 @@ export default function ListeningHome() {
           </button>
           <button
             className={styles.replayBtn}
-            onClick={handlePlay}
+            onClick={() => { audioQueueRef.current = audioUrls; playFromLine(0); }}
             disabled={!canPlay}
           >
             ↺ Replay
           </button>
+          <span className={styles.timeDisplay}>
+            {fmtTime(currentTime)} / {fmtTime(duration)}
+          </span>
         </div>
 
         {audioError && (
