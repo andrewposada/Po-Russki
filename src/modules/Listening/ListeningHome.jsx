@@ -265,7 +265,7 @@ export default function ListeningHome() {
 
       // Track 2: audio in background
       setLoadingStep(2);
-      setAudioLoading(true);
+      setAudioLoading(true); 
       setAudioError(false);
 
       fetchAllAudio(data.content, data.contentHash, data.characters)
@@ -345,12 +345,7 @@ export default function ListeningHome() {
     setProgress(0);
     setCurrentTime(0);
     setDuration(0);
-    audioQueueRef.current = [];
-      currentLineRef.current = 0;
-      const prevAudio = activeAudioRef.current;
-      if (prevAudio) { try { prevAudio.pause(); } catch {} prevAudio.src = ""; }
-      activeAudioRef.current = null;
-      setModuleState(MS.CONTENT_READY);
+    
 
     // Update duration once metadata loads
     audio.onloadedmetadata = () => setDuration(audio.duration || 0);
