@@ -24,6 +24,7 @@ import Grammar from "./modules/Grammar";
 import Vocabulary   from "./modules/Vocabulary";
 import Tabu         from "./modules/Tabu";
 import Muzyka       from "./modules/Muzyka";
+import Listening    from "./modules/Listening";
 // import Drill        from "./modules/Drill/Drill";
 
 function ProtectedRoute({ children }) {
@@ -124,6 +125,7 @@ function AppContent() {
           <Route path="/tabu"                        element={<ProtectedRoute><Tabu /></ProtectedRoute>} />
           <Route path="/muzyka"                      element={<ProtectedRoute><Muzyka /></ProtectedRoute>} />
           <Route path="/muzyka/song/:songId"         element={<ProtectedRoute><Muzyka /></ProtectedRoute>} />
+          <Route path="/listening"                   element={<ProtectedRoute><Listening /></ProtectedRoute>} />
           {/* <Route path="/drill" element={<ProtectedRoute><Drill /></ProtectedRoute>} /> */}
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>

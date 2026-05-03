@@ -136,11 +136,16 @@ function CefrProgressSection({ cefrLevel, report, rc }) {
     ? Math.min(100, Math.round(((rc.consistency_score ?? 0) / thresholds.consistency_min) * 100))
     : null;
 
+  const listeningPct = thresholds.listening_comp
+    ? Math.min(100, Math.round((((rc.listening_comprehension ?? 0)) / thresholds.listening_comp) * 100))
+    : null;
+
   const bars = [
     { label: `Grammar (${rc.grammar_accuracy ?? 0}% / ${thresholds.grammar_accuracy}% needed)`, pct: grammarPct, color: "#b07c5a" },
     { label: `Vocabulary (${rc.vocab_tier2_plus_count ?? 0} / ${thresholds.vocab_tier2_plus} words needed)`, pct: vocabPct, color: "#7a9e7e" },
     readingPct !== null ? { label: `Reading (${rc.reading_data_sufficient ? `${rc.reading_comprehension ?? 0}%` : "no data"} / ${thresholds.reading_comp}% needed)`, pct: rc.reading_data_sufficient ? readingPct : 0, color: "#7aaec8" } : null,
-    consistPct !== null ? { label: `Consistency (${rc.consistency_score ?? 0} / ${thresholds.consistency_min} needed)`, pct: consistPct, color: "#9a7ec8" } : null,
+    listeningPct !== null ? { label: `Listening (${rc.listening_data_sufficient ? `${rc.listening_comprehension ?? 0}%` : "no data"} / ${thresholds.listening_comp}% needed)`, pct: rc.listening_data_sufficient ? listeningPct : 0, color: "#9a7ec8" } : null,
+    consistPct !== null ? { label: `Consistency (${rc.consistency_score ?? 0} / ${thresholds.consistency_min} needed)`, pct: consistPct, color: "#6a8ec8" } : null,
   ].filter(Boolean);
 
   const advancementReady = !!report.cefr_advance_to;
@@ -454,6 +459,23 @@ export default function ProgressOverlay({ onClose }) {
                       </>
                     )}
                   </div>
+                  <div className={styles.statPill}>
+                    {rc.listening_data_sufficient && rc.listening_comprehension != null ? (
+                      <>
+                        <span className={styles.statVal}>{rc.listening_comprehension}%</span>
+                        <span className={styles.statLbl}>Listening</span>
+                        <div className={styles.statBar}>
+                          <div className={styles.statBarFill} style={{ width: `${rc.listening_comprehension}%`, background: "#9a7ec8" }} />
+                        </div>
+                      </>
+                    ) : (
+                      <>
+                        <span className={styles.statVal} style={{ fontSize: 13, color: "var(--c-text-light)" }}>—</span>
+                        <span className={styles.statLbl}>Listening</span>
+                        <span className={styles.statNote}>needs 3+ sessions</span>
+                      </>
+                    )}
+                  </div>
                   {rc.consistency_score != null && (
                     <div className={styles.statPill}>
                       <span className={styles.statVal}>{rc.consistency_score}/10</span>
@@ -545,6 +567,16 @@ export default function ProgressOverlay({ onClose }) {
                     <div className={styles.readingNote}>
                       <span style={{ fontSize: 14, flexShrink: 0 }}>📖</span>
                       <p className={styles.readingNoteText}>{report.reading_note}</p>
+                    </div>
+                  </div>
+                )}
+
+                {/* Listening note */}
+                {report.listening_note && (
+                  <div className={styles.section}>
+                    <div className={styles.readingNote}>
+                      <span style={{ fontSize: 14, flexShrink: 0 }}>🎧</span>
+                      <p className={styles.readingNoteText}>{report.listening_note}</p>
                     </div>
                   </div>
                 )}

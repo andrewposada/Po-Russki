@@ -26,22 +26,26 @@ export default async function handler(req, res) {
     // Merge: computed_scores is ground truth, Sonnet fills commentary fields
     const report = {
       report_card: {
-        overall_grade:           snapshot.computed_scores.overall_grade,
-        grammar_accuracy:        snapshot.computed_scores.grammar_accuracy,
-        vocab_retention:         snapshot.computed_scores.vocab_retention,
-        reading_comprehension:   snapshot.computed_scores.reading_comprehension,
-        reading_data_sufficient: snapshot.computed_scores.reading_data_sufficient,
-        consistency_score:       snapshot.computed_scores.consistency_score,
-        weighted_average:        snapshot.computed_scores.weighted_average,
-        vocab_tier2_plus_count:  snapshot.computed_scores.vocab_tier2_plus,
-        trend:                   sonnetReport.trend          ?? "stable",
-        level_estimate:          sonnetReport.level_estimate ?? snapshot.current_cefr_level,
+        overall_grade:              snapshot.computed_scores.overall_grade,
+        grammar_accuracy:           snapshot.computed_scores.grammar_accuracy,
+        vocab_retention:            snapshot.computed_scores.vocab_retention,
+        reading_comprehension:      snapshot.computed_scores.reading_comprehension,
+        reading_data_sufficient:    snapshot.computed_scores.reading_data_sufficient,
+        listening_comprehension:    snapshot.computed_scores.listening_comprehension,
+        listening_data_sufficient:  snapshot.computed_scores.listening_data_sufficient,
+        listening_session_count:    snapshot.computed_scores.listening_session_count,
+        consistency_score:          snapshot.computed_scores.consistency_score,
+        weighted_average:           snapshot.computed_scores.weighted_average,
+        vocab_tier2_plus_count:     snapshot.computed_scores.vocab_tier2_plus,
+        trend:                      sonnetReport.trend          ?? "stable",
+        level_estimate:             sonnetReport.level_estimate ?? snapshot.current_cefr_level,
       },
       summary:              sonnetReport.summary              ?? "",
       strengths:            sonnetReport.strengths            ?? [],
       challenges:           sonnetReport.challenges           ?? [],
       struggling_words:     sonnetReport.struggling_words     ?? [],
       reading_note:         sonnetReport.reading_note         ?? null,
+      listening_note:       sonnetReport.listening_note       ?? null,
       next_milestone:       sonnetReport.next_milestone       ?? null,
       recommend_level_review: sonnetReport.recommend_level_review ?? false,
       cefr_advance_to:      snapshot.cefr_advance_to,
@@ -118,9 +122,11 @@ async function runSonnetAnalysis(snapshot, haikuPatternsCsv) {
   const cefrContext = buildCefrContext(current_cefr_level, computed_scores, cefr_advance_to);
 
   const input = `COMPUTED SCORES (ground truth — do not recalculate):
-grade:${computed_scores.overall_grade} weighted_avg:${computed_scores.weighted_average}% grammar:${computed_scores.grammar_accuracy}% vocab_retention:${computed_scores.vocab_retention}% reading:${computed_scores.reading_comprehension ?? "no_data"} consistency:${computed_scores.consistency_score}/10 streak:${computed_scores.current_streak}days
+grade:${computed_scores.overall_grade} weighted_avg:${computed_scores.weighted_average}% grammar:${computed_scores.grammar_accuracy}% vocab_retention:${computed_scores.vocab_retention}% reading:${computed_scores.reading_comprehension ?? "no_data"} listening:${computed_scores.listening_comprehension ?? "no_data"} consistency:${computed_scores.consistency_score}/10 streak:${computed_scores.current_streak}days
 
 READING: ${computed_scores.reading_data_sufficient ? `${computed_scores.reading_session_count} sessions, ${computed_scores.reading_comprehension}% accuracy` : `insufficient data (${computed_scores.reading_session_count} sessions, need 3)`}
+
+LISTENING: ${computed_scores.listening_data_sufficient ? `${computed_scores.listening_session_count} sessions, ${computed_scores.listening_comprehension}% accuracy` : `insufficient data (${computed_scores.listening_session_count} sessions, need 3)`}
 
 TOPIC BREAKDOWN (topic,accuracy,attempts,bucket):
 ${topic_breakdown_csv}
@@ -162,6 +168,7 @@ ACTION ROUTE RULES — use exactly these formats:
 - Grammar freeplay targeted: /grammar/freeplay?topics=TOPIC_ID (use the numeric topic ID)
 - Vocabulary session: /vocabulary/session
 - Library: /library
+- Listening module: /listening
 - Specific lesson: /lessons/play/LESSON_ID
 - Assignments: /lessons/assignments`,
       messages: [{
@@ -192,6 +199,7 @@ Return ONLY this JSON:
   ],
   "struggling_words": ["<Russian word>"],
   "reading_note": "<string or null — comment on reading. If insufficient data, explain what practicing in the Library would do for their grade.>",
+  "listening_note": "<string or null — comment on listening comprehension. If insufficient data, explain what practicing in the Listening module would do for their grade. If data exists, comment on their listening accuracy and what it shows about their comprehension of spoken Russian.>",
   "next_milestone": "<1 sentence about what the next concrete improvement looks like>",
   "cefr_commentary": "<2-3 sentences about where they stand in their current CEFR level and what the clearest gap is to the next level>",
   "recommend_level_review": <true if data strongly suggests readiness to advance CEFR level, false otherwise>
@@ -203,6 +211,8 @@ RULES:
 - struggling_words: specific Russian words from error patterns that appear multiple times — empty array if none
 - trend: compare current scores to prior_reports if available; otherwise "stable"
 - If reading is insufficient, reading_note should explain the grade impact warmly
+- If listening is insufficient, listening_note should explain what the Listening module would add to their grade warmly
+- listening_note route hint: direct them to /listening
 - No bullet points in text fields`,
       }],
     }),
@@ -221,10 +231,10 @@ RULES:
 
 function buildCefrContext(currentLevel, computedScores, cefrAdvanceTo) {
   const levelMap = {
-    A1: { next: "A2", grammarNeed: 65, vocabNeed: 500,  readNeed: 50,  topicsNeed: 6  },
-    A2: { next: "B1", grammarNeed: 70, vocabNeed: 1200, readNeed: 60,  topicsNeed: 10 },
-    B1: { next: "B2", grammarNeed: 78, vocabNeed: 2500, readNeed: 72,  topicsNeed: 15 },
-    B2: { next: null, grammarNeed: null, vocabNeed: null, readNeed: null, topicsNeed: null },
+    A1: { next: "A2", grammarNeed: 65, vocabNeed: 500,  readNeed: 50,  listenNeed: null, topicsNeed: 6  },
+    A2: { next: "B1", grammarNeed: 70, vocabNeed: 1200, readNeed: 60,  listenNeed: 50,  topicsNeed: 10 },
+    B1: { next: "B2", grammarNeed: 78, vocabNeed: 2500, readNeed: 72,  listenNeed: 60,  topicsNeed: 15 },
+    B2: { next: null, grammarNeed: null, vocabNeed: null, readNeed: null, listenNeed: null, topicsNeed: null },
   };
   const info = levelMap[currentLevel] ?? levelMap["A1"];
 
@@ -234,8 +244,16 @@ function buildCefrContext(currentLevel, computedScores, cefrAdvanceTo) {
     lines.push(`grammar_gap:${computedScores.grammar_accuracy}%_of_${info.grammarNeed}%_needed`);
     lines.push(`vocab_gap:${computedScores.vocab_tier2_plus}_of_${info.vocabNeed}_words_needed`);
     if (info.readNeed) {
-      const readVal = computedScores.reading_data_sufficient ? `${computedScores.reading_comprehension}%` : "no_data";
+      const readVal = computedScores.reading_data_sufficient
+        ? `${computedScores.reading_comprehension}%`
+        : "no_data";
       lines.push(`reading_gap:${readVal}_of_${info.readNeed}%_needed`);
+    }
+    if (info.listenNeed) {
+      const listenVal = computedScores.listening_data_sufficient
+        ? `${computedScores.listening_comprehension}%`
+        : "no_data";
+      lines.push(`listening_gap:${listenVal}_of_${info.listenNeed}%_needed`);
     }
     lines.push(`reliable_topics:${computedScores.reliable_topics}_of_${info.topicsNeed}_needed`);
     if (cefrAdvanceTo) lines.push(`advancement_eligible:true`);

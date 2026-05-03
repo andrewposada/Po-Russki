@@ -34,6 +34,7 @@ export const ATTEMPT_SOURCES = {
   COMPREHENSION:    8,
   SONG_STUDY:       9,
   SONG_DRILL:       10,
+  LISTENING:        11,
 };
 
 // ── Constants — mirror of attempt_topics seed data ───────────────────────────
@@ -84,6 +85,16 @@ export const ATTEMPT_TOPICS = {
   SONG_MEANING:     91,
   SONG_CLOZE:       92,
   SONG_RECALL:      93,
+  // Listening
+  LISTENING_GIST:        100,
+  LISTENING_DETAIL:      101,
+  LISTENING_INFERENCE:   102,
+  LISTENING_DICTATION:   103,
+  LISTENING_WORD_ORDER:  104,
+  LISTENING_TRANSLATION: 105,
+  LISTENING_TRUE_FALSE:  106,
+  LISTENING_RESPOND:     107,
+  LISTENING_MISHEAR:     108,
 };
 
 // ── Maps grammar roadmap node IDs to topic IDs ────────────────────────────────
@@ -158,6 +169,16 @@ export const ATTEMPT_EXERCISE_TYPES = {
   SONG_MEANING:     27,
   SONG_CLOZE:       28,
   SONG_RECALL:      29,
+  // Listening — domain 7
+  LISTENING_GIST_MC:          30,
+  LISTENING_DETAIL_MC:        31,
+  LISTENING_INFERENCE_MC:     32,
+  LISTENING_DICTATION_FILL:   33,
+  LISTENING_WORD_REORDER:     34,
+  LISTENING_PHRASE_TRANSLATE: 35,
+  LISTENING_TRUE_FALSE:       36,
+  LISTENING_RESPOND_MC:       37,
+  LISTENING_MISHEAR_CORRECT:  38,
 };
 
 // ── Maps comprehension question type strings to topic IDs ─────────────────────

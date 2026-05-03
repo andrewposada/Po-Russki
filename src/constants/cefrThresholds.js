@@ -19,6 +19,8 @@ export const CEFR_THRESHOLDS = {
     vocab_tier2_plus:     200,
     reading_comp:         null,   // not required at A1
     reading_sessions:     0,
+    listening_comp:       null,   // not required at A1
+    listening_sessions:   0,
     consistency_min:      null,
     consecutive_reports:  1,
   },
@@ -30,6 +32,8 @@ export const CEFR_THRESHOLDS = {
     vocab_tier2_plus:     500,
     reading_comp:         50,
     reading_sessions:     3,
+    listening_comp:       50,
+    listening_sessions:   3,
     consistency_min:      null,
     consecutive_reports:  1,
   },
@@ -41,8 +45,10 @@ export const CEFR_THRESHOLDS = {
     vocab_tier2_plus:     1200,
     reading_comp:         60,
     reading_sessions:     3,
+    listening_comp:       60,
+    listening_sessions:   5,
     consistency_min:      6,
-    consecutive_reports:  2,   // must hold across 2 consecutive reports
+    consecutive_reports:  2,
   },
   B2: {
     label: "B2 — Upper Intermediate",
@@ -52,6 +58,8 @@ export const CEFR_THRESHOLDS = {
     vocab_tier2_plus:     2500,
     reading_comp:         72,
     reading_sessions:     5,
+    listening_comp:       70,
+    listening_sessions:   10,
     consistency_min:      null,
     consecutive_reports:  2,
   },
@@ -74,15 +82,29 @@ export const GRADE_THRESHOLDS = [
 export const CONSISTENCY_PLUS_MIN  = 8;
 export const CONSISTENCY_MINUS_MAX = 4;
 
-// Grade weights — must sum to 1.0
-// When reading_data_sufficient is false, grammar and vocab are rebalanced
+// Grade weights — must sum to 1.0 within each combination.
+// Four combinations depending on which receptive skill data is available:
+//   read + listen:  grammar 40% + vocab 25% + reading 20% + listening 15%
+//   read only:      grammar 50% + vocab 30% + reading 20%
+//   listen only:    grammar 50% + vocab 30% + listening 20%
+//   neither:        grammar 55% + vocab 45%
 export const GRADE_WEIGHTS = {
-  grammar:          0.40,
-  vocab:            0.35,
-  reading:          0.25,
-  // Fallback when reading data is insufficient:
-  grammar_no_read:  0.53,
-  vocab_no_read:    0.47,
+  // Read + Listen
+  grammar:              0.40,
+  vocab:                0.25,
+  reading:              0.20,
+  listening:            0.15,
+  // Read only
+  grammar_read_only:    0.50,
+  vocab_read_only:      0.30,
+  reading_only:         0.20,
+  // Listen only
+  grammar_listen_only:  0.50,
+  vocab_listen_only:    0.30,
+  listening_only:       0.20,
+  // Neither
+  grammar_no_read:      0.55,
+  vocab_no_read:        0.45,
 };
 
 // Topic accuracy bucket thresholds

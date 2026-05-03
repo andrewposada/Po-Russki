@@ -237,6 +237,44 @@ function MuzScene() {
   );
 }
 
+function ListenScene() {
+  return (
+    <svg className={styles.cardScene} viewBox="0 0 380 280" fill="none" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMidYMid slice">
+      <rect width="380" height="280" fill="#1a1e2e"/>
+      {/* Background glow */}
+      <ellipse cx="190" cy="140" rx="140" ry="110" fill="#2a3a5a" opacity="0.5"/>
+      {/* Outer headphone arc */}
+      <path d="M88 152 Q88 58 190 58 Q292 58 292 152" stroke="#4a6a9a" strokeWidth="9" fill="none" strokeLinecap="round"/>
+      {/* Left ear cup */}
+      <rect x="66" y="140" width="38" height="58" rx="19" fill="#3a5a8a"/>
+      <rect x="73" y="149" width="24" height="40" rx="12" fill="#2a4a7a"/>
+      {/* Right ear cup */}
+      <rect x="276" y="140" width="38" height="58" rx="19" fill="#3a5a8a"/>
+      <rect x="283" y="149" width="24" height="40" rx="12" fill="#2a4a7a"/>
+      {/* Left sound waves */}
+      <path d="M50 161 Q42 169 50 177" stroke="#7aaec8" strokeWidth="2.5" fill="none" strokeLinecap="round" opacity="0.75"/>
+      <path d="M37 152 Q22 169 37 186" stroke="#7aaec8" strokeWidth="2" fill="none" strokeLinecap="round" opacity="0.45"/>
+      <path d="M24 143 Q4 169 24 195" stroke="#7aaec8" strokeWidth="1.5" fill="none" strokeLinecap="round" opacity="0.2"/>
+      {/* Right sound waves */}
+      <path d="M330 161 Q338 169 330 177" stroke="#7aaec8" strokeWidth="2.5" fill="none" strokeLinecap="round" opacity="0.75"/>
+      <path d="M343 152 Q358 169 343 186" stroke="#7aaec8" strokeWidth="2" fill="none" strokeLinecap="round" opacity="0.45"/>
+      <path d="M356 143 Q376 169 356 195" stroke="#7aaec8" strokeWidth="1.5" fill="none" strokeLinecap="round" opacity="0.2"/>
+      {/* Waveform bars */}
+      <rect x="138" y="212" width="8" height="16" rx="4" fill="#7aaec8" opacity="0.55"/>
+      <rect x="150" y="205" width="8" height="30" rx="4" fill="#7aaec8" opacity="0.65"/>
+      <rect x="162" y="197" width="8" height="46" rx="4" fill="#7aaec8" opacity="0.75"/>
+      <rect x="174" y="205" width="8" height="30" rx="4" fill="#7aaec8" opacity="0.65"/>
+      <rect x="186" y="199" width="8" height="42" rx="4" fill="#c8e0ee" opacity="0.9"/>
+      <rect x="198" y="206" width="8" height="28" rx="4" fill="#7aaec8" opacity="0.7"/>
+      <rect x="210" y="200" width="8" height="40" rx="4" fill="#7aaec8" opacity="0.75"/>
+      <rect x="222" y="207" width="8" height="26" rx="4" fill="#7aaec8" opacity="0.6"/>
+      <rect x="234" y="213" width="8" height="14" rx="4" fill="#7aaec8" opacity="0.5"/>
+      {/* Label */}
+      <text x="190" y="262" textAnchor="middle" fontFamily="Georgia,serif" fontSize="10" fill="white" opacity="0.28" letterSpacing="2">слушать</text>
+    </svg>
+  );
+}
+
 // ── Card data ───────────────────────────────────────────────────────────────
 
 const CARDS = [
@@ -293,6 +331,15 @@ const CARDS = [
     hint:      "Learn Russian through music & lyrics",
     overlay:   "linear-gradient(100deg, rgba(0,0,0,0) 30%, rgba(10,6,24,0.7) 100%)",
     Scene:     MuzScene,
+  },
+  {
+    path:      "/listening",
+    areaClass: "cardListen",
+    en:        "Listening",
+    ru:        "Слушание",
+    hint:      "Train your ear with AI audio exercises",
+    overlay:   "linear-gradient(160deg, rgba(0,0,0,0) 20%, rgba(6,10,28,0.8) 100%)",
+    Scene:     ListenScene,
   },
 ];
 

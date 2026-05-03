@@ -20,6 +20,9 @@ export default async function handler(req, res) {
   if (type === "free_response") {
     return handleFreeResponse(body, res);
   }
+  if (type === "listening_typed") {
+    return handleListeningTyped(body, res);
+  }
   return handlePractice(body, res);
 }
 
@@ -119,6 +122,61 @@ If there are no errors, return an empty errors array. Score 90+ if the response 
     return res.json(grade);
   } catch (err) {
     console.error("lesson-grade-free error:", err);
+    return res.status(500).json({ error: "Grading failed" });
+  }
+}
+
+// ── Listening typed answer grading (Haiku, correct/feedback) ────────────────
+
+async function handleListeningTyped({ questionType, correctAnswer, studentAnswer }, res) {
+  if (!correctAnswer || !studentAnswer) {
+    return res.status(400).json({ error: "correctAnswer and studentAnswer required" });
+  }
+
+  const isEnglish = questionType === "phrase_translation";
+
+  const systemPrompt = `You are grading a listening comprehension exercise for a Russian language learner.
+Be lenient with minor errors that don't affect meaning.
+Respond ONLY with valid JSON: {"correct": true or false, "feedback": "one sentence"}
+No markdown. No preamble. No extra fields.`;
+
+  const userPrompt = isEnglish
+    ? `The student heard a Russian phrase and must give its English meaning.
+Correct answer: "${correctAnswer}"
+Student answer: "${studentAnswer}"
+Accept synonyms, paraphrases, and minor wording differences if the meaning is correct.
+Is the student correct? Respond with JSON.`
+    : `The student heard Russian audio and must recall a word or phrase in Russian.
+Correct answer: "${correctAnswer}"
+Student answer: "${studentAnswer}"
+Accept: ё/е alternations, missing stress marks, minor spelling variation, capitalisation differences.
+Reject: wrong word, wrong grammatical form, meaningfully different text.
+Is the student correct? Respond with JSON.`;
+
+  try {
+    const response = await fetch("https://api.anthropic.com/v1/messages", {
+      method: "POST",
+      headers: {
+        "Content-Type":      "application/json",
+        "x-api-key":         process.env.ANTHROPIC_API_KEY,
+        "anthropic-version": "2023-06-01",
+      },
+      body: JSON.stringify({
+        model:      MODEL_HAIKU,
+        max_tokens: 80,
+        system:     systemPrompt,
+        messages:   [{ role: "user", content: userPrompt }],
+      }),
+    });
+
+    const data  = await response.json();
+    const raw   = data?.content?.[0]?.text ?? "";
+    const clean = raw.replace(/```json|```/g, "").trim();
+    const grade = JSON.parse(clean);
+    return res.json({ correct: !!grade.correct, feedback: grade.feedback ?? "" });
+
+  } catch (err) {
+    console.error("lesson-grade listening_typed error:", err);
     return res.status(500).json({ error: "Grading failed" });
   }
 }

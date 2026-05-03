@@ -36,12 +36,34 @@ function computeLetterGrade(weightedAvg, consistencyScore) {
   return base + modifier;
 }
 
-function computeWeightedAverage(grammarAcc, vocabRetention, readingComp, readingDataSufficient) {
-  if (readingDataSufficient && readingComp !== null) {
+function computeWeightedAverage(
+  grammarAcc, vocabRetention,
+  readingComp, readingDataSufficient,
+  listeningComp, listeningDataSufficient,
+) {
+  const hasRead   = readingDataSufficient   && readingComp   !== null;
+  const hasListen = listeningDataSufficient && listeningComp !== null;
+
+  if (hasRead && hasListen) {
     return Math.round(
-      grammarAcc     * GRADE_WEIGHTS.grammar +
-      vocabRetention * GRADE_WEIGHTS.vocab   +
-      readingComp    * GRADE_WEIGHTS.reading
+      grammarAcc     * GRADE_WEIGHTS.grammar   +
+      vocabRetention * GRADE_WEIGHTS.vocab     +
+      readingComp    * GRADE_WEIGHTS.reading   +
+      listeningComp  * GRADE_WEIGHTS.listening
+    );
+  }
+  if (hasRead) {
+    return Math.round(
+      grammarAcc     * GRADE_WEIGHTS.grammar_read_only +
+      vocabRetention * GRADE_WEIGHTS.vocab_read_only   +
+      readingComp    * GRADE_WEIGHTS.reading_only
+    );
+  }
+  if (hasListen) {
+    return Math.round(
+      grammarAcc     * GRADE_WEIGHTS.grammar_listen_only +
+      vocabRetention * GRADE_WEIGHTS.vocab_listen_only   +
+      listeningComp  * GRADE_WEIGHTS.listening_only
     );
   }
   return Math.round(
@@ -74,6 +96,8 @@ function checkCefrAdvancement(currentLevel, computedScores, priorReports, vocabT
     vocab_tier2_plus,
     reading_comp,
     reading_sessions,
+    listening_comp,
+    listening_sessions,
     consistency_min,
     consecutive_reports,
     topics_required,
@@ -88,8 +112,14 @@ function checkCefrAdvancement(currentLevel, computedScores, priorReports, vocabT
     computedScores.reading_comprehension >= reading_comp &&
     computedScores.reading_session_count >= reading_sessions
   );
+  const meetsListening = listening_comp === null || (
+    computedScores.listening_data_sufficient &&
+    computedScores.listening_comprehension !== null &&
+    computedScores.listening_comprehension >= listening_comp &&
+    computedScores.listening_session_count >= listening_sessions
+  );
   const meetsConsist   = consistency_min === null || computedScores.consistency_score >= consistency_min;
-  const meetsThisRound = meetsGrammar && meetsVocab && meetsTopics && meetsReading && meetsConsist;
+  const meetsThisRound = meetsGrammar && meetsVocab && meetsTopics && meetsReading && meetsListening && meetsConsist;
 
   if (!meetsThisRound) return null;
 
@@ -285,6 +315,28 @@ export async function buildProgressSnapshot(userId, lastReportDate, currentCefrL
     readingComprehension = Math.round((totalScore / comprehension.length) * 100);
   }
 
+  // ── Computed: listening comprehension ─────────────────────────────────────
+  // Listening attempts live in universal_attempts with source_id = 11.
+  // A session = a day with ≥ 3 listening attempts (each exercise produces 3–4 attempts).
+  // Accuracy = correct / total across all listening attempts in period.
+  const listeningAttempts = attempts.filter(a => a.source_id === 11);
+  const listeningByDay = {};
+  for (const a of listeningAttempts) {
+    const day = a.attempted_at.slice(0, 10);
+    if (!listeningByDay[day]) listeningByDay[day] = { total: 0, correct: 0 };
+    listeningByDay[day].total++;
+    if (a.is_correct) listeningByDay[day].correct++;
+  }
+  // Count days with ≥ 3 attempts as a completed session
+  const listeningSessionCount = Object.values(listeningByDay)
+    .filter(d => d.total >= 3).length;
+  const listeningDataSufficient = listeningSessionCount >= MIN_READING_SESSIONS_FOR_GRADE;
+  let listeningComprehension = null;
+  if (listeningDataSufficient && listeningAttempts.length > 0) {
+    const listeningCorrect = listeningAttempts.filter(a => a.is_correct).length;
+    listeningComprehension = Math.round((listeningCorrect / listeningAttempts.length) * 100);
+  }
+
   // ── Computed: consistency ─────────────────────────────────────────────────
   const attemptDates = [...new Set(attempts.map(a => a.attempted_at.slice(0, 10)))].sort();
   const last30Days   = Array.from({ length: 30 }, (_, i) => {
@@ -309,25 +361,30 @@ export async function buildProgressSnapshot(userId, lastReportDate, currentCefrL
 
   // ── Computed: weighted average + letter grade ────────────────────────────
   const weightedAverage = computeWeightedAverage(
-    grammarAccuracy, vocabRetention, readingComprehension, readingDataSufficient
+    grammarAccuracy, vocabRetention,
+    readingComprehension, readingDataSufficient,
+    listeningComprehension, listeningDataSufficient,
   );
   const overallGrade = computeLetterGrade(weightedAverage, consistencyScore);
 
   // ── Computed scores object (passed to API as ground truth) ───────────────
   const computedScores = {
-    grammar_accuracy:        grammarAccuracy,
-    vocab_retention:         vocabRetention,
-    reading_comprehension:   readingComprehension,
-    reading_data_sufficient: readingDataSufficient,
-    reading_session_count:   readingSessionCount,
-    consistency_score:       consistencyScore,
-    active_days_last_30:     activeDaysLast30,
-    current_streak:          streak,
-    weighted_average:        weightedAverage,
-    overall_grade:           overallGrade,
-    reliable_topics:         reliableTopics.length,
-    total_words:             totalWords,
-    vocab_tier2_plus:        tier2PlusCount,
+    grammar_accuracy:           grammarAccuracy,
+    vocab_retention:            vocabRetention,
+    reading_comprehension:      readingComprehension,
+    reading_data_sufficient:    readingDataSufficient,
+    reading_session_count:      readingSessionCount,
+    listening_comprehension:    listeningComprehension,
+    listening_data_sufficient:  listeningDataSufficient,
+    listening_session_count:    listeningSessionCount,
+    consistency_score:          consistencyScore,
+    active_days_last_30:        activeDaysLast30,
+    current_streak:             streak,
+    weighted_average:           weightedAverage,
+    overall_grade:              overallGrade,
+    reliable_topics:            reliableTopics.length,
+    total_words:                totalWords,
+    vocab_tier2_plus:           tier2PlusCount,
   };
 
   // ── CEFR advancement check ────────────────────────────────────────────────

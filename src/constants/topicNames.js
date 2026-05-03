@@ -50,6 +50,16 @@ export const TOPIC_NAMES = {
   91: "Song (meaning)",
   92: "Song (cloze)",
   93: "Song (recall)",
+  // Listening (100–108)
+  100: "Listening (gist)",
+  101: "Listening (detail)",
+  102: "Listening (inference)",
+  103: "Listening (dictation)",
+  104: "Listening (word order)",
+  105: "Listening (translation)",
+  106: "Listening (true/false)",
+  107: "Listening (respond)",
+  108: "Listening (mishear)",
 };
 
 // Abbreviated names for CSV columns (saves tokens)
@@ -97,4 +107,14 @@ export const TOPIC_NAMES_SHORT = {
   91: "Song-meaning",
   92: "Song-cloze",
   93: "Song-recall",
+  // Listening (100–108)
+  100: "Listen-gist",
+  101: "Listen-detail",
+  102: "Listen-infer",
+  103: "Listen-dictation",
+  104: "Listen-wordorder",
+  105: "Listen-trans",
+  106: "Listen-tf",
+  107: "Listen-respond",
+  108: "Listen-mishear",
 };

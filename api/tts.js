@@ -8,10 +8,15 @@ export default async function handler(req, res) {
     return res.status(405).json({ error: "Method not allowed" });
   }
 
-  const { text } = req.body ?? {};
+  const { text, voiceName } = req.body ?? {};
   if (!text || typeof text !== "string") {
     return res.status(400).json({ error: "text is required" });
   }
+
+  const resolvedVoice =
+    typeof voiceName === "string" && voiceName.startsWith("ru-RU-")
+      ? voiceName
+      : "ru-RU-Standard-A";
 
   const apiKey = process.env.GOOGLE_TTS_API_KEY;
   if (!apiKey) {
@@ -26,7 +31,7 @@ export default async function handler(req, res) {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           input: { text },
-          voice: { languageCode: "ru-RU", name: "ru-RU-Wavenet-C" },
+          voice: { languageCode: "ru-RU", name: resolvedVoice },
           audioConfig: { audioEncoding: "MP3" },
         }),
       }
