@@ -11,10 +11,18 @@
 /* ── Hero ── */
 .hero {
   display: flex;
-  align-items: flex-end;
+  align-items: stretch;
   justify-content: space-between;
   margin-bottom: 36px;
   gap: 24px;
+}
+
+.heroLeft {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  min-width: 0;
+  flex: 1;
 }
 
 .heroEyebrow {
