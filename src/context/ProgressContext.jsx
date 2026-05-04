@@ -43,7 +43,7 @@ export function ProgressProvider({ children }) {
         if (hoursSince < REPORT_COOLDOWN_HOURS) {
           // Surface existing report if available
           if (lastReport?.report) {
-            setLatestReport(lastReport.report);
+            setLatestReport({ ...lastReport.report, generated_at: lastReport.generated_at });
             setReportReady(true);
           }
           setCheckComplete(true);
@@ -106,7 +106,7 @@ export function ProgressProvider({ children }) {
           setCefrLevel(snapshot.cefr_advance_to);
         }
 
-        setLatestReport(report);
+        setLatestReport({ ...report, generated_at: snapshot.generated_at });
         setReportReady(true);
         console.log("Progress check: report generated successfully");
     } catch (err) {

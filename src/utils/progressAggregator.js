@@ -321,8 +321,11 @@ export async function buildProgressSnapshot(userId, lastReportDate, currentCefrL
   const readingDataSufficient = readingSessionCount >= MIN_READING_SESSIONS_FOR_GRADE;
   let readingComprehension = null;
   if (readingDataSufficient && comprehension.length > 0) {
-    const totalScore = comprehension.reduce((s, c) => s + (c.score ?? 0), 0);
-    readingComprehension = Math.round((totalScore / comprehension.length) * 100);
+    const scored = comprehension.filter(c => c.score !== null);
+    if (scored.length > 0) {
+      const totalScore = scored.reduce((s, c) => s + c.score, 0);
+      readingComprehension = Math.round(totalScore / scored.length);
+    }
   }
 
   // ── Computed: listening comprehension ─────────────────────────────────────
