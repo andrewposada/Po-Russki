@@ -124,7 +124,7 @@ async function runSonnetAnalysis(snapshot, haikuPatternsCsv) {
   const input = `COMPUTED SCORES (ground truth — do not recalculate):
 grade:${computed_scores.overall_grade} weighted_avg:${computed_scores.weighted_average}% grammar:${computed_scores.grammar_accuracy}% vocab_retention:${computed_scores.vocab_retention}% reading:${computed_scores.reading_comprehension ?? "no_data"} listening:${computed_scores.listening_comprehension ?? "no_data"} consistency:${computed_scores.consistency_score}/10 streak:${computed_scores.current_streak}days
 
-READING: ${computed_scores.reading_data_sufficient ? `${computed_scores.reading_session_count} sessions, ${computed_scores.reading_comprehension}% accuracy` : `insufficient data (${computed_scores.reading_session_count} sessions, need 3)`}
+READING: ${computed_scores.reading_data_sufficient ? `${computed_scores.reading_session_count} sessions, ${computed_scores.reading_comprehension}% accuracy${snapshot.reading_avg_wpm ? `, avg ${snapshot.reading_avg_wpm} WPM` : ""}` : `insufficient data (${computed_scores.reading_session_count} sessions, need 3)`}
 
 LISTENING: ${computed_scores.listening_data_sufficient ? `${computed_scores.listening_session_count} sessions, ${computed_scores.listening_comprehension}% accuracy` : `insufficient data (${computed_scores.listening_session_count} sessions, need 3)`}
 

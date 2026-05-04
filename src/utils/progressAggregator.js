@@ -207,11 +207,7 @@ export async function buildProgressSnapshot(userId, lastReportDate, currentCefrL
       .select("tier, is_mastered, next_review_at")
       .eq("user_id", userId),
 
-    supabase
-      .from("reading_log")
-      .select("chapter_id, time_spent, started_at")
-      .eq("user_id", userId)
-      .gte("started_at", since),
+    Promise.resolve({ data: [] }), // chapters fetched below after books resolve
 
     supabase
       .from("comprehension_attempts")
@@ -243,15 +239,27 @@ export async function buildProgressSnapshot(userId, lastReportDate, currentCefrL
       .eq("is_core", true),
   ]);
 
-  const attempts        = attemptsRes.data      ?? [];
-  const completions     = completionsRes.data   ?? [];
-  const words           = wordsRes.data         ?? [];
-  const readingSessions = readingRes.data       ?? [];
-  const comprehension   = comprehensionRes.data ?? [];
-  const priorReports    = priorReportsRes.data  ?? [];
-  const books           = booksRes.data         ?? [];
-  const userProgress    = userProgressRes.data  ?? { xp_total: 0, level: 1 };
-  const lessons         = lessonsRes.data       ?? [];
+  const attempts      = attemptsRes.data      ?? [];
+  const completions   = completionsRes.data   ?? [];
+  const words         = wordsRes.data         ?? [];
+  const comprehension = comprehensionRes.data ?? [];
+  const priorReports  = priorReportsRes.data  ?? [];
+  const books         = booksRes.data         ?? [];
+  const userProgress  = userProgressRes.data  ?? { xp_total: 0, level: 1 };
+  const lessons       = lessonsRes.data       ?? [];
+
+  // Fetch completed chapters scoped to this user's books, filtered by last_read_at in period
+  const bookIds = books.map(b => b.id);
+  let completedChapters = [];
+  if (bookIds.length > 0) {
+    const chaptersRes = await supabase
+      .from("chapters")
+      .select("id, book_id, reading_time_seconds, word_count, last_read_at")
+      .eq("is_completed", true)
+      .in("book_id", bookIds)
+      .gte("last_read_at", since);
+    completedChapters = chaptersRes.data ?? [];
+  }
 
   // ── Threshold check ──────────────────────────────────────────────────────
   if (attempts.length < MIN_ATTEMPTS) {
@@ -307,7 +315,9 @@ export async function buildProgressSnapshot(userId, lastReportDate, currentCefrL
   const vocabRetention  = totalWords > 0 ? Math.round((tier2PlusCount / totalWords) * 100) : 0;
 
   // ── Computed: reading comprehension ──────────────────────────────────────
-  const readingSessionCount = comprehension.length;
+  // Session count = completed chapters last_read_at within the reporting period.
+  // Accuracy comes from comprehension_attempts (unchanged).
+  const readingSessionCount = completedChapters.length;
   const readingDataSufficient = readingSessionCount >= MIN_READING_SESSIONS_FOR_GRADE;
   let readingComprehension = null;
   if (readingDataSufficient && comprehension.length > 0) {
@@ -457,6 +467,12 @@ export async function buildProgressSnapshot(userId, lastReportDate, currentCefrL
     // ── Supporting context ──
     completed_lessons: completedLessons,
     user_progress:     { xp_total: userProgress.xp_total ?? 0, level: userProgress.level ?? 1 },
-    reading_sessions_in_period: readingSessions.length,
+    reading_sessions_in_period: completedChapters.length,
+    reading_avg_wpm: (() => {
+      const timed = completedChapters.filter(c => c.reading_time_seconds > 0 && c.word_count > 0);
+      if (!timed.length) return null;
+      const avg = timed.reduce((s, c) => s + (c.word_count / c.reading_time_seconds) * 60, 0) / timed.length;
+      return Math.round(avg);
+    })(),
   };
 }
