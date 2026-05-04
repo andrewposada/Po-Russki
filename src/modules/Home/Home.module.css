@@ -156,14 +156,13 @@
 .cardRu {
   display: block;
   font-family: var(--font-ru);
-  font-size: clamp(22px, 3.5vw, 34px);
+  font-size: clamp(16px, 3.5vw, 34px);
   font-weight: 700;
   color: #ffffff;
-  line-height: 1;
+  line-height: 1.1;
   letter-spacing: -0.5px;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  word-break: break-word;
+  hyphens: auto;
 }
 
 .cardHint {
@@ -309,10 +308,13 @@
 .focusSecondaryGroup {
   display: flex;
   gap: 10px;
+  width: 100%;
+  min-width: 0;
 }
 
 .focusSecondary {
   flex: 1;
+  min-width: 0;
   display: flex;
   flex-direction: column;
   align-items: flex-start;
@@ -351,18 +353,24 @@
   font-weight: 600;
   color: var(--c-text-dark);
   font-family: var(--font-ui);
-  white-space: nowrap;
   overflow: hidden;
-  text-overflow: ellipsis;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  word-break: break-word;
 }
 
 .focusSecondarySubtext {
   font-size: 10px;
   color: var(--c-text-light);
   font-family: var(--font-ui);
-  white-space: nowrap;
   overflow: hidden;
-  text-overflow: ellipsis;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  word-break: break-word;
 }
 
 /* ── Skeleton loader ── */
