@@ -23,6 +23,7 @@
   justify-content: center;
   min-width: 0;
   flex: 1;
+  align-self: stretch;
 }
 
 .heroEyebrow {
@@ -247,6 +248,7 @@
   flex-direction: column;
   min-width: 260px;
   max-width: 300px;
+  align-self: stretch;
 }
 
 .focusPrimary {
@@ -261,6 +263,7 @@
   text-align: left;
   transition: transform 0.15s ease, box-shadow 0.15s ease, opacity 0.15s ease;
   min-height: 72px;
+  flex: 1;
 }
 
 .focusPrimary:hover {
