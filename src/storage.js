@@ -50,6 +50,17 @@ export async function getSettings(userId) {
   return data ?? null;
 }
 
+export async function markReportSeen(userId, reportGeneratedAt) {
+  const { error } = await supabase
+    .from("user_settings")
+    .upsert({
+      user_id:              userId,
+      last_seen_report_at:  reportGeneratedAt,
+      updated_at:           new Date(),
+    }, { onConflict: "user_id" });
+  if (error) console.warn("markReportSeen:", error.message);
+}
+
 export async function saveSettings(userId, { cefrLevel, cursiveFont, transliteration }) {
   const { error } = await supabase
     .from("user_settings")

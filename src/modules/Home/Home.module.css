@@ -27,6 +27,22 @@
   font-family: var(--font-ui);
 }
 
+.streakPill {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  background: #fff3e0;
+  color: #b85c00;
+  font-size: 11px;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 99px;
+  margin-left: 8px;
+  border: 1px solid #f5d09a;
+  letter-spacing: 0.02em;
+  vertical-align: middle;
+}
+
 .heroTitle {
   font-family: "DM Serif Display", Georgia, serif;
   font-size: clamp(44px, 6vw, 68px);
@@ -140,21 +156,28 @@
 .cardRu {
   display: block;
   font-family: var(--font-ru);
-  font-size: 34px;
+  font-size: clamp(22px, 3.5vw, 34px);
   font-weight: 700;
   color: #ffffff;
   line-height: 1;
   letter-spacing: -0.5px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .cardHint {
-  display: block;
   font-size: 12px;
   color: rgba(255, 255, 255, 0.6);
   margin-top: 6px;
   font-weight: 400;
   line-height: 1.35;
   font-family: var(--font-ui);
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
 }
 
 /* ── Grid areas ── */
@@ -224,19 +247,19 @@
   align-items: center;
   gap: 12px;
   padding: 16px 18px;
-  background: var(--c-bg-card);
-  border: 1.5px solid var(--c-border);
+  background: var(--c-text-dark);
+  border: 1.5px solid var(--c-text-dark);
   border-radius: var(--radius-md);
   cursor: pointer;
   text-align: left;
-  transition: transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease;
+  transition: transform 0.15s ease, box-shadow 0.15s ease, opacity 0.15s ease;
   min-height: 72px;
 }
 
 .focusPrimary:hover {
   transform: translateY(-2px);
-  box-shadow: 0 6px 20px rgba(0,0,0,0.08);
-  border-color: var(--c-sage);
+  box-shadow: 0 8px 24px rgba(0,0,0,0.18);
+  opacity: 0.92;
 }
 
 .focusIcon {
@@ -254,9 +277,9 @@
 }
 
 .focusLabel {
-  font-size: 13px;
-  font-weight: 600;
-  color: var(--c-text-dark);
+  font-size: 14px;
+  font-weight: 700;
+  color: #ffffff;
   font-family: var(--font-ui);
   white-space: nowrap;
   overflow: hidden;
@@ -265,7 +288,7 @@
 
 .focusSubtext {
   font-size: 11px;
-  color: var(--c-text-light);
+  color: rgba(255,255,255,0.6);
   font-family: var(--font-ui);
   white-space: nowrap;
   overflow: hidden;
@@ -274,13 +297,13 @@
 
 .focusArrow {
   font-size: 16px;
-  color: var(--c-text-xlight);
+  color: rgba(255,255,255,0.5);
   flex-shrink: 0;
   transition: color 0.15s ease;
 }
 
 .focusPrimary:hover .focusArrow {
-  color: var(--c-sage);
+  color: rgba(255,255,255,0.9);
 }
 
 .focusSecondaryGroup {
@@ -297,16 +320,17 @@
   padding: 12px 14px;
   background: var(--c-bg-card);
   border: 1px solid var(--c-border);
+  border-left: 3px solid var(--c-sage);
   border-radius: var(--radius-md);
   cursor: pointer;
   text-align: left;
-  transition: transform 0.15s ease, border-color 0.15s ease;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
   min-height: 62px;
 }
 
 .focusSecondary:hover {
-  transform: translateY(-1px);
-  border-color: var(--c-border-soft);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.07);
 }
 
 .focusSecondaryIcon {

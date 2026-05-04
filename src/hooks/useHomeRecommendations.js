@@ -328,8 +328,8 @@ export function useHomeRecommendations() {
           candidates.push({
             type: "vocab_due",
             score: scoreCandidate("vocab_due", { dueCount, daysSinceLastVocab }),
-            label: `Review vocabulary`,
-            subtext: `${dueCount} words due`,
+            label: `Review your ${dueCount} due words`,
+            subtext: `Don't let them fade — pick up where you left off`,
             path: "/vocabulary/session",
             icon: "📚",
             heroCategory: "vocab_due",
@@ -341,8 +341,8 @@ export function useHomeRecommendations() {
           candidates.push({
             type: "lesson_overdue",
             score: scoreCandidate("lesson_overdue", { daysSinceLesson }),
-            label: nextLessonNodeTitle ?? "Continue lessons",
-            subtext: nextLesson.title,
+            label: `Pick up ${nextLesson.title}`,
+            subtext: `You haven't studied in ${Math.floor(daysSinceLesson)} days`,
             path: `/lessons/play/${nextLesson.id}`,
             icon: "📖",
             heroCategory: "lesson_overdue",
@@ -352,8 +352,8 @@ export function useHomeRecommendations() {
           candidates.push({
             type: "lesson_available",
             score: scoreCandidate("lesson_available", {}),
-            label: nextLessonNodeTitle ?? "Next lesson",
-            subtext: nextLesson.title,
+            label: `Start ${nextLesson.title}`,
+            subtext: `Next up in ${nextLessonNodeTitle ?? "your roadmap"}`,
             path: `/lessons/play/${nextLesson.id}`,
             icon: "🎯",
             heroCategory: "lesson_available",
@@ -367,8 +367,8 @@ export function useHomeRecommendations() {
           candidates.push({
             type: "weak_topic",
             score: scoreCandidate("weak_topic", { accuracy: worstAccuracy }),
-            label: `Drill ${topicName}`,
-            subtext: `${Math.round(worstAccuracy * 100)}% accuracy`,
+            label: `Struggling with ${topicName}?`,
+            subtext: `${Math.round(worstAccuracy * 100)}% accuracy — a short drill will help`,
             path: freeplayParam ? `/grammar/freeplay?topics=${freeplayParam}` : "/grammar",
             icon: "⚡",
             heroCategory: "weak_topic",
@@ -381,8 +381,8 @@ export function useHomeRecommendations() {
           candidates.push({
             type: "reading",
             score: scoreCandidate("reading", { daysSinceReading }),
-            label: `Continue reading`,
-            subtext: bookTitle,
+            label: `Continue «${bookTitle}»`,
+            subtext: `Your story is waiting — pick it back up`,
             path: `/library`,
             icon: "📕",
             heroCategory: "reading",
@@ -405,26 +405,28 @@ export function useHomeRecommendations() {
 
         // Listening
         candidates.push({
-          type: "listening",
-          score: scoreCandidate("listening", { daysSinceListening }),
-          label: "Listening exercise",
-          subtext: daysSinceListening === Infinity
-            ? "Train your ear — never tried"
-            : `${Math.floor(daysSinceListening)}d since last session`,
-          path: "/listening",
-          icon: "🎧",
+            type: "listening",
+            score: scoreCandidate("listening", { daysSinceListening }),
+            label: daysSinceListening === Infinity
+              ? "Try a listening exercise"
+              : "Train your ear today",
+            subtext: daysSinceListening === Infinity
+              ? "You haven't tried Слушание yet"
+              : `${Math.floor(daysSinceListening)} days since your last session`,
+            path: "/listening",
+            icon: "🎧",
           heroCategory: "listening",
           heroTokens: {},
         });
 
         // Always include fallback
         candidates.push({
-          type: "fallback",
-          score: scoreCandidate("fallback", {}),
-          label: "Play Табу",
-          subtext: "Describe without saying the word",
-          path: "/tabu",
-          icon: "🎲",
+            type: "fallback",
+            score: scoreCandidate("fallback", {}),
+            label: "Take a break with Табу",
+            subtext: "Describe the word without saying it",
+            path: "/tabu",
+            icon: "🎲",
           heroCategory: "fallback",
           heroTokens: {},
         });

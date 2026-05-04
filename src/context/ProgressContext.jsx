@@ -3,7 +3,7 @@
 
 import { createContext, useContext, useState, useEffect, useRef } from "react";
 import { useAuth } from "../AuthContext";
-import { getProgressReports, saveProgressReport, getRecentAttempts } from "../storage";
+import { getProgressReports, saveProgressReport, getRecentAttempts, getSettings, markReportSeen } from "../storage";
 import { buildProgressSnapshot } from "../utils/progressAggregator";
 import { getCefrLevel, saveCefrLevel } from "../storage";
 
@@ -17,9 +17,10 @@ const PROGRESS_REPORT_VERSION = "1.0";
 export function ProgressProvider({ children }) {
   const { user } = useAuth();
 
- const [latestReport,    setLatestReport]    = useState(null);
-  const [reportReady,     setReportReady]      = useState(false);
-  const [checkComplete,   setCheckComplete]   = useState(false);
+  const [latestReport,     setLatestReport]     = useState(null);
+  const [latestReportDate, setLatestReportDate] = useState(null);
+  const [reportReady,      setReportReady]      = useState(false);
+  const [checkComplete,    setCheckComplete]    = useState(false);
   const [newAttemptCount, setNewAttemptCount] = useState(0);
   const [cefrLevel,       setCefrLevel]       = useState("A1");
   const hasCheckedRef = useRef(false);
@@ -44,7 +45,10 @@ export function ProgressProvider({ children }) {
           // Surface existing report if available
           if (lastReport?.report) {
             setLatestReport({ ...lastReport.report, generated_at: lastReport.generated_at });
-            setReportReady(true);
+            setLatestReportDate(lastReport.generated_at);
+            const settings = await getSettings(userId);
+            const alreadySeen = settings?.last_seen_report_at === lastReport.generated_at;
+            if (!alreadySeen) setReportReady(true);
           }
           setCheckComplete(true);
           console.log(`Progress check: cooldown active (${Math.round(hoursSince)}h since last report)`);
@@ -106,7 +110,10 @@ export function ProgressProvider({ children }) {
           setCefrLevel(snapshot.cefr_advance_to);
         }
 
-        setLatestReport({ ...report, generated_at: snapshot.generated_at });
+        const freshReports = await getProgressReports(userId, 1);
+        const newGeneratedAt = freshReports[0]?.generated_at ?? snapshot.generated_at;
+        setLatestReport({ ...report, generated_at: newGeneratedAt });
+        setLatestReportDate(newGeneratedAt);
         setReportReady(true);
         console.log("Progress check: report generated successfully");
     } catch (err) {
@@ -116,12 +123,15 @@ export function ProgressProvider({ children }) {
     }
   }
 
-  function dismissBanner() {
+  async function dismissBanner() {
     setReportReady(false);
+    if (user?.uid && latestReportDate) {
+      await markReportSeen(user.uid, latestReportDate);
+    }
   }
 
   return (
-    <ProgressContext.Provider value={{ latestReport, reportReady, dismissBanner, checkComplete, newAttemptCount, cefrLevel }}>
+    <ProgressContext.Provider value={{ latestReport, reportReady, dismissBanner, checkComplete, newAttemptCount, cefrLevel, latestReportDate }}>
       {children}
     </ProgressContext.Provider>
   );

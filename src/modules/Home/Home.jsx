@@ -357,7 +357,12 @@ export default function Home() {
       {/* ── Hero ── */}
       <header className={styles.hero}>
         <div className={styles.heroLeft}>
-          <p className={styles.heroEyebrow}>{eyebrow}{stats.streak > 0 ? ` · 🔥 ${stats.streak}` : ""}</p>
+          <p className={styles.heroEyebrow}>
+            {eyebrow}
+            {stats.streak > 0 && (
+              <span className={styles.streakPill}>🔥 {stats.streak}</span>
+            )}
+          </p>
           <h1 className={styles.heroTitle}>
             What are you<br />
             <em>learning today?</em>
