@@ -13,12 +13,7 @@ function getDayLabel() {
   });
 }
 
-// ── Hardcoded stats — wire to real data in a follow-up phase ──────────────
-const STATS = [
-  { num: "🔥 12", label: "Day streak"  },
-  { num: "340",   label: "Words"       },
-  { num: "8",     label: "Due today"   },
-];
+import { useHomeRecommendations } from "../../hooks/useHomeRecommendations";
 
 // ── SVG Illustrations ──────────────────────────────────────────────────────
 
@@ -348,6 +343,7 @@ const CARDS = [
 export default function Home() {
   const navigate = useNavigate();
   const { user } = useAuth();
+  const { isLoading, heroLine, primary, secondary, stats } = useHomeRecommendations();
 
   const displayName =
     user?.displayName ||
@@ -361,23 +357,60 @@ export default function Home() {
       {/* ── Hero ── */}
       <header className={styles.hero}>
         <div className={styles.heroLeft}>
-          <p className={styles.heroEyebrow}>{eyebrow}</p>
+          <p className={styles.heroEyebrow}>{eyebrow}{stats.streak > 0 ? ` · 🔥 ${stats.streak}` : ""}</p>
           <h1 className={styles.heroTitle}>
             What are you<br />
             <em>learning today?</em>
           </h1>
-          <p className={styles.heroSub}>
-            Pick a module to continue your Russian journey.
-          </p>
+          {!isLoading && heroLine && (
+            <p className={styles.heroSub}>{heroLine}</p>
+          )}
+          {isLoading && (
+            <div className={`${styles.heroSubSkeleton} ${styles.skeleton}`} />
+          )}
         </div>
 
-        <div className={styles.streakBar}>
-          {STATS.map((s) => (
-            <div key={s.label} className={styles.streakItem}>
-              <span className={styles.streakNum}>{s.num}</span>
-              <span className={styles.streakLabel}>{s.label}</span>
-            </div>
-          ))}
+        <div className={styles.focusStrip}>
+          {isLoading ? (
+            <>
+              <div className={`${styles.focusPrimary} ${styles.skeleton}`} />
+              <div className={styles.focusSecondaryGroup}>
+                <div className={`${styles.focusSecondary} ${styles.skeleton}`} />
+                <div className={`${styles.focusSecondary} ${styles.skeleton}`} />
+              </div>
+            </>
+          ) : (
+            <>
+              {primary && (
+                <button
+                  className={styles.focusPrimary}
+                  onClick={() => navigate(primary.path)}
+                >
+                  <span className={styles.focusIcon}>{primary.icon}</span>
+                  <div className={styles.focusText}>
+                    <span className={styles.focusLabel}>{primary.label}</span>
+                    <span className={styles.focusSubtext}>{primary.subtext}</span>
+                  </div>
+                  <span className={styles.focusArrow}>→</span>
+                </button>
+              )}
+              <div className={styles.focusSecondaryGroup}>
+                {secondary.map((item, i) => (
+                  <button
+                    key={item.type + i}
+                    className={styles.focusSecondary}
+                    onClick={() => navigate(item.path)}
+                  >
+                    <span className={styles.focusSecondaryIcon}>{item.icon}</span>
+                    <div className={styles.focusSecondaryText}>
+                      <span className={styles.focusSecondaryLabel}>{item.label}</span>
+                      <span className={styles.focusSecondarySubtext}>{item.subtext}</span>
+                    </div>
+                  </button>
+                ))}
+              </div>
+            </>
+          )}
         </div>
       </header>
 

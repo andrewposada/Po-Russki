@@ -28,6 +28,7 @@ import {
   LOADING_STEPS, pickVoiceForGender,
 } from "./listeningConstants";
 import { cacheAudio, getCachedAudio, revokeAllAudio } from "../../utils/audioCache";
+import { touchLastActive } from "../../storage";
 import styles from "./ListeningHome.module.css";
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
@@ -579,13 +580,14 @@ const lineDurationsRef = useRef([]); // duration in seconds per line, populated 
 
   // ── Detect all answered → REVIEWING ───────────────────────────────────────
 
-  useEffect(() => {
+  uuseEffect(() => {
     if (!exercise || moduleState !== MS.ANSWERING) return;
     const total  = exercise.questions.length;
     const graded = Object.values(answers).filter(a => a.graded).length;
     if (graded === total && total > 0) {
       setModuleState(MS.REVIEWING);
       setShowTranscript(false); // toggle hidden, user opens manually
+      touchLastActive(user?.uid); // fire-and-forget — marks today as active
       // Pre-generate next audio
       if (nextContentRef.current) {
         nextContentRef.current.then(data => {

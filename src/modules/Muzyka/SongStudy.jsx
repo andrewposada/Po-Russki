@@ -2,7 +2,7 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useAuth } from "../../AuthContext";
-import { getSongs, updateSongLearned, updateSongMastered, updateSongStudyProgress } from "../../storage";
+import { getSongs, updateSongLearned, updateSongMastered, updateSongStudyProgress, touchLastActive } from "../../storage";
 import { useAttemptTracker, ATTEMPT_SOURCES, ATTEMPT_TOPICS } from "../../hooks/useAttemptTracker";
 import { songExplainContext } from "../../components/TranslationTooltip/songExplainContext";
 import styles from "./SongStudy.module.css";
@@ -149,6 +149,7 @@ export default function SongStudy() {
         study_progress_index: idx,
         study_score_points:   points,
       });
+      touchLastActive(user.uid); // fire-and-forget — no await
     } catch (e) { console.error("persistStudyProgress:", e); }
   }, [user, songId]);
 

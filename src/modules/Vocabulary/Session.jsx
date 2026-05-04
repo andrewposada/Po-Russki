@@ -4,7 +4,7 @@ import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import { useNavigate, useLocation }  from "react-router-dom";
 import { useAuth }                   from "../../AuthContext";
 import { useSettings }               from "../../context/SettingsContext";
-import { getDueWords, updateWordSrs } from "../../storage";
+import { getDueWords, updateWordSrs, touchLastActive } from "../../storage";
 import {
   getExerciseType,
   SRS_QUALITY,
@@ -243,6 +243,7 @@ export default function Session() {
           tier:        newTier,
           tier_streak: newStreak,
         });
+        touchLastActive(user.uid); // fire-and-forget — no await
         return;
       } catch (e) {
         const isLastAttempt = attempt === maxAttempts;

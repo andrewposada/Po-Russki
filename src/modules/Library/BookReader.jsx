@@ -5,7 +5,8 @@ import { useAuth }     from "../../AuthContext";
 import { useSettings } from "../../context/SettingsContext";
 import { useWordBank } from "../../context/WordBankContext";
 import {
-  getBooks, getChapters, updateBook, incrementChapterReadingTime, markChapterCompleted, getAttempt,
+  getBooks, getChapters, updateBook, incrementChapterReadingTime,
+  markChapterCompleted, getAttempt, updateChapter, touchLastActive,
 } from "../../storage";
 import { useReadingTimer } from "../../hooks/useReadingTimer";
 import styles from "./BookReader.module.css";
@@ -138,6 +139,8 @@ export default function BookReader() {
       setError(err.message);
     } finally {
       setLoading(false);
+      // Touch last_active_date on initial book open (goToChapter not called on mount)
+      if (user) touchLastActive(user.uid); // fire-and-forget
     }
   }
 
@@ -162,6 +165,12 @@ export default function BookReader() {
     setTranslationsCache({});
     setShowComprehension(false);
     setHasExistingQuestions(false);
+    // Write last_read_at on every chapter open and touch streak
+    const ch = chapters.find(c => c.chapter_num === num);
+    if (ch && user) {
+      updateChapter(user.uid, ch.id, { last_read_at: new Date().toISOString() }); // fire-and-forget
+      touchLastActive(user.uid); // fire-and-forget
+    }
     const ch = chapters.find(c => c.chapter_num === num);
     if (ch && user) {
       const prior = ch.reading_time_seconds ?? 0;

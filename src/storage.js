@@ -559,6 +559,24 @@ export async function markChapterCompleted(chapterId) {
   if (error) console.warn("markChapterCompleted:", error.message);
 }
 
+/**
+ * Returns the single most recently read chapter across all books for this user.
+ * chapters has no user_id column — ownership is via books.user_id.
+ * Returns null if the user has never opened a book.
+ */
+export async function getLastReadChapter(userId) {
+  const { data, error } = await supabase
+    .from("chapters")
+    .select("id, book_id, chapter_num, title, last_read_at, is_completed, books!inner(id, title, cover_color, user_id)")
+    .eq("books.user_id", userId)
+    .not("last_read_at", "is", null)
+    .order("last_read_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  if (error) { console.error("getLastReadChapter:", error); return null; }
+  return data ?? null;
+}
+
 // ─────────────────────────────────────────────────────────────────────────────
 // LESSONS
 // ─────────────────────────────────────────────────────────────────────────────
@@ -757,10 +775,11 @@ export async function addXP(userId, amount) {
     .from('user_progress')
     .upsert(
       {
-        user_id:    userId,
-        xp_total:   newXP,
-        level:      newLevel,
-        updated_at: new Date().toISOString(),
+        user_id:         userId,
+        xp_total:        newXP,
+        level:           newLevel,
+        last_active_date: new Date().toISOString().slice(0, 10), // 'YYYY-MM-DD'
+        updated_at:      new Date().toISOString(),
       },
       { onConflict: 'user_id' }
     )
@@ -769,6 +788,41 @@ export async function addXP(userId, amount) {
   if (error) { console.error('addXP:', error); return null; }
   // Returns { user_id, xp_total, level } — caller can detect level-up by comparing old vs new level
   return data;
+}
+
+/**
+ * Mark today as an active date in user_progress.
+ * Call this at the end of any meaningful activity that does NOT already call addXP:
+ *   - Vocab session (Session.jsx — after SRS update)
+ *   - Song study (SongStudy.jsx — after scoring a line)
+ *   - Reading (BookReader.jsx — on chapter open / close)
+ *   - Listening (ListeningHome.jsx — after completing an exercise)
+ *
+ * Fire-and-forget — never throws, never blocks the caller.
+ * Skips write if last_active_date is already today (checked client-side).
+ */
+export async function touchLastActive(userId) {
+  if (!userId) return;
+  const today = new Date().toISOString().slice(0, 10); // 'YYYY-MM-DD'
+  try {
+    // Read current row to avoid unnecessary writes
+    const { data } = await supabase
+      .from("user_progress")
+      .select("last_active_date")
+      .eq("user_id", userId)
+      .maybeSingle();
+
+    if (data?.last_active_date === today) return; // already marked today
+
+    await supabase
+      .from("user_progress")
+      .upsert(
+        { user_id: userId, last_active_date: today, updated_at: new Date().toISOString() },
+        { onConflict: "user_id" }
+      );
+  } catch (e) {
+    console.warn("touchLastActive:", e.message);
+  }
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -942,7 +996,7 @@ export async function getRecentAttempts(userId, days = 60) {
   const cutoff = new Date(Date.now() - days * 24 * 60 * 60 * 1000).toISOString();
   const { data, error } = await supabase
     .from("universal_attempts")
-    .select("topic_id, attempted_at")
+    .select("topic_id, source_id, is_correct, attempted_at")
     .eq("user_id", userId)
     .gte("attempted_at", cutoff)
     .order("attempted_at", { ascending: false });

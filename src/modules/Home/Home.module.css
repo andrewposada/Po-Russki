@@ -50,41 +50,7 @@
   font-family: var(--font-ui);
 }
 
-/* ── Streak bar ── */
-.streakBar {
-  display: flex;
-  gap: 16px;
-  align-items: center;
-  flex-shrink: 0;
-}
 
-.streakItem {
-  text-align: center;
-  padding: 14px 20px;
-  background: var(--c-bg-card);
-  border: 1px solid var(--c-border);
-  border-radius: var(--radius-md);
-}
-
-.streakNum {
-  display: block;
-  font-family: "DM Serif Display", Georgia, serif;
-  font-size: 30px;
-  line-height: 1;
-  color: var(--c-text-dark);
-  letter-spacing: -1px;
-}
-
-.streakLabel {
-  display: block;
-  font-size: 11px;
-  font-weight: 500;
-  color: var(--c-text-light);
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
-  margin-top: 4px;
-  font-family: var(--font-ui);
-}
 
 /* ── Card grid ── */
 .grid {
@@ -239,5 +205,173 @@
 
   .heroTitle {
     font-size: 40px;
+  }
+}
+
+/* ── Focus strip ── */
+.focusStrip {
+  display: flex;
+  gap: 10px;
+  align-items: stretch;
+  flex-shrink: 0;
+  flex-direction: column;
+  min-width: 260px;
+  max-width: 300px;
+}
+
+.focusPrimary {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 16px 18px;
+  background: var(--c-bg-card);
+  border: 1.5px solid var(--c-border);
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  text-align: left;
+  transition: transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease;
+  min-height: 72px;
+}
+
+.focusPrimary:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(0,0,0,0.08);
+  border-color: var(--c-sage);
+}
+
+.focusIcon {
+  font-size: 22px;
+  flex-shrink: 0;
+  line-height: 1;
+}
+
+.focusText {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  flex: 1;
+  min-width: 0;
+}
+
+.focusLabel {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--c-text-dark);
+  font-family: var(--font-ui);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.focusSubtext {
+  font-size: 11px;
+  color: var(--c-text-light);
+  font-family: var(--font-ui);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.focusArrow {
+  font-size: 16px;
+  color: var(--c-text-xlight);
+  flex-shrink: 0;
+  transition: color 0.15s ease;
+}
+
+.focusPrimary:hover .focusArrow {
+  color: var(--c-sage);
+}
+
+.focusSecondaryGroup {
+  display: flex;
+  gap: 10px;
+}
+
+.focusSecondary {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+  padding: 12px 14px;
+  background: var(--c-bg-card);
+  border: 1px solid var(--c-border);
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  text-align: left;
+  transition: transform 0.15s ease, border-color 0.15s ease;
+  min-height: 62px;
+}
+
+.focusSecondary:hover {
+  transform: translateY(-1px);
+  border-color: var(--c-border-soft);
+}
+
+.focusSecondaryIcon {
+  font-size: 16px;
+  line-height: 1;
+}
+
+.focusSecondaryText {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  width: 100%;
+  min-width: 0;
+}
+
+.focusSecondaryLabel {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--c-text-dark);
+  font-family: var(--font-ui);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.focusSecondarySubtext {
+  font-size: 10px;
+  color: var(--c-text-light);
+  font-family: var(--font-ui);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* ── Skeleton loader ── */
+@keyframes skeletonPulse {
+  0%, 100% { opacity: 0.5; }
+  50%       { opacity: 1; }
+}
+
+.skeleton {
+  background: var(--c-bg-panel);
+  border-radius: var(--radius-md);
+  animation: skeletonPulse 1.4s ease-in-out infinite;
+  border: none !important;
+  pointer-events: none;
+}
+
+.heroSubSkeleton {
+  height: 16px;
+  width: 260px;
+  max-width: 100%;
+  border-radius: 6px;
+  margin-top: 4px;
+}
+
+/* ── Responsive ── */
+@media (max-width: 700px) {
+  .focusStrip {
+    max-width: 100%;
+    min-width: 0;
+    width: 100%;
+  }
+
+  .focusSecondaryGroup {
+    gap: 8px;
   }
 }
