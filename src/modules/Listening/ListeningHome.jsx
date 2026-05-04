@@ -21,6 +21,8 @@ import { useAuth }           from "../../AuthContext";
 import { useSettings }       from "../../context/SettingsContext";
 import { useAttemptTracker }  from "../../hooks/useAttemptTracker";
 import { useRussianKeyboard } from "../../hooks/useRussianKeyboard";
+import { useProgress }        from "../../context/ProgressContext";
+import { useWordBank }         from "../../context/WordBankContext";
 import { pickRandom, SITUATIONS, VOCAB_CATEGORIES } from "../../data/exerciseVariety";
 import {
   CONTENT_FORMATS, FORMAT_WEIGHTS, LISTENING_EXERCISE_TYPES,
@@ -30,6 +32,96 @@ import {
 import { cacheAudio, getCachedAudio, revokeAllAudio } from "../../utils/audioCache";
 import { touchLastActive } from "../../storage";
 import styles from "./ListeningHome.module.css";
+
+// ── Content length config ─────────────────────────────────────────────────────
+
+// Weights: quick=20%, short=35%, full=45%
+const CONTENT_LENGTH_WEIGHTS = { quick: 20, short: 35, full: 45 };
+
+function pickContentLength() {
+  const entries = Object.entries(CONTENT_LENGTH_WEIGHTS);
+  const total   = entries.reduce((s, [, w]) => s + w, 0);
+  let r = Math.random() * total;
+  for (const [id, w] of entries) {
+    r -= w;
+    if (r <= 0) return id;
+  }
+  return "full";
+}
+
+// Exercise types allowed per content length
+function pickExerciseTypesForLength(contentLength) {
+  if (contentLength === "quick") {
+    // Quick: single dictation_fill only
+    return ["dictation_fill"];
+  }
+  if (contentLength === "short") {
+    // Short: MC only, 2 questions
+    const mc = LISTENING_EXERCISE_TYPES.filter(t => t.grading === "mc");
+    return [...mc].sort(() => Math.random() - 0.5).slice(0, 2).map(t => t.id);
+  }
+  // Full: existing logic — 3 MC + 1 typed
+  const mc    = LISTENING_EXERCISE_TYPES.filter(t => t.grading === "mc");
+  const typed = LISTENING_EXERCISE_TYPES.filter(t => t.grading === "typed");
+  const picks = [...mc].sort(() => Math.random() - 0.5).slice(0, 3).map(t => t.id);
+  picks.push(pickRandom(typed).id);
+  return picks.sort(() => Math.random() - 0.5);
+}
+
+// ── Vocab word picker (sessionStorage dedup) ──────────────────────────────────
+
+const RECENT_WORDS_KEY   = "listening_recent_words";
+const RECENT_WORDS_LIMIT = 10;
+
+function getRecentWords() {
+  try {
+    return new Set(JSON.parse(sessionStorage.getItem(RECENT_WORDS_KEY) ?? "[]"));
+  } catch {
+    return new Set();
+  }
+}
+
+function recordRecentWord(word) {
+  try {
+    const arr = JSON.parse(sessionStorage.getItem(RECENT_WORDS_KEY) ?? "[]");
+    arr.unshift(word);
+    sessionStorage.setItem(RECENT_WORDS_KEY, JSON.stringify(arr.slice(0, RECENT_WORDS_LIMIT)));
+  } catch {}
+}
+
+/**
+ * Pick a vocab word to inject.
+ * Priority: struggling_words from report (60%) → tier>=1 words (40%)
+ * Falls back gracefully if either pool is empty.
+ * Filters out recently used words within the session.
+ *
+ * @param {string[]|null} strugglingWords - from latestReport.struggling_words
+ * @param {object[]|null} bankWords       - from WordBankContext words array (tier >= 1)
+ * @returns {string|null}
+ */
+function pickVocabWord(strugglingWords, bankWords) {
+  const recent = getRecentWords();
+
+  const struggling = (strugglingWords ?? []).filter(w => !recent.has(w));
+  const pool       = (bankWords ?? [])
+    .filter(w => (w.tier ?? 0) >= 1 && !recent.has(w.word))
+    .map(w => w.word);
+
+  let chosen = null;
+
+  // 60% chance use struggling list (if non-empty after dedup), else pool
+  if (struggling.length > 0 && Math.random() < 0.6) {
+    chosen = struggling[Math.floor(Math.random() * struggling.length)];
+  } else if (pool.length > 0) {
+    chosen = pool[Math.floor(Math.random() * pool.length)];
+  } else if (struggling.length > 0) {
+    // Pool exhausted — fall back to struggling even if recently used
+    chosen = struggling[Math.floor(Math.random() * struggling.length)];
+  }
+
+  if (chosen) recordRecentWord(chosen);
+  return chosen;
+}
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -52,14 +144,7 @@ function weightedPickFormat() {
   return "dialogue";
 }
 
-function pickExerciseTypes() {
-  const mc    = LISTENING_EXERCISE_TYPES.filter(t => t.grading === "mc");
-  const typed = LISTENING_EXERCISE_TYPES.filter(t => t.grading === "typed");
-  const shuffledMc = [...mc].sort(() => Math.random() - 0.5);
-  const picks = shuffledMc.slice(0, 3).map(t => t.id);
-  picks.push(pickRandom(typed).id);
-  return picks.sort(() => Math.random() - 0.5);
-}
+// pickExerciseTypes replaced by pickExerciseTypesForLength above
 
 function getExerciseTypeMeta(typeId) {
   return LISTENING_EXERCISE_TYPES.find(t => t.id === typeId) ?? null;
@@ -110,20 +195,8 @@ async function fetchAllAudio(content, contentHash, characters) {
 
 // ── Content generator ─────────────────────────────────────────────────────────
 
-async function generateContent(cefrLevel) {
-  const situation     = pickRandom(SITUATIONS);
-  const vocabCategory = pickRandom(VOCAB_CATEGORIES);
-  const contentFormat = weightedPickFormat();
-  const exerciseTypes = pickExerciseTypes();
-
-  const res = await fetch("/api/listening-generate", {
-    method:  "POST",
-    headers: { "Content-Type": "application/json" },
-    body:    JSON.stringify({ level: cefrLevel, situation, vocabCategory, contentFormat, exerciseTypes }),
-  });
-  if (!res.ok) throw new Error("Content generation failed");
-  return res.json();
-}
+// generateContent is defined inside the component below to close over
+// latestReport and words context. See inside ListeningHome.
 
 // ── Grader for typed questions ────────────────────────────────────────────────
 
@@ -156,6 +229,8 @@ export default function ListeningHome() {
   const { user }       = useAuth();
   const { translitOn } = useSettings();
   const { track, ATTEMPT_SOURCES } = useAttemptTracker();
+  const { latestReport }           = useProgress();
+  const { words, loadWords }       = useWordBank();
 
   // Core state
   const [moduleState,  setModuleState]  = useState(MS.IDLE);
@@ -231,6 +306,11 @@ const lineDurationsRef = useRef([]); // duration in seconds per line, populated 
     };
   }, []);
 
+  // Load word bank on mount so vocab words are available for injection
+  useEffect(() => {
+    loadWords();
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
   // Apply Russian keyboard to typed inputs
   // We import the hook at the top and call it once per input via a stable ref callback.
   // Since useRussianKeyboard takes (ref, enabled) and the inputs are conditional,
@@ -248,6 +328,45 @@ const lineDurationsRef = useRef([]); // duration in seconds per line, populated 
   }, [playbackSpeed]);
 
   // ── Generation ──────────────────────────────────────────────────────────────
+
+  // ── Inner content generator (closes over context) ──────────────────────────
+
+  const generateContent = useCallback(async (level) => {
+    const situation     = pickRandom(SITUATIONS);
+    const vocabCategory = pickRandom(VOCAB_CATEGORIES);
+    const contentFormat = weightedPickFormat();
+    const contentLength = pickContentLength();
+    const exerciseTypes = pickExerciseTypesForLength(contentLength);
+
+    // Personalization rolls
+    const useVocab    = Math.random() < 0.75;
+    const useWeakArea = Math.random() < 0.35;
+
+    const vocabWord = useVocab
+      ? pickVocabWord(latestReport?.struggling_words ?? null, words ?? null)
+      : null;
+
+    const weakArea = useWeakArea && latestReport?.challenges?.length > 0
+      ? latestReport.challenges[Math.floor(Math.random() * latestReport.challenges.length)].topic
+      : null;
+
+    const res = await fetch("/api/listening-generate", {
+      method:  "POST",
+      headers: { "Content-Type": "application/json" },
+      body:    JSON.stringify({
+        level:         level,
+        situation,
+        vocabCategory,
+        contentFormat,
+        exerciseTypes,
+        contentLength,
+        vocabWord,
+        weakArea,
+      }),
+    });
+    if (!res.ok) throw new Error("Content generation failed");
+    return res.json();
+  }, [latestReport, words]);
 
   const startGeneration = useCallback(async () => {
     setModuleState(MS.GENERATING);
@@ -308,7 +427,7 @@ const lineDurationsRef = useRef([]); // duration in seconds per line, populated 
   const preGenerateNextContent = useCallback(() => {
     if (nextContentRef.current) return;
     nextContentRef.current = generateContent(cefrLevel).catch(() => null);
-  }, [cefrLevel]);
+  }, [cefrLevel, generateContent]);
 
   const preGenerateNextAudio = useCallback((contentData) => {
     if (!contentData || nextAudioRef.current) return;
@@ -580,7 +699,7 @@ const lineDurationsRef = useRef([]); // duration in seconds per line, populated 
 
   // ── Detect all answered → REVIEWING ───────────────────────────────────────
 
-  uuseEffect(() => {
+  useEffect(() => {
     if (!exercise || moduleState !== MS.ANSWERING) return;
     const total  = exercise.questions.length;
     const graded = Object.values(answers).filter(a => a.graded).length;

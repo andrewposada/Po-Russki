@@ -30,15 +30,27 @@ export default async function handler(req, res) {
   }
 
   const {
-    level         = "A2",
-    situation     = "at a café ordering coffee",
-    vocabCategory = "food and cooking",
-    contentFormat = "dialogue",
-    exerciseTypes = ["gist_question", "specific_detail", "dictation_fill"],
+    level          = "A2",
+    situation      = "at a café ordering coffee",
+    vocabCategory  = "food and cooking",
+    contentFormat  = "dialogue",
+    exerciseTypes  = ["gist_question", "specific_detail", "dictation_fill"],
+    contentLength  = "full",   // "quick" | "short" | "full"
+    vocabWord      = null,     // Russian word to weave into content, or null
+    weakArea       = null,     // English challenge topic string, or null
   } = req.body ?? {};
 
   const isDialogue = contentFormat === "dialogue" || contentFormat === "interview";
-  const questionCount = isDialogue ? 4 : 3;
+
+  // Question count and content size vary by length mode
+  const questionCount = contentLength === "quick" ? 1
+    : contentLength === "short" ? 2
+    : isDialogue ? 4 : 3;
+
+  // Line count targets per length mode
+  const lineTarget = contentLength === "quick" ? "exactly 1 sentence"
+    : contentLength === "short" ? "3–5 exchanges"
+    : "6–10 exchanges";
 
   const formatInstructions = isDialogue
     ? `Write a natural ${contentFormat} between two people.
@@ -51,12 +63,12 @@ Assign realistic Russian names appropriate to the situation. Vary genders — do
 Then format content as a JSON array of line objects, each with:
   "speaker": "A" or "B"
   "text": the Russian sentence (one natural spoken utterance per line)
-Aim for 6–10 exchanges total. Each line should be one complete spoken sentence or short phrase.`
+Aim for ${lineTarget} total. Each line should be one complete spoken sentence or short phrase.`
     : `Write a short spoken ${contentFormat} in Russian by a single narrator.
 Format content as a JSON array of objects, each with:
   "speaker": "A"
   "text": a sentence or short paragraph of spoken Russian
-Use 3–6 lines to create natural spoken pacing.`;
+Use ${contentLength === "quick" ? "exactly 1 line" : contentLength === "short" ? "2–3 lines" : "3–6 lines"} to create natural spoken pacing.`;
 
   const questionSpecs = {
     gist_question:
@@ -68,11 +80,11 @@ Use 3–6 lines to create natural spoken pacing.`;
     inference:
       `type "inference" — multiple choice about what the speaker(s) probably feel or imply. Fields: question (string), options (array of 4 strings), correct_index (0-based int).`,
     dictation_fill:
-      `type "dictation_fill" — a sentence from the content with 1–2 words replaced by _____. Fields: gapped_sentence (Russian with blanks), answers (array of missing Russian words in order).`,
+      `type "dictation_fill" — take ONE sentence from the content and replace exactly ONE word with _____. Only one blank per question. Fields: gapped_sentence (Russian with exactly one _____), answers (array containing exactly one missing Russian word).`,
     word_reconstruction:
       `type "word_reconstruction" — a short phrase (3–5 words) from the content the user must type from memory. Fields: prompt_en (English translation), answer (correct Russian phrase).`,
     phrase_translation:
-      `type "phrase_translation" — a short phrase heard in the audio. Fields: prompt_ru (the Russian phrase), answer_en (its English meaning).`,
+      `type "phrase_translation" — pick a short phrase that appears verbatim in the content array. Fields: prompt_ru (the exact Russian phrase from content), answer_en (its English meaning). The prompt_ru MUST be a substring of one of the content lines.`,
     respond_next:
       `type "respond_next" — given the context, what would be a natural next thing to say? Fields: context_en (brief English summary of the exchange), options (array of 4 Russian phrases), correct_index (0-based int).`,
     mishear_correction:
@@ -83,6 +95,22 @@ Use 3–6 lines to create natural spoken pacing.`;
     .slice(0, questionCount)
     .map((type, i) => `Question ${i + 1}: ${questionSpecs[type] ?? questionSpecs.specific_detail}`)
     .join("\n");
+
+  // Personalization hints — appended to userPrompt when present
+  const personalizationLines = [];
+  if (vocabWord) {
+    personalizationLines.push(
+      `- Naturally include the Russian word "${vocabWord}" somewhere in the content. Do not force it — if it fits organically, use it; if the situation makes it awkward, you may use a closely related form of the word.`
+    );
+  }
+  if (weakArea) {
+    personalizationLines.push(
+      `- The learner struggles with ${weakArea}. Where natural, weave this grammar or vocabulary theme into the content.`
+    );
+  }
+  const personalizationBlock = personalizationLines.length > 0
+    ? `\nPersonalization hints:\n${personalizationLines.join("\n")}`
+    : "";
 
   const systemPrompt = `You are a Russian language content creator for a learner app.
 Generate natural, idiomatic Russian appropriate for CEFR level ${level}.
@@ -95,6 +123,8 @@ Respond ONLY with valid JSON. No markdown fences. No preamble. No explanation af
 - Vocabulary theme: ${vocabCategory}
 - Content format: ${contentFormat}
 - CEFR level: ${level}
+- Content length: ${contentLength} (${contentLength === "quick" ? "1 sentence only" : contentLength === "short" ? "3–5 exchanges" : "full passage"})
+${personalizationBlock}
 
 ${formatInstructions}
 
