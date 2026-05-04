@@ -166,9 +166,9 @@ export default function BookReader() {
     setShowComprehension(false);
     setHasExistingQuestions(false);
     // Write last_read_at on every chapter open and touch streak
-    const ch = chapters.find(c => c.chapter_num === num);
-    if (ch && user) {
-      updateChapter(user.uid, ch.id, { last_read_at: new Date().toISOString() }); // fire-and-forget
+    const chForRead = chapters.find(c => c.chapter_num === num);
+    if (chForRead && user) {
+      updateChapter(user.uid, chForRead.id, { last_read_at: new Date().toISOString() }); // fire-and-forget
       touchLastActive(user.uid); // fire-and-forget
     }
     const ch = chapters.find(c => c.chapter_num === num);
