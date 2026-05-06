@@ -9,7 +9,7 @@ import { getCefrLevel, saveCefrLevel } from "../storage";
 
 const ProgressContext = createContext(null);
 
-const REPORT_COOLDOWN_HOURS  = 24;
+const REPORT_COOLDOWN_HOURS  = 72;
 const MIN_NEW_ATTEMPTS       = 75;
 const MIN_DISTINCT_TOPICS    = 3;
 const PROGRESS_REPORT_VERSION = "1.0";
