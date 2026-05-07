@@ -163,7 +163,6 @@ export const VOCAB_EXPLORE_MODES = [
   { id:"translate", label:"Translate"         },
   { id:"mc",        label:"Multiple Choice"   },
   { id:"cloze",     label:"Fill in the Blank" },
-  { id:"sentence",  label:"Sentence Builder"  },
 ];
 
 /**
@@ -183,15 +182,45 @@ export const VOCAB_EXPLORE_MODES = [
  * Returns one of: "matching" | "mc" | "translate_ru_en" | "cloze"
  *               | "translate_en_ru" | "sentence"
  */
+/**
+ * Derive exercise type and direction for a word based on tier + tier_streak.
+ *
+ * Returns: { type: string, direction: "ru_en" | "en_ru" | null }
+ *
+ * Tiers 2, 4, 5 alternate direction using tier_streak % 2:
+ *   Tier 2: even → RU→EN (passive recall first), odd → EN→RU
+ *   Tier 4: even → EN→RU (harder first), odd → RU→EN
+ *   Tier 5: even → RU→EN (consolidation), odd → EN→RU
+ *
+ * Mastered words cycle through a lightweight maintenance rotation.
+ */
 export function getExerciseType(word) {
-  if (word.is_mastered) return "sentence";
+  const streak = word.tier_streak ?? 0;
+
+  if (word.is_mastered) {
+    // Maintenance rotation for mastered words: MC → translate_ru_en → translate_en_ru
+    const cycle = (word.review_count ?? 0) % 3;
+    if (cycle === 0) return { type: "mc",              direction: null    };
+    if (cycle === 1) return { type: "translate",       direction: "ru_en" };
+                     return { type: "translate",       direction: "en_ru" };
+  }
+
   switch (word.tier ?? 0) {
-    case 0:  return "matching";
-    case 1:  return "mc";
-    case 2:  return "translate_ru_en";
-    case 3:  return "cloze";
-    case 4:  return "translate_en_ru";
-    default: return "sentence"; // tier 5+
+    case 0:  return { type: "matching",  direction: null    };
+    case 1:  return { type: "mc",        direction: null    };
+    case 2:  return {
+      type:      "translate",
+      direction: streak % 2 === 0 ? "ru_en" : "en_ru",
+    };
+    case 3:  return { type: "cloze",     direction: null    };
+    case 4:  return {
+      type:      "translate",
+      direction: streak % 2 === 0 ? "en_ru" : "ru_en",
+    };
+    default: return {  // tier 5+
+      type:      "translate",
+      direction: streak % 2 === 0 ? "ru_en" : "en_ru",
+    };
   }
 }
 
@@ -204,14 +233,16 @@ export const SRS_QUALITY = {
 };
 
 // Tier badge display config keyed by exercise type string
+// TIER_BADGE is keyed by tier number (as string) for tiers that have a
+// single exercise, and by "translate_ru_en" / "translate_en_ru" for the
+// alternating translate tiers. Session.jsx builds the key dynamically.
 export const TIER_BADGE = {
-  matching:        { label: "Tier 0 · Matching",          bg: "#E6F1FB", text: "#185FA5" },
-  mc:              { label: "Tier 1 · Multiple Choice",   bg: "#EAF3DE", text: "#3B6D11" },
-  translate_ru_en: { label: "Tier 2 · Translate RU→EN",  bg: "#FAEEDA", text: "#854F0B" },
-  cloze:           { label: "Tier 3 · Fill in the Blank", bg: "#F3E8FB", text: "#6B2D8B" },
-  translate_en_ru: { label: "Tier 4 · Translate EN→RU",  bg: "#FBE8E8", text: "#8B2D2D" },
-  sentence:        { label: "Tier 5 · Sentence Builder",  bg: "#FBEAF0", text: "#993556" },
-  mastered:        { label: "Mastered",                   bg: "#EEEDFE", text: "#3C3489" },
+  0:               { label: "Tier 0 · Matching",              bg: "#E6F1FB", text: "#185FA5" },
+  1:               { label: "Tier 1 · Multiple Choice",       bg: "#EAF3DE", text: "#3B6D11" },
+  translate_ru_en: { label: "Translate RU→EN",                bg: "#FAEEDA", text: "#854F0B" },
+  translate_en_ru: { label: "Translate EN→RU",                bg: "#FDE8E8", text: "#8B2D2D" },
+  3:               { label: "Tier 3 · Fill in the Blank",     bg: "#F3E8FB", text: "#6B2D8B" },
+  mastered:        { label: "Mastered",                       bg: "#EEEDFE", text: "#3C3489" },
 };
 
 // Max tier before a word is considered fully graduated (but not auto-mastered)

@@ -82,11 +82,11 @@ async function gradeAnswer({ mode, word, studentAnswer, correctAnswer }) {
   return res.json();
 }
 
-function deriveQuality(exerciseType, correct) {
+function deriveQuality(exerciseType, direction, correct) {
   if (!correct) return SRS_QUALITY.FAIL;
   if (exerciseType === "matching" || exerciseType === "mc") return SRS_QUALITY.CORRECT_EASY;
-  if (exerciseType === "translate_ru_en")                   return SRS_QUALITY.CORRECT_MEDIUM;
-  return SRS_QUALITY.CORRECT_HARD;
+  if (exerciseType === "translate" && direction === "ru_en") return SRS_QUALITY.CORRECT_MEDIUM;
+  return SRS_QUALITY.CORRECT_HARD; // translate en_ru, cloze
 }
 
 function computeTierProgression(word, correct) {
@@ -158,8 +158,9 @@ export default function Session() {
   const pendingMatchResults = useRef({});
 
   // ── Derived ───────────────────────────────────────────────────────────────
-  const currentWord  = isExplore ? exploreWord : words[currentIdx];
-  const exerciseType = currentWord ? getExerciseType(currentWord) : null;
+  const currentWord = isExplore ? exploreWord : words[currentIdx];
+  const { type: exerciseType, direction: exerciseDirection } =
+    (currentWord ? getExerciseType(currentWord) : { type: null, direction: null });
 
   // How many words does the current exercise step consume?
   // Matching = 4 words at once, everything else = 1.
@@ -193,10 +194,10 @@ export default function Session() {
     setFeedback(null);
     setDistractors([]);
     setClozeData(null);
-    prepareCard(currentWord, exerciseType);
+    prepareCard(currentWord, exerciseType, exerciseDirection);
   }, [currentIdx, phase]);
 
-  const prepareCard = useCallback(async (word, exType) => {
+  const prepareCard = useCallback(async (word, exType, exDirection) => {
     if (exType === "mc") {
       const definitions = word.translation
         ? word.translation.split(",").map(d => d.trim()).filter(Boolean)
@@ -217,7 +218,7 @@ export default function Session() {
   }, [level]);
 
   // ── Background DB writer with retry ──────────────────────────────────────
-  async function writeSrsWithRetry(userId, word, exType, correct, newTier, newStreak, maxAttempts = 3) {
+  async function writeSrsWithRetry(userId, word, exType, direction, correct, newTier, newStreak, shouldMaster = false, maxAttempts = 3) {
     for (let attempt = 1; attempt <= maxAttempts; attempt++) {
       try {
         let newSrs;
@@ -232,7 +233,7 @@ export default function Session() {
           };
         } else {
           newSrs = await callSrsUpdate({
-            quality:       deriveQuality(exType, correct),
+            quality:       deriveQuality(exType, direction, correct),
             interval_days: word.interval_days ?? 0,
             ease_factor:   word.ease_factor   ?? 2.5,
             review_count:  word.review_count  ?? 0,
@@ -242,6 +243,7 @@ export default function Session() {
           ...newSrs,
           tier:        newTier,
           tier_streak: newStreak,
+          ...(shouldMaster ? { is_mastered: true } : {}),
         });
         touchLastActive(user.uid); // fire-and-forget — no await
         return;
@@ -259,11 +261,13 @@ export default function Session() {
   // ── SRS + tier update ─────────────────────────────────────────────────────
   // skipWordsMutation: pass true for matching to avoid mutating the words array
   // mid-card, which would cause MatchingCard to reset via its useEffect([words]).
-  const handleSrsUpdate = (word, exType, correct, skipWordsMutation = false) => {
+  const handleSrsUpdate = (word, exType, direction, correct, skipWordsMutation = false) => {
     const alreadyReviewed = reviewedThisSession.current.has(word.id);
 
-    const { tier: newTier, tier_streak: newStreak } = computeTierProgression(word, correct);
-    const graduated = newTier > (word.tier ?? 0);
+    const { tier: rawTier, tier_streak: newStreak } = computeTierProgression(word, correct);
+    const shouldMaster = rawTier > MAX_TIER;
+    const newTier      = shouldMaster ? MAX_TIER : rawTier;
+    const graduated    = rawTier > (word.tier ?? 0);
 
     setSessionResults(prev => ({
       ...prev,
@@ -288,7 +292,7 @@ export default function Session() {
     if (alreadyReviewed) return;
 
     reviewedThisSession.current.add(word.id);
-    writeSrsWithRetry(user.uid, word, exType, correct, newTier, newStreak);
+    writeSrsWithRetry(user.uid, word, exType, direction, correct, newTier, newStreak, shouldMaster);
   };
 
   // ── Answer handlers ───────────────────────────────────────────────────────
@@ -307,7 +311,7 @@ export default function Session() {
       else setStreak(0);
     }
 
-    handleSrsUpdate(currentWord, "mc", correct);
+    handleSrsUpdate(currentWord, "mc", null, correct);
 
     track({
       sourceId:       isExplore ? ATTEMPT_SOURCES.VOCAB_EXPLORE : ATTEMPT_SOURCES.VOCAB_SESSION,
@@ -326,7 +330,7 @@ export default function Session() {
     let feedbackText = "";
 
     try {
-      if (exerciseType === "translate_ru_en") {
+      if (exerciseType === "translate" && exerciseDirection === "ru_en") {
         const exact = studentAnswer.trim().toLowerCase() === currentWord.translation?.trim().toLowerCase();
         if (exact) {
           correct = true; feedbackText = "Correct!";
@@ -334,10 +338,13 @@ export default function Session() {
           const result = await gradeAnswer({ mode: "translate_ru_en", word: currentWord, studentAnswer });
           correct = result.correct; feedbackText = result.feedback;
         }
+      } else if (exerciseType === "translate" && exerciseDirection === "en_ru") {
+        const result = await gradeAnswer({ mode: "translate_en_ru", word: currentWord, studentAnswer });
+        correct = result.correct; feedbackText = result.feedback;
       } else {
-        const modeMap = { translate_en_ru: "translate_en_ru", cloze: "cloze", sentence: "sentence" };
-        const result  = await gradeAnswer({
-          mode: modeMap[exerciseType], word: currentWord,
+        // cloze
+        const result = await gradeAnswer({
+          mode: "cloze", word: currentWord,
           studentAnswer, correctAnswer: clozeData?.answer,
         });
         correct = result.correct; feedbackText = result.feedback;
@@ -356,18 +363,22 @@ export default function Session() {
       else setStreak(0);
     }
 
-    if (!isExplore) handleSrsUpdate(currentWord, exerciseType, correct);
+    if (!isExplore) handleSrsUpdate(currentWord, exerciseType, exerciseDirection, correct);
+
+    const resolvedExType =
+      exerciseType === "translate"
+        ? (exerciseDirection === "ru_en" ? "translate_ru_en" : "translate_en_ru")
+        : exerciseType;
 
     const vocabExTypeMap = {
       translate_ru_en: ATTEMPT_EXERCISE_TYPES.VOCAB_TRANSLATE,
       translate_en_ru: ATTEMPT_EXERCISE_TYPES.VOCAB_TRANSLATE_EN_RU,
       cloze:           ATTEMPT_EXERCISE_TYPES.VOCAB_CLOZE,
-      sentence:        ATTEMPT_EXERCISE_TYPES.VOCAB_SENTENCE,
     };
     track({
       sourceId:       isExplore ? ATTEMPT_SOURCES.VOCAB_EXPLORE : ATTEMPT_SOURCES.VOCAB_SESSION,
       topicId:        posToTopicId(currentWord.part_of_speech),
-      exerciseTypeId: vocabExTypeMap[exerciseType] ?? null,
+      exerciseTypeId: vocabExTypeMap[resolvedExType] ?? null,
       word:           currentWord.word,
       isCorrect:      correct,
       userAnswer:     correct ? null : studentAnswer,
@@ -413,7 +424,7 @@ export default function Session() {
   // words array stays stable), then advances the session index.
   const handleMatchNext = useCallback(() => {
     Object.values(pendingMatchResults.current).forEach(({ word, correct }) => {
-      handleSrsUpdate(word, "matching", correct, true);
+      handleSrsUpdate(word, "matching", null, correct, true);
     });
     pendingMatchResults.current = {};
 
@@ -435,7 +446,7 @@ export default function Session() {
       setStreak(0);
     }
 
-    if (!isExplore) handleSrsUpdate(currentWord, exerciseType, false);
+    if (!isExplore) handleSrsUpdate(currentWord, exerciseType, exerciseDirection, false);
     handleNext();
   }, [currentWord, exerciseType, isExplore]);
 
@@ -544,7 +555,7 @@ export default function Session() {
   const accuracy      = totalCount > 0 ? Math.round((correctCount / totalCount) * 100) : null;
 
   const tierLabel = (t) =>
-    ["Matching","Multiple Choice","Translate RU→EN","Cloze","Translate EN→RU","Sentence Builder"][t] ?? "—";
+    ["Matching","Multiple Choice","Translate (alternating)","Cloze","Translate (alternating)","Translate (consolidation)"][t] ?? "—";
 
   const nextDueTime = () => {
     const future = wordsRef.current
@@ -741,10 +752,10 @@ export default function Session() {
               feedback={feedback}
             />
           )}
-          {(exerciseType === "translate_ru_en" || exerciseType === "translate_en_ru") && currentWord && (
+          {exerciseType === "translate" && currentWord && (
             <TranslateCard
               word={currentWord}
-              direction={exerciseType === "translate_ru_en" ? "ru_en" : "en_ru"}
+              direction={exerciseDirection}
               onAnswer={handleTextAnswer}
               feedback={feedback}
               grading={grading}
@@ -755,14 +766,6 @@ export default function Session() {
               word={currentWord}
               clozeData={clozeData}
               loading={cardLoading}
-              onAnswer={handleTextAnswer}
-              feedback={feedback}
-              grading={grading}
-            />
-          )}
-          {exerciseType === "sentence" && currentWord && (
-            <SentenceCard
-              word={currentWord}
               onAnswer={handleTextAnswer}
               feedback={feedback}
               grading={grading}
